@@ -3,14 +3,14 @@
 // until the visitor clicks "Load player" (no third-party cookies by default).
 import type { Release } from '../data/types';
 
-interface Props { embed: NonNullable<Release['embed']>; title: string }
-const { embed, title } = Astro.props;
+interface Props { embed: NonNullable<Release['embed']>; title: string; height?: number }
+const { embed, title, height: fixedHeight } = Astro.props;
 
 const src =
   embed.provider === 'youtube'
     ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(embed.src)}`
     : embed.src;
-const height = embed.provider === 'youtube' ? undefined : embed.provider === 'spotify' ? 152 : 166;
+const height = fixedHeight ?? (embed.provider === 'youtube' ? undefined : embed.provider === 'spotify' ? 152 : 166);
 const label = { spotify: 'Spotify', youtube: 'YouTube', soundcloud: 'SoundCloud' }[embed.provider];
 ---
 

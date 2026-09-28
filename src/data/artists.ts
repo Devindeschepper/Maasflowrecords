@@ -16,22 +16,20 @@ export const artists: Artist[] = [
     image: '/images/artists/vin.svg',
     imageAlt: 'Portrait of VIN (placeholder)',
     bioHref: '/bio/#vin',
-    // TODO: paste VIN's real profile links. Empty = "coming soon".
+    // Streaming / store profiles. Add a platform by adding a line; remove a line to hide it.
     streaming: {
-      spotify: '',
-      appleMusic: '',
-      youtubeMusic: '',
-      soundcloud: '',
-      deezer: '',
-      tidal: '',
-      amazonMusic: '',
-      beatstars: '',
+      spotify: 'https://open.spotify.com/artist/5bDu5EvUNqdhJfVXYcQiXK',
+      appleMusic: 'https://music.apple.com/us/artist/vin/1717180938',
+      youtubeMusic: 'https://music.youtube.com/channel/UC8dDWNLNjAxwDzcRoadqSvg',
+      beatstars: 'https://www.beatstars.com/devindeschepper48605',
     },
     socials: {
-      instagram: '',
-      tiktok: '',
-      youtube: '',
+      instagram: 'https://www.instagram.com/vintheartist/',
+      tiktok: 'https://www.tiktok.com/@vintheartist010',
+      youtube: 'https://www.youtube.com/channel/UC8dDWNLNjAxwDzcRoadqSvg',
     },
+    // Spotify "artist" player (top tracks + covers, always up to date).
+    spotifyEmbed: 'https://open.spotify.com/embed/artist/5bDu5EvUNqdhJfVXYcQiXK',
   },
 ];
 

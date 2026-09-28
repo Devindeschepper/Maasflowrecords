@@ -18,20 +18,16 @@ export const site = {
 };
 
 /**
- * Official label / artist accounts.
- * TODO: paste the real profile URLs. Empty strings are shown as "coming soon".
- * Remove a line to hide that platform everywhere.
+ * Official label accounts. For now these are VIN's accounts.
+ * Add a platform by adding a line (see platforms.ts for the ids); remove a line to hide it.
  */
 export const labelSocials: Links = {
-  instagram: '',
-  tiktok: '',
-  youtube: '',
-  facebook: '',
-  x: '',
-  spotify: '',
-  appleMusic: '',
-  soundcloud: '',
-  beatstars: '',
+  instagram: 'https://www.instagram.com/vintheartist/',
+  tiktok: 'https://www.tiktok.com/@vintheartist010',
+  youtube: 'https://www.youtube.com/channel/UC8dDWNLNjAxwDzcRoadqSvg',
+  spotify: 'https://open.spotify.com/artist/5bDu5EvUNqdhJfVXYcQiXK',
+  appleMusic: 'https://music.apple.com/us/artist/vin/1717180938',
+  beatstars: 'https://www.beatstars.com/devindeschepper48605',
 };
 
 export const nav = [
