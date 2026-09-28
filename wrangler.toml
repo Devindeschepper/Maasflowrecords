@@ -1,0 +1,12 @@
+# Cloudflare Pages configuration (used by `wrangler pages dev` locally
+# and by Cloudflare Pages when building from GitHub).
+name = "maasflowrecords"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Non-secret variables. Secrets (TURNSTILE_SECRET_KEY, RESEND_API_KEY)
+# are set in the Cloudflare dashboard, or in .dev.vars for local dev.
+[vars]
+CONTACT_TO_EMAIL = "info@maasflowrecords.com"
+PAYMENT_PROVIDER = "manual"

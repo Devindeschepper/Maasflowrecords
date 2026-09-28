@@ -1,0 +1,30 @@
+{
+  "name": "maasflowrecords",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Official website of Maas Flow Records — independent music label from Rotterdam.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "wrangler pages dev dist",
+    "check": "astro check",
+    "typecheck:functions": "tsc -p functions/tsconfig.json"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.5.0",
+    "@fontsource-variable/inter": "^5.2.6",
+    "@fontsource/anton": "^5.2.6",
+    "astro": "^5.13.0",
+    "simple-icons": "^15.0.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@cloudflare/workers-types": "^4.20250801.0",
+    "typescript": "^5.9.2",
+    "wrangler": "^4.28.0"
+  }
+}

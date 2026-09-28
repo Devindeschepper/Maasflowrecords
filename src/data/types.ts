@@ -1,0 +1,102 @@
+// Shared content types. Every page is generated from the files in this folder,
+// so adding an artist / release / event / product = adding one object to a list.
+
+export type PlatformId =
+  | 'spotify'
+  | 'appleMusic'
+  | 'youtube'
+  | 'youtubeMusic'
+  | 'soundcloud'
+  | 'deezer'
+  | 'tidal'
+  | 'amazonMusic'
+  | 'beatstars'
+  | 'instagram'
+  | 'tiktok'
+  | 'facebook'
+  | 'x'
+  | 'twitch'
+  | 'bandcamp';
+
+/** A map of platform -> URL. Leave a platform out (or empty) to hide it. */
+export type Links = Partial<Record<PlatformId, string>>;
+
+export interface Artist {
+  slug: string;
+  name: string;
+  roles: string[];
+  origin: string;
+  /** One or two sentences, used on cards and the artist page. */
+  tagline: string;
+  description: string;
+  image: string;
+  imageAlt: string;
+  /** Anchor/page that holds the full bio. */
+  bioHref: string;
+  streaming: Links;
+  socials: Links;
+}
+
+export type ReleaseType = 'Single' | 'EP' | 'Album' | 'Beat Tape';
+
+export interface Release {
+  slug: string;
+  title: string;
+  /** Artist slugs (see artists.ts). */
+  artists: string[];
+  type: ReleaseType;
+  /** ISO date (YYYY-MM-DD). Future dates are shown as "Upcoming". */
+  releaseDate: string;
+  cover: string;
+  description: string;
+  tracks?: string[];
+  links: Links;
+  /**
+   * Optional embedded player. Paste the embed URL from Spotify
+   * ("Share → Embed track") or a YouTube video id.
+   */
+  embed?: { provider: 'spotify' | 'youtube' | 'soundcloud'; src: string };
+  featured?: boolean;
+}
+
+export interface LabelEvent {
+  slug: string;
+  title: string;
+  kind: 'Concert' | 'Livestream' | 'Performance' | 'Label event' | 'Listening session' | 'Other';
+  /** ISO date-time with timezone offset, e.g. 2026-11-14T20:00:00+01:00 */
+  start: string;
+  venue: string;
+  city: string;
+  /** For livestreams: where to watch. */
+  online?: boolean;
+  description: string;
+  image: string;
+  ticketUrl?: string;
+  ticketLabel?: string;
+}
+
+export type ProductCategory = 'Vinyl' | 'CD' | 'T-Shirt' | 'Hoodie' | 'Cap' | 'Poster' | 'Other';
+
+export interface Product {
+  id: string;
+  name: string;
+  category: ProductCategory;
+  description: string;
+  /** Price in euro cents (2500 = €25.00). */
+  price: number;
+  image: string;
+  /** Number in stock. 0 = sold out. Use `preorder` for items not yet shipped. */
+  stock: number;
+  preorder?: boolean;
+  sizes?: string[];
+  /** Weight class used for shipping. */
+  shippingClass: 'small' | 'standard';
+}
+
+export interface ShippingZone {
+  id: string;
+  label: string;
+  /** Price in euro cents per shipping class. */
+  rates: Record<Product['shippingClass'], number>;
+  estimate: string;
+}
