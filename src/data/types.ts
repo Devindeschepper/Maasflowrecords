@@ -35,6 +35,8 @@ export interface Artist {
   bioHref: string;
   streaming: Links;
   socials: Links;
+  /** Optional Spotify artist embed URL (open.spotify.com/embed/artist/…). */
+  spotifyEmbed?: string;
 }
 
 export type ReleaseType = 'Single' | 'EP' | 'Album' | 'Beat Tape';
