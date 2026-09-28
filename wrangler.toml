@@ -25,5 +25,10 @@ run_worker_first = ["/api/*"]
 CONTACT_TO_EMAIL = "info@maasflowrecords.com"
 PAYMENT_PROVIDER = "manual"
 
+# Same values for preview deployments (non-production branches, `wrangler preview`).
+[previews.vars]
+CONTACT_TO_EMAIL = "info@maasflowrecords.com"
+PAYMENT_PROVIDER = "manual"
+
 [observability]
 enabled = true
