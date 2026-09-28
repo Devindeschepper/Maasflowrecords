@@ -1,0 +1,29 @@
+# Cloudflare Workers configuration — used by `npx wrangler deploy`
+# (Cloudflare "Workers Builds" runs this automatically on every push to GitHub).
+#
+# The name must match the Worker's name in the Cloudflare dashboard.
+name = "maasflowrecords2"
+main = "worker/index.ts"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Builds the website (Astro → ./dist) before every deploy.
+[build]
+command = "npm run build"
+
+# The website itself: the static Astro build.
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "404-page"
+# Only the form/checkout API goes through the Worker code; pages are served directly.
+run_worker_first = ["/api/*"]
+
+# Non-secret variables. Secrets (TURNSTILE_SECRET_KEY, RESEND_API_KEY) are set in the
+# Cloudflare dashboard (Settings → Variables and Secrets) or in .dev.vars for local dev.
+[vars]
+CONTACT_TO_EMAIL = "info@maasflowrecords.com"
+PAYMENT_PROVIDER = "manual"
+
+[observability]
+enabled = true

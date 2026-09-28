@@ -1,0 +1,23 @@
+# The site is static, so "upcoming" vs "past" events/releases are decided at build time.
+# This triggers a Cloudflare Pages rebuild every night so dates stay correct.
+# Setup: Cloudflare Pages → your project → Settings → Builds → Deploy hooks → create one,
+# then add its URL as a GitHub secret named CLOUDFLARE_DEPLOY_HOOK.
+name: Nightly rebuild
+
+on:
+  schedule:
+    - cron: '7 3 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Cloudflare Pages deploy hook
+        env:
+          HOOK: ${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then echo "CLOUDFLARE_DEPLOY_HOOK secret not set — skipping"; exit 0; fi
+          curl -fsS -X POST "$HOOK" > /dev/null

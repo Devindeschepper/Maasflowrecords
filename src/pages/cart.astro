@@ -1,0 +1,220 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import Turnstile from '../components/Turnstile.astro';
+import { products, shippingZones, MAX_QTY_PER_ITEM } from '../data/products';
+
+// Only what the browser needs to display the cart. The server re-prices everything.
+const catalogue = products.map(({ id, name, price, image, stock, preorder, shippingClass }) => ({
+  id, name, price, image, stock, preorder, shippingClass,
+}));
+---
+
+<BaseLayout title="Cart & Checkout" description="Your Maas Flow Records shopping cart." noindex>
+  <PageHero eyebrow="Shop" title="Cart" />
+  <script type="application/json" id="catalogue" set:html={JSON.stringify({ catalogue, zones: shippingZones, max: MAX_QTY_PER_ITEM }).replace(/</g, '\\u003c')} />
+
+  <section class="section">
+    <div class="container checkout">
+      <div>
+        <h2 class="sr-only">Items</h2>
+        <ul class="lines" id="cart-lines" aria-live="polite"></ul>
+        <p class="empty" id="cart-empty" hidden>Your cart is empty. <a href="/shop/">Go to the shop</a>.</p>
+      </div>
+
+      <aside class="summary card" id="checkout-box" hidden>
+        <h2 class="h3">Checkout</h2>
+        <form class="form" id="checkout-form" action="/api/checkout" method="post">
+          <div class="field">
+            <label for="o-zone">Ship to <span class="req">*</span></label>
+            <select id="o-zone" name="zone" required>
+              {shippingZones.map((z) => <option value={z.id}>{z.label}</option>)}
+            </select>
+          </div>
+
+          <dl class="totals">
+            <div><dt>Subtotal</dt><dd id="t-sub">—</dd></div>
+            <div><dt>Shipping</dt><dd id="t-ship">—</dd></div>
+            <div class="grand"><dt>Total (incl. VAT)</dt><dd id="t-total">—</dd></div>
+          </dl>
+
+          <fieldset class="fs">
+            <legend>Your details</legend>
+            <div class="field"><label for="o-name">Full name <span class="req">*</span></label><input id="o-name" name="name" required maxlength="100" autocomplete="name" /></div>
+            <div class="field"><label for="o-email">Email <span class="req">*</span></label><input id="o-email" name="email" type="email" required maxlength="200" autocomplete="email" /></div>
+            <div class="field"><label for="o-addr">Address <span class="req">*</span></label><input id="o-addr" name="address" required maxlength="200" autocomplete="street-address" /></div>
+            <div class="form-row">
+              <div class="field"><label for="o-zip">Postal code <span class="req">*</span></label><input id="o-zip" name="postalCode" required maxlength="20" autocomplete="postal-code" /></div>
+              <div class="field"><label for="o-city">City <span class="req">*</span></label><input id="o-city" name="city" required maxlength="100" autocomplete="address-level2" /></div>
+            </div>
+            <div class="field"><label for="o-country">Country <span class="req">*</span></label><input id="o-country" name="country" required maxlength="80" autocomplete="country-name" /></div>
+            <div class="field"><label for="o-notes">Order notes</label><textarea id="o-notes" name="notes" class="short" maxlength="1000" rows="3"></textarea></div>
+          </fieldset>
+
+          <div class="hp" aria-hidden="true"><label for="o-website">Website</label><input id="o-website" name="website" tabindex="-1" autocomplete="off" /></div>
+          <input type="hidden" name="_ts" value="" />
+          <input type="hidden" name="cart" value="" />
+
+          <label class="check">
+            <input type="checkbox" name="terms" value="yes" required />
+            <span>I agree to the <a href="/shop/#shipping">shipping &amp; returns</a> terms.</span>
+          </label>
+
+          <Turnstile />
+          <button class="btn btn-primary" type="submit">Place order</button>
+          <p class="form-status" role="status" aria-live="polite"></p>
+        </form>
+      </aside>
+
+      <div class="card done" id="order-done" hidden>
+        <h2>Thank you</h2>
+        <p class="lead" id="order-done-msg"></p>
+        <a class="btn" href="/shop/">Back to shop</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { getCart, setQty, clearCart, onCartChange } from '../scripts/cart';
+
+  type Item = { id: string; name: string; price: number; image: string; stock: number; preorder?: boolean; shippingClass: 'small' | 'standard' };
+  type Zone = { id: string; label: string; rates: Record<'small' | 'standard', number>; estimate: string };
+  const { catalogue, zones, max } = JSON.parse(document.getElementById('catalogue')!.textContent!) as {
+    catalogue: Item[]; zones: Zone[]; max: number;
+  };
+
+  const eur = (c: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' }).format(c / 100);
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  const list = $<HTMLUListElement>('cart-lines');
+  const form = $<HTMLFormElement>('checkout-form');
+  const zoneSel = $<HTMLSelectElement>('o-zone');
+  const status = form.querySelector<HTMLElement>('.form-status')!;
+  (form.elements.namedItem('_ts') as HTMLInputElement).value = String(Date.now());
+
+  const el = (tag: string, cls?: string, text?: string) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+
+  function lines() {
+    return getCart()
+      .map((l) => ({ ...l, item: catalogue.find((p) => p.id === l.id) }))
+      .filter((l): l is typeof l & { item: Item } => !!l.item && l.item.stock > 0);
+  }
+
+  function render() {
+    const ls = lines();
+    list.replaceChildren();
+    $('cart-empty').hidden = ls.length > 0;
+    $('checkout-box').hidden = ls.length === 0;
+
+    for (const l of ls) {
+      const li = el('li', 'line');
+      const img = el('img') as HTMLImageElement;
+      img.src = l.item.image; img.alt = ''; img.width = 96; img.height = 96;
+      const info = el('div', 'line-info');
+      info.append(el('strong', '', l.item.name));
+      if (l.size) info.append(el('span', 'mono muted', `Size: ${l.size}`));
+      if (l.item.preorder) info.append(el('span', 'tag tag-accent', 'Pre-order'));
+      info.append(el('span', 'muted', eur(l.item.price)));
+
+      const qty = el('div', 'qty');
+      const label = `${l.item.name}${l.size ? ` (${l.size})` : ''}`;
+      const cap = Math.min(max, l.item.stock);
+      const minus = el('button', 'qbtn', '−') as HTMLButtonElement;
+      minus.type = 'button'; minus.setAttribute('aria-label', `Decrease quantity of ${label}`);
+      minus.onclick = () => setQty(l.id, l.size, l.qty - 1, cap);
+      const n = el('span', 'qn', String(l.qty));
+      n.setAttribute('aria-label', `Quantity ${l.qty}`);
+      const plus = el('button', 'qbtn', '+') as HTMLButtonElement;
+      plus.type = 'button'; plus.setAttribute('aria-label', `Increase quantity of ${label}`);
+      plus.disabled = l.qty >= cap;
+      plus.onclick = () => setQty(l.id, l.size, l.qty + 1, cap);
+      const rm = el('button', 'rm', 'Remove') as HTMLButtonElement;
+      rm.type = 'button'; rm.setAttribute('aria-label', `Remove ${label}`);
+      rm.onclick = () => setQty(l.id, l.size, 0);
+      qty.append(minus, n, plus, rm);
+
+      li.append(img, info, qty, el('span', 'line-total', eur(l.item.price * l.qty)));
+      list.append(li);
+    }
+    totals(ls);
+  }
+
+  function totals(ls = lines()) {
+    const sub = ls.reduce((s, l) => s + l.item.price * l.qty, 0);
+    const zone = zones.find((z) => z.id === zoneSel.value) ?? zones[0];
+    const cls = ls.some((l) => l.item.shippingClass === 'standard') ? 'standard' : 'small';
+    const ship = ls.length ? zone.rates[cls] : 0;
+    $('t-sub').textContent = eur(sub);
+    $('t-ship').textContent = `${eur(ship)} · ${zone.estimate}`;
+    $('t-total').textContent = eur(sub + ship);
+  }
+
+  zoneSel.addEventListener('change', () => totals());
+  onCartChange(render);
+  render();
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+    const cart = lines().map(({ id, size, qty }) => ({ id, size, qty }));
+    (form.elements.namedItem('cart') as HTMLInputElement).value = JSON.stringify(cart);
+    const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    btn.disabled = true;
+    status.dataset.state = '';
+    status.textContent = 'Placing order…';
+    try {
+      const res = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } });
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string; redirectUrl?: string; message?: string };
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Checkout failed. Please try again.');
+      if (data.redirectUrl) {
+        // A payment provider returned a hosted checkout page.
+        location.href = data.redirectUrl;
+        return;
+      }
+      clearCart();
+      $('checkout-box').hidden = true;
+      $('order-done').hidden = false;
+      $('order-done-msg').textContent = data.message ?? 'Your order was received.';
+    } catch (err) {
+      status.dataset.state = 'error';
+      status.textContent = `${(err as Error).message} Questions: info@maasflowrecords.com`;
+    } finally {
+      btn.disabled = false;
+      (window as unknown as { turnstile?: { reset: () => void } }).turnstile?.reset();
+    }
+  });
+</script>
+
+<style>
+  .checkout { display: grid; gap: 2rem; align-items: start; }
+  .lines { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+  .lines :global(.line) {
+    display: grid; grid-template-columns: 72px 1fr auto; gap: 0.5rem 1rem; align-items: center;
+    padding: 1rem 0; border-bottom: 1px solid var(--line);
+  }
+  .lines :global(img) { width: 72px; height: 72px; object-fit: cover; background: var(--surface); grid-row: span 2; }
+  .lines :global(.line-info) { display: grid; gap: 0.2rem; font-size: 0.92rem; justify-items: start; }
+  .lines :global(.line-total) { font-weight: 600; grid-column: 3; grid-row: 1; }
+  .lines :global(.qty) { grid-column: 2 / -1; display: flex; align-items: center; gap: 0.25rem; }
+  .lines :global(.qbtn) { width: 40px; height: 40px; background: var(--surface); color: var(--text); border: 1px solid var(--line); font-size: 1.1rem; cursor: pointer; }
+  .lines :global(.qbtn:disabled) { opacity: 0.4; cursor: not-allowed; }
+  .lines :global(.qn) { min-width: 2.2rem; text-align: center; }
+  .lines :global(.rm) { margin-left: auto; background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; font-size: 0.82rem; min-height: 40px; }
+  .summary, .done { padding: clamp(1.1rem, 4vw, 1.75rem); }
+  .h3 { font-size: clamp(1.35rem, 3vw, 1.75rem); }
+  .totals { margin: 0; display: grid; gap: 0.5rem; padding: 1rem 0; border-block: 1px solid var(--line); }
+  .totals div { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.92rem; }
+  .totals dd { margin: 0; text-align: right; }
+  .totals .grand { font-weight: 700; font-size: 1.05rem; }
+  .fs { border: 0; padding: 0; margin: 0; display: grid; gap: 1rem; }
+  .fs legend { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.75rem; }
+  @media (min-width: 960px) {
+    .checkout { grid-template-columns: 1.5fr 1fr; gap: 3rem; }
+    .summary { position: sticky; top: calc(var(--header-h) + 1.5rem); }
+  }
+</style>

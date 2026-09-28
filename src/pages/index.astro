@@ -1,0 +1,219 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ReleaseCard from '../components/ReleaseCard.astro';
+import EventCard from '../components/EventCard.astro';
+import ProductCard from '../components/ProductCard.astro';
+import PlatformLinks from '../components/PlatformLinks.astro';
+import { site, labelSocials } from '../data/site';
+import { artists } from '../data/artists';
+import { sortedReleases, latestRelease, upcomingReleases } from '../data/releases';
+import { upcomingEvents } from '../data/events';
+import { products } from '../data/products';
+import { artistNames, catalogNo, fmtDate } from '../lib/format';
+
+const vin = artists[0];
+const latest = latestRelease();
+const next = upcomingReleases()[0];
+const featuredRelease = next ?? latest;
+const moreReleases = sortedReleases().slice(0, 4);
+const events = upcomingEvents().slice(0, 3);
+const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
+---
+
+<BaseLayout>
+  <script>
+    import { enhanceAddToCart } from '../scripts/shop';
+    enhanceAddToCart();
+  </script>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="dot"></span>Independent label · {site.city}</p>
+        <h1>Maas<br />Flow<br /><span class="outline">Records</span></h1>
+        <p class="lead">
+          An independent music label from Rotterdam, founded by producer and rapper <strong>VIN</strong>.
+          Rap, R&amp;B and beats — built from the ground up.
+        </p>
+        <div class="btn-row">
+          {latest && <a class="btn btn-primary" href={`/music/${latest.slug}/`}>▶ Listen</a>}
+          <a class="btn" href="/artists/vin/">Discover VIN</a>
+          <a class="btn btn-ghost" href="/music/">View releases</a>
+          <a class="btn btn-ghost" href="/shop/">Shop</a>
+        </div>
+      </div>
+      <figure class="hero-artist">
+        <img src={vin.image} alt={vin.imageAlt} width="720" height="900" fetchpriority="high" />
+        <figcaption>
+          <span class="mono muted">Main artist</span>
+          <span class="name">{vin.name}</span>
+          <span class="mono muted">{vin.roles.join(' / ')}</span>
+        </figcaption>
+      </figure>
+    </div>
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker-track mono">
+        {Array.from({ length: 2 }).map(() => (
+          <span>MAAS FLOW RECORDS ✦ ROTTERDAM ✦ INDEPENDENT ✦ BEHIND THE BEATS ✦ BEHIND THE MIC ✦ STUDENT OF THE GAME ✦ </span>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- LATEST / NEXT RELEASE -->
+  {
+    featuredRelease && (
+      <section class="section">
+        <div class="container feature">
+          <a href={`/music/${featuredRelease.slug}/`} class="feature-cover">
+            <img src={featuredRelease.cover} alt={`${featuredRelease.title} cover art`} width="700" height="700" loading="lazy" />
+          </a>
+          <div>
+            <p class="eyebrow">
+              <span class="dot" />
+              {next ? 'Next release' : 'Latest release'} · {catalogNo(featuredRelease)}
+            </p>
+            <h2>{featuredRelease.title}</h2>
+            <p class="mono muted">
+              {featuredRelease.type} · {artistNames(featuredRelease)} · {next ? 'Out ' : ''}{fmtDate(featuredRelease.releaseDate)}
+            </p>
+            <p class="lead">{featuredRelease.description}</p>
+            <div class="btn-row">
+              <a class="btn btn-primary" href={`/music/${featuredRelease.slug}/`}>
+                {next ? 'Release details' : '▶ Listen now'}
+              </a>
+              {next && products.some((p) => p.preorder) && <a class="btn" href="/shop/">Pre-order vinyl &amp; CD</a>}
+            </div>
+            {latest && next && (
+              <p class="also muted">
+                Latest out now: <a href={`/music/${latest.slug}/`}>{latest.title}</a>
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- MUSIC -->
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <h2>Music</h2>
+        <a class="link-arrow" href="/music/">All releases</a>
+      </div>
+      <div class="grid grid-4">
+        {moreReleases.map((r) => <ReleaseCard release={r} />)}
+      </div>
+    </div>
+  </section>
+
+  <!-- EVENTS -->
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <h2>Upcoming</h2>
+        <a class="link-arrow" href="/events/">All events</a>
+      </div>
+      {events.length ? events.map((e) => <EventCard event={e} compact />) : <p class="empty">No events announced yet. Follow us to be the first to know.</p>}
+    </div>
+  </section>
+
+  <!-- ARTIST SPOTLIGHT -->
+  <section class="section spotlight">
+    <div class="container spotlight-grid">
+      <div>
+        <p class="eyebrow"><span class="dot"></span>Artist</p>
+        <h2>{vin.name}</h2>
+        <blockquote>“I rap what I live.”</blockquote>
+        <p class="lead muted">{vin.description}</p>
+        <div class="btn-row">
+          <a class="btn btn-primary" href="/artists/vin/">Discover VIN</a>
+          <a class="btn btn-ghost" href="/bio/">Read the bio</a>
+        </div>
+      </div>
+      <div class="split-cards">
+        <a class="split card" href={vin.streaming.beatstars || '/contact/?topic=beats'} {...(vin.streaming.beatstars ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+          <p class="mono muted">For artists</p>
+          <h3>Buy beats</h3>
+          <p class="muted">Leases &amp; exclusives from VIN on BeatStars.</p>
+          <span class="link-arrow">Browse beats</span>
+        </a>
+        <a class="split card" href="/casting/">
+          <p class="mono muted">Work with us</p>
+          <h3>Send music / collab</h3>
+          <p class="muted">Singers, rappers, producers, musicians — send your work.</p>
+          <span class="link-arrow">Casting</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- SHOP -->
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <h2>Shop</h2>
+        <a class="link-arrow" href="/shop/">Full shop</a>
+      </div>
+      <div class="grid grid-3">
+        {shopItems.map((p) => <ProductCard product={p} />)}
+      </div>
+    </div>
+  </section>
+
+  <!-- SOCIALS -->
+  <section class="section">
+    <div class="container socials">
+      <div>
+        <p class="eyebrow"><span class="dot"></span>Stay connected</p>
+        <h2>Follow the label</h2>
+        <p class="muted">New music, studio sessions and events — first on our socials.</p>
+      </div>
+      <PlatformLinks links={labelSocials} variant="chips" />
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero { position: relative; border-bottom: 1px solid var(--line); overflow: hidden; }
+  .hero-grid { display: grid; gap: 2.5rem; padding-top: clamp(2.5rem, 8vw, 5rem); padding-bottom: 3.5rem; }
+  .hero h1 { font-size: clamp(4rem, 17vw, 10rem); line-height: 0.86; margin-bottom: 1.5rem; }
+  .outline { color: transparent; -webkit-text-stroke: 1.5px var(--text); }
+  .hero .lead { margin-bottom: 1.75rem; }
+  .hero-artist { margin: 0; position: relative; border: 1px solid var(--line); background: var(--surface); }
+  .hero-artist img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+  .hero-artist figcaption {
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 1rem;
+    display: grid; gap: 0.2rem; background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+  }
+  .hero-artist .name { font-family: var(--font-display); font-size: 3rem; line-height: 1; }
+  @media (min-width: 900px) {
+    .hero-grid { grid-template-columns: 1.35fr 1fr; align-items: end; }
+  }
+
+  .ticker { border-top: 1px solid var(--line); overflow: hidden; white-space: nowrap; padding: 0.7rem 0; }
+  .ticker-track { display: inline-block; animation: tick 40s linear infinite; font-size: 0.72rem; letter-spacing: 0.2em; color: var(--muted); }
+  @keyframes tick { to { transform: translateX(-50%); } }
+
+  .feature { display: grid; gap: 2rem; align-items: center; }
+  .feature-cover { display: block; border: 1px solid var(--line); }
+  .feature-cover img { width: 100%; aspect-ratio: 1; object-fit: cover; }
+  .feature h2 { font-size: clamp(2.6rem, 8vw, 5rem); }
+  .feature .mono { margin-bottom: 1.25rem; }
+  .also { margin-top: 1.25rem; font-size: 0.9rem; }
+  @media (min-width: 860px) { .feature { grid-template-columns: 1fr 1.1fr; gap: 4rem; } }
+
+  .spotlight-grid { display: grid; gap: 2.5rem; }
+  .spotlight h2 { font-size: clamp(4rem, 14vw, 8rem); }
+  blockquote { margin: 0 0 1rem; font-family: var(--font-display); font-size: clamp(1.5rem, 4vw, 2.2rem); text-transform: uppercase; color: var(--accent); }
+  .split-cards { display: grid; gap: 1rem; align-content: end; }
+  .split { display: block; padding: 1.5rem; text-decoration: none; transition: border-color 0.15s; }
+  .split:hover { border-color: var(--text); }
+  .split .mono { margin-bottom: 0.5rem; font-size: 0.68rem; }
+  @media (min-width: 900px) { .spotlight-grid { grid-template-columns: 1.3fr 1fr; gap: 4rem; } }
+
+  .socials { display: grid; gap: 1.5rem; align-items: end; }
+  @media (min-width: 900px) { .socials { grid-template-columns: 1fr 1fr; } }
+</style>

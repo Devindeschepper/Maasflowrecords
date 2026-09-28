@@ -1,0 +1,116 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import ProductCard from '../components/ProductCard.astro';
+import { products, shippingZones, formatPrice } from '../data/products';
+import { site } from '../data/site';
+
+const categories = [...new Set(products.map((p) => p.category))];
+
+const jsonLd = products.map((p) => ({
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: p.name,
+  description: p.description,
+  image: new URL(p.image, site.url).href,
+  brand: { '@type': 'Brand', name: site.name },
+  offers: {
+    '@type': 'Offer',
+    price: (p.price / 100).toFixed(2),
+    priceCurrency: 'EUR',
+    availability: p.stock <= 0 ? 'https://schema.org/SoldOut' : p.preorder ? 'https://schema.org/PreOrder' : 'https://schema.org/InStock',
+    url: new URL('/shop/', site.url).href,
+  },
+}));
+---
+
+<BaseLayout title="Shop" description="Official Maas Flow Records store — vinyl, CDs, t-shirts, hoodies, caps and posters." jsonLd={jsonLd}>
+  <PageHero eyebrow="Official store" title="Shop" lead="Vinyl, CDs and merch. Every order directly supports independent music." />
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <h2 class="sr-only">Products</h2>
+        <div class="filters" role="group" aria-label="Filter products by category">
+          <button type="button" class="filter" aria-pressed="true" data-filter="all">All</button>
+          {categories.map((c) => <button type="button" class="filter" aria-pressed="false" data-filter={c}>{c}</button>)}
+        </div>
+        <a href="/cart/" class="link-arrow">View cart</a>
+      </div>
+      <div class="grid grid-3" id="product-grid">
+        {products.map((p) => <div data-cat={p.category}><ProductCard product={p} /></div>)}
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="shipping">
+    <div class="container info">
+      <div>
+        <h2 class="h3">Shipping</h2>
+        <table class="rates">
+          <caption class="sr-only">Shipping rates</caption>
+          <thead><tr><th scope="col">Destination</th><th scope="col">Small items</th><th scope="col">Vinyl / hoodies</th><th scope="col">Delivery</th></tr></thead>
+          <tbody>
+            {shippingZones.map((z) => (
+              <tr><th scope="row">{z.label}</th><td>{formatPrice(z.rates.small)}</td><td>{formatPrice(z.rates.standard)}</td><td>{z.estimate}</td></tr>
+            ))}
+          </tbody>
+        </table>
+        <p class="muted small">Orders ship from Rotterdam, NL. One shipping charge per order, based on the largest item.</p>
+      </div>
+      <div>
+        <h2 class="h3">Orders &amp; returns</h2>
+        <ul class="muted small list">
+          <li>Pre-orders ship on or around the release date. Mixed orders ship together.</li>
+          <li>You'll receive an order confirmation by email.</li>
+          <li>Returns accepted within 14 days of delivery (EU right of withdrawal). Items must be unused.</li>
+          <li>Questions? <a href={`mailto:${site.email}`}>{site.email}</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="h3">Payment</h2>
+        <p class="muted small">
+          All prices in EUR, VAT included. Payment is handled securely by our payment provider —
+          card details never touch this website.
+        </p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { enhanceAddToCart } from '../scripts/shop';
+  enhanceAddToCart();
+
+  const buttons = document.querySelectorAll<HTMLButtonElement>('.filter');
+  const items = document.querySelectorAll<HTMLElement>('#product-grid > [data-cat]');
+  buttons.forEach((b) =>
+    b.addEventListener('click', () => {
+      buttons.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      items.forEach((el) => (el.hidden = b.dataset.filter !== 'all' && el.dataset.cat !== b.dataset.filter));
+    }),
+  );
+</script>
+
+<style>
+  .filters { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .filter {
+    min-height: 40px; padding: 0.4rem 0.85rem; background: none; color: var(--muted);
+    border: 1px solid var(--line); font: 500 0.72rem/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+  }
+  .filter[aria-pressed='true'] { color: var(--bg); background: var(--text); border-color: var(--text); }
+  #product-grid > div { display: flex; }
+  #product-grid > div > :global(*) { flex: 1; }
+  #product-grid > div[hidden] { display: none; }
+  .info { display: grid; gap: 2.5rem; }
+  .info > div { min-width: 0; }
+  .h3 { font-size: clamp(1.35rem, 3vw, 1.75rem); }
+  .small { font-size: 0.88rem; }
+  .list { padding-left: 1.1rem; margin: 0; }
+  .list li { padding: 0.2rem 0; }
+  .rates { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-bottom: 0.75rem; display: block; overflow-x: auto; }
+  .rates th, .rates td { text-align: left; padding: 0.55rem 0.6rem 0.55rem 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .rates td:last-child { white-space: normal; min-width: 7rem; }
+  .rates thead th { font: 500 0.66rem var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  @media (min-width: 960px) { .info { grid-template-columns: 1.4fr 1fr 1fr; gap: 3rem; } }
+</style>

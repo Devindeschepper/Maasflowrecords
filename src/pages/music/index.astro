@@ -1,0 +1,101 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/PageHero.astro';
+import ReleaseCard from '../../components/ReleaseCard.astro';
+import PlatformLinks from '../../components/PlatformLinks.astro';
+import { sortedReleases, isUpcoming } from '../../data/releases';
+import { artists } from '../../data/artists';
+import type { ReleaseType } from '../../data/types';
+
+const all = sortedReleases();
+const upcoming = all.filter(isUpcoming).reverse();
+const out = all.filter((r) => !isUpcoming(r));
+const types: ReleaseType[] = ['Album', 'EP', 'Single', 'Beat Tape'];
+const present = types.filter((t) => out.some((r) => r.type === t));
+const vin = artists[0];
+---
+
+<BaseLayout title="Music & Releases" description="Singles, EPs, albums and beat tapes released on Maas Flow Records. Stream on Spotify, Apple Music, YouTube and more.">
+  <PageHero eyebrow="Catalogue" title="Music" lead="Every release on Maas Flow Records — singles, EPs, albums and beat tapes." />
+
+  {
+    upcoming.length > 0 && (
+      <section class="section">
+        <div class="container">
+          <div class="section-head"><h2>Coming soon</h2></div>
+          <div class="grid grid-4">{upcoming.map((r) => <ReleaseCard release={r} />)}</div>
+        </div>
+      </section>
+    )
+  }
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <h2>Out now</h2>
+        {
+          present.length > 1 && (
+            <div class="filters" role="group" aria-label="Filter releases by type">
+              <button type="button" class="filter" aria-pressed="true" data-filter="all">All</button>
+              {present.map((t) => <button type="button" class="filter" aria-pressed="false" data-filter={t}>{t}s</button>)}
+            </div>
+          )
+        }
+      </div>
+      {
+        out.length ? (
+          <div class="grid grid-4" id="release-grid">
+            {out.map((r) => <div data-type={r.type}><ReleaseCard release={r} /></div>)}
+          </div>
+        ) : (
+          <p class="empty">First release coming soon.</p>
+        )
+      }
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container beats">
+      <div>
+        <p class="eyebrow"><span class="dot"></span>Beats by VIN</p>
+        <h2>Need a beat?</h2>
+        <p class="lead muted">VIN sells leases and exclusive beats on BeatStars. For custom production, get in touch.</p>
+        <div class="btn-row">
+          {vin.streaming.beatstars ? (
+            <a class="btn btn-primary" href={vin.streaming.beatstars} target="_blank" rel="noopener noreferrer">Browse beats on BeatStars</a>
+          ) : (
+            <span class="btn btn-primary" aria-disabled="true">BeatStars link soon</span>
+          )}
+          <a class="btn btn-ghost" href="/contact/?topic=beats">Custom production</a>
+        </div>
+      </div>
+      <div>
+        <p class="eyebrow">Stream VIN everywhere</p>
+        <PlatformLinks links={vin.streaming} variant="chips" />
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>('.filter');
+  const items = document.querySelectorAll<HTMLElement>('#release-grid > [data-type]');
+  buttons.forEach((b) =>
+    b.addEventListener('click', () => {
+      buttons.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      const f = b.dataset.filter;
+      items.forEach((el) => (el.hidden = f !== 'all' && el.dataset.type !== f));
+    }),
+  );
+</script>
+
+<style>
+  .filters { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .filter {
+    min-height: 40px; padding: 0.4rem 0.85rem; background: none; color: var(--muted);
+    border: 1px solid var(--line); font: 500 0.72rem/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+  }
+  .filter[aria-pressed='true'] { color: var(--bg); background: var(--text); border-color: var(--text); }
+  .beats { display: grid; gap: 2.5rem; }
+  @media (min-width: 900px) { .beats { grid-template-columns: 1.2fr 1fr; align-items: end; } }
+</style>

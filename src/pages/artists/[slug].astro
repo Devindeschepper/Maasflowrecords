@@ -1,0 +1,87 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ReleaseCard from '../../components/ReleaseCard.astro';
+import PlatformLinks from '../../components/PlatformLinks.astro';
+import { artists } from '../../data/artists';
+import { releasesByArtist } from '../../data/releases';
+import { site } from '../../data/site';
+import type { Artist } from '../../data/types';
+
+export function getStaticPaths() {
+  return artists.map((artist) => ({ params: { slug: artist.slug }, props: { artist } }));
+}
+
+const { artist: a } = Astro.props as { artist: Artist };
+const music = releasesByArtist(a.slug);
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'MusicGroup',
+    name: a.name,
+    genre: ['Hip hop', 'R&B'],
+    foundingLocation: a.origin,
+    image: new URL(a.image, site.url).href,
+    url: new URL(`/artists/${a.slug}/`, site.url).href,
+    recordLabel: { '@type': 'Organization', name: site.name },
+    sameAs: [...Object.values(a.streaming), ...Object.values(a.socials)].filter(Boolean),
+  },
+];
+---
+
+<BaseLayout title={a.name} description={`${a.name} — ${a.roles.join(', ').toLowerCase()} from ${a.origin}, signed to ${site.name}. ${a.tagline}`} image={a.image} type="profile" jsonLd={jsonLd}>
+  <section class="artist-hero">
+    <div class="container grid-hero">
+      <div class="photo">
+        <img src={a.image} alt={a.imageAlt} width="720" height="900" fetchpriority="high" />
+      </div>
+      <div class="intro">
+        <p class="eyebrow"><span class="dot"></span>{a.roles.join(' / ')} · {a.origin}</p>
+        <h1>{a.name}</h1>
+        <p class="lead">{a.tagline}</p>
+        <p class="muted">{a.description}</p>
+        <div class="btn-row">
+          <a class="btn btn-primary" href={a.bioHref}>Read full bio</a>
+          <a class="btn btn-ghost" href="#music">Music</a>
+          {a.streaming.beatstars && <a class="btn btn-ghost" href={a.streaming.beatstars} target="_blank" rel="noopener noreferrer">Buy beats</a>}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container two-col">
+      <div>
+        <h2>Listen</h2>
+        <PlatformLinks links={a.streaming} variant="list" />
+      </div>
+      <div>
+        <h2>Follow</h2>
+        <PlatformLinks links={a.socials} variant="list" />
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="music">
+    <div class="container">
+      <div class="section-head">
+        <h2>Releases</h2>
+        <a class="link-arrow" href="/music/">Full catalogue</a>
+      </div>
+      {music.length ? <div class="grid grid-4">{music.map((r) => <ReleaseCard release={r} />)}</div> : <p class="empty">No releases yet.</p>}
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .artist-hero { padding-block: clamp(2rem, 6vw, 4rem); border-bottom: 1px solid var(--line); }
+  .grid-hero { display: grid; gap: 2rem; align-items: end; }
+  .photo img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border: 1px solid var(--line); }
+  .intro h1 { font-size: clamp(5rem, 22vw, 12rem); line-height: 0.85; }
+  .intro .muted { max-width: 60ch; }
+  .two-col { display: grid; gap: 3rem; }
+  @media (min-width: 860px) {
+    .grid-hero { grid-template-columns: 1fr 1.2fr; gap: 4rem; }
+    .two-col { grid-template-columns: 1fr 1fr; }
+  }
+</style>

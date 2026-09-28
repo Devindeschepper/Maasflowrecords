@@ -1,0 +1,54 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/PageHero.astro';
+import { artists } from '../../data/artists';
+---
+
+<BaseLayout title="Artists" description="The Maas Flow Records roster — independent artists from Rotterdam.">
+  <PageHero eyebrow="Roster" title="Artists" lead="The artists of Maas Flow Records. Independent, hands-on, still learning." />
+
+  <section class="section">
+    <div class="container">
+      <ul class="roster">
+        {
+          artists.map((a, i) => (
+            <li>
+              <a href={`/artists/${a.slug}/`} class="row">
+                <span class="mono muted num">{String(i + 1).padStart(2, '0')}</span>
+                <img src={a.image} alt={a.imageAlt} width="360" height="450" loading="lazy" />
+                <span class="text">
+                  <span class="name">{a.name}</span>
+                  <span class="mono muted">{a.roles.join(' / ')} · {a.origin}</span>
+                  <span class="tagline">{a.tagline}</span>
+                </span>
+                <span class="go" aria-hidden="true">→</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="muted join">
+        Want to work with the label? <a href="/casting/">Send us your music</a>.
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .roster { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+  .roster li { border-bottom: 1px solid var(--line); }
+  .row { display: grid; grid-template-columns: 1fr; gap: 1rem; padding: 1.5rem 0; text-decoration: none; align-items: center; }
+  .num { display: none; }
+  .row img { width: 100%; max-width: 360px; aspect-ratio: 4 / 5; object-fit: cover; border: 1px solid var(--line); }
+  .text { display: grid; gap: 0.35rem; }
+  .name { font-family: var(--font-display); font-size: clamp(4rem, 14vw, 8rem); line-height: 0.9; text-transform: uppercase; }
+  .tagline { font-size: 1.1rem; }
+  .go { font-size: 2rem; transition: transform 0.15s; }
+  .row:hover .name { color: var(--accent); }
+  .row:hover .go { transform: translateX(6px); }
+  .join { margin-top: 2rem; }
+  @media (min-width: 800px) {
+    .row { grid-template-columns: 50px 220px 1fr auto; gap: 2rem; }
+    .num { display: block; }
+  }
+</style>

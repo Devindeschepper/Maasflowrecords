@@ -1,0 +1,28 @@
+---
+// Wordmark. Swap for an <img> of the real logo once it exists
+// (put it in /public/images/brand/ and keep the aria-label).
+interface Props { size?: 'sm' | 'lg' }
+const { size = 'sm' } = Astro.props;
+---
+
+<span class:list={['logo', `logo--${size}`]} aria-label="Maas Flow Records">
+  <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+    <rect x="1" y="1" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" />
+    <path d="M6 22 V10 L11 17 L16 10 V22 M20 10 H26 M20 10 V22 M20 16 H25" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="miter" />
+  </svg>
+  <span class="words" aria-hidden="true">
+    <span class="w1">Maas Flow</span>
+    <span class="w2">Records</span>
+  </span>
+</span>
+
+<style>
+  .logo { display: inline-flex; align-items: center; gap: 0.6rem; line-height: 1; }
+  .mark { width: 32px; height: 32px; flex: none; }
+  .words { display: flex; flex-direction: column; gap: 2px; }
+  .w1 { font-family: var(--font-display); font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.02em; }
+  .w2 { font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.38em; text-transform: uppercase; color: var(--muted); }
+  .logo--lg .mark { width: 56px; height: 56px; }
+  .logo--lg .w1 { font-size: 2rem; }
+  .logo--lg .w2 { font-size: 0.72rem; }
+</style>

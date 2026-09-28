@@ -1,0 +1,14 @@
+---
+// Cloudflare Turnstile widget (privacy-friendly CAPTCHA alternative).
+// Rendered only when PUBLIC_TURNSTILE_SITE_KEY is set, so local dev works without it.
+const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
+---
+
+{
+  siteKey && (
+    <>
+      <div class="cf-turnstile" data-sitekey={siteKey} data-theme="dark" data-size="flexible" />
+      <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
+    </>
+  )
+}
