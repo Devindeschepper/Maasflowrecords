@@ -4,8 +4,8 @@ Official website of **Maas Flow Records**, the independent music label from Rott
 Live at **https://maasflowrecords.com**.
 
 - **Astro** — static, fast, SEO-friendly pages (no framework JS shipped)
-- **Cloudflare Pages** — hosting, deployed automatically from GitHub
-- **Cloudflare Pages Functions** (`/functions`) — contact form, casting form, shop checkout
+- **Cloudflare Workers** (static assets) — hosting, deployed automatically from GitHub
+- **Worker API** (`worker/` + `functions/api/`) — contact form, casting form, shop checkout
 - **Cloudflare Turnstile** — spam protection · **Resend** — email delivery
 
 ---
@@ -56,31 +56,34 @@ public/           ← static files: images, favicon, _headers (security), robots
 npm install
 npm run dev            # http://localhost:4321  (pages only)
 npm run build          # production build → dist/
-npx wrangler pages dev dist   # pages + /api functions locally (reads .dev.vars)
+npx wrangler dev       # full site + /api locally, like production (reads .dev.vars)
 ```
 
 Copy `.env.example` → `.env` and `.dev.vars` for local keys. **Never commit real keys.**
 
-## Deploy: GitHub → Cloudflare Pages
+## Deploy: GitHub → Cloudflare (Workers)
 
-1. Cloudflare dashboard → **Workers & Pages → Create → Pages → Connect to Git** → choose this repo.
-2. Build settings: Framework **Astro**, build command `npm run build`, output directory `dist`.
-   Environment variable `NODE_VERSION` = `22`.
-3. **Custom domains** → add `maasflowrecords.com` and `www.maasflowrecords.com`
-   (easiest if the domain's DNS is on Cloudflare).
-4. **Settings → Variables and Secrets** (Production):
-   | Name | Type | Value |
+The site deploys as a Cloudflare Worker with static assets (`wrangler.toml`):
+`npx wrangler deploy` first runs `npm run build` (Astro → `dist/`), then uploads the pages.
+Only `/api/*` requests run Worker code (`worker/index.ts` → handlers in `functions/api/`).
+
+1. Cloudflare dashboard → **Create app** → import this GitHub repo (or, on an existing Worker,
+   **Settings → Build → Git repository**). Deploy command: `npx wrangler deploy`. Build command: leave empty.
+2. The Worker name in the dashboard must match `name` in `wrangler.toml` (currently `maasflowrecords2`).
+3. **Settings → Domains & Routes** → add `maasflowrecords.com` and `www.maasflowrecords.com`.
+4. Variables:
+   | Name | Where | Value |
    | --- | --- | --- |
-   | `PUBLIC_TURNSTILE_SITE_KEY` | text | Turnstile site key |
-   | `TURNSTILE_SECRET_KEY` | secret | Turnstile secret key |
-   | `RESEND_API_KEY` | secret | Resend API key |
-   | `CONTACT_FROM_EMAIL` | text | `Maas Flow Records <noreply@maasflowrecords.com>` |
-   | `CONTACT_TO_EMAIL` | text | `info@maasflowrecords.com` |
-   | `PAYMENT_PROVIDER` | text | `manual` |
+   | `PUBLIC_TURNSTILE_SITE_KEY` | Settings → Build → **Build variables** | Turnstile site key |
+   | `TURNSTILE_SECRET_KEY` | Settings → **Variables and Secrets** (secret) | Turnstile secret key |
+   | `RESEND_API_KEY` | Settings → **Variables and Secrets** (secret) | Resend API key |
+   | `CONTACT_FROM_EMAIL` | Settings → **Variables and Secrets** (text) | `Maas Flow Records <noreply@maasflowrecords.com>` |
 5. **Turnstile**: Cloudflare dashboard → Turnstile → Add widget → domain `maasflowrecords.com`.
 6. **Resend**: create an account, add & verify the domain `maasflowrecords.com` (DNS records), create an API key.
-7. Optional nightly rebuild (keeps "upcoming/past" dates fresh): Pages → Settings → Builds → *Deploy hooks* →
-   create a hook, then add its URL as GitHub secret `CLOUDFLARE_DEPLOY_HOOK`.
+7. Optional nightly rebuild (keeps "upcoming/past" dates fresh): create a deploy hook in the Worker's build
+   settings and add its URL as GitHub secret `CLOUDFLARE_DEPLOY_HOOK`.
+
+The `functions/` folder also works unchanged on Cloudflare **Pages** if you ever switch.
 
 ## Shop & payments
 
