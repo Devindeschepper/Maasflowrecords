@@ -1,0 +1,19 @@
+---
+// Fallback confirmation page for visitors without JavaScript
+// (the form functions redirect here after a plain HTML POST).
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Thank you" noindex>
+  <section class="section">
+    <div class="container">
+      <p class="eyebrow"><span class="dot"></span>Received</p>
+      <h1>Thank you.</h1>
+      <p class="lead muted">Your message was sent to Maas Flow Records. We'll get back to you as soon as we can.</p>
+      <div class="btn-row">
+        <a class="btn btn-primary" href="/">Back home</a>
+        <a class="btn btn-ghost" href="/music/">Listen to the music</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
