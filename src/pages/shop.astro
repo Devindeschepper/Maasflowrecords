@@ -103,12 +103,14 @@ const jsonLd = products.map((p) => ({
   #product-grid > div > :global(*) { flex: 1; }
   #product-grid > div[hidden] { display: none; }
   .info { display: grid; gap: 2.5rem; }
+  .info > div { min-width: 0; }
   .h3 { font-size: clamp(1.35rem, 3vw, 1.75rem); }
   .small { font-size: 0.88rem; }
   .list { padding-left: 1.1rem; margin: 0; }
   .list li { padding: 0.2rem 0; }
   .rates { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-bottom: 0.75rem; display: block; overflow-x: auto; }
   .rates th, .rates td { text-align: left; padding: 0.55rem 0.6rem 0.55rem 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .rates td:last-child { white-space: normal; min-width: 7rem; }
   .rates thead th { font: 500 0.66rem var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
   @media (min-width: 960px) { .info { grid-template-columns: 1.4fr 1fr 1fr; gap: 3rem; } }
 </style>
