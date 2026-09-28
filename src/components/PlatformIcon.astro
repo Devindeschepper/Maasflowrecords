@@ -1,0 +1,46 @@
+---
+// Brand icons from the `simple-icons` package, rendered as inline SVG at build time.
+// Unknown/missing icons fall back to the platform's initial.
+import * as icons from 'simple-icons';
+import type { PlatformId } from '../data/types';
+import { platforms } from '../data/platforms';
+
+interface Props {
+  id: PlatformId;
+  size?: number;
+}
+const { id, size = 20 } = Astro.props;
+
+const slugMap: Record<PlatformId, string> = {
+  spotify: 'siSpotify',
+  appleMusic: 'siApplemusic',
+  youtube: 'siYoutube',
+  youtubeMusic: 'siYoutubemusic',
+  soundcloud: 'siSoundcloud',
+  deezer: 'siDeezer',
+  tidal: 'siTidal',
+  amazonMusic: 'siAmazonmusic',
+  beatstars: 'siBeatstars',
+  instagram: 'siInstagram',
+  tiktok: 'siTiktok',
+  facebook: 'siFacebook',
+  x: 'siX',
+  twitch: 'siTwitch',
+  bandcamp: 'siBandcamp',
+};
+const icon = (icons as unknown as Record<string, { path: string } | undefined>)[slugMap[id]];
+const initial = platforms[id].label.charAt(0);
+---
+
+{
+  icon ? (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+      <path d={icon.path} />
+    </svg>
+  ) : (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <rect x="1" y="1" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" />
+      <text x="12" y="16.5" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" font-family="sans-serif">{initial}</text>
+    </svg>
+  )
+}
