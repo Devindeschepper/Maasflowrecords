@@ -29,8 +29,10 @@ Tips
 - Dates: `'2026-11-20'` (releases), `'2026-12-12T20:00:00+01:00'` (events). Future = "Upcoming", past = "Past" automatically.
 - Prices are in **cents**: `2500` = €25.00. `stock: 0` = sold out.
 - An empty link (`''`) shows the platform greyed out as "soon". Remove the line to hide it.
-- Spotify player on a release: `embed: { provider: 'spotify', src: 'https://open.spotify.com/embed/track/…' }`
-  (YouTube: `embed: { provider: 'youtube', src: 'VIDEO_ID' }`).
+- Song preview on a release: put a short clip (a few seconds, .mp3) in `public/audio/` and add
+  `preview: '/audio/<file>.mp3'` to the release. A play button appears on the cover.
+  (There is deliberately no Spotify player: embedded plays by logged-out visitors don't count as streams,
+  so the site sends people to the streaming apps instead.)
 
 ## Project structure
 
@@ -102,4 +104,4 @@ For a larger catalogue, a hosted store (Shopify Starter / Lemon Squeezy / Big Ca
 - Forms: Turnstile + honeypot + timing check + server-side validation + same-origin check.
 - Security headers & Content-Security-Policy in `public/_headers`.
 - Form submissions are only emailed to the label; nothing is stored or published.
-- Music players only load third-party content after a click (privacy-friendly).
+- No third-party players or trackers: song previews are hosted on the site itself.

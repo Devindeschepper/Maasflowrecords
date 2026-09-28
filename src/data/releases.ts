@@ -36,7 +36,7 @@ export const releases: Release[] = [
       youtube: '',
       soundcloud: '',
     },
-    // Example: embed: { provider: 'spotify', src: 'https://open.spotify.com/embed/track/XXXXXXXX' },
+    // Example: preview: '/audio/what-i-live.mp3',
   },
   {
     slug: 'student-of-the-game',

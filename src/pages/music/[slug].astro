@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PlatformLinks from '../../components/PlatformLinks.astro';
-import Player from '../../components/Player.astro';
+import PreviewButton from '../../components/PreviewButton.astro';
 import ReleaseCard from '../../components/ReleaseCard.astro';
 import { releases, isUpcoming, sortedReleases } from '../../data/releases';
 import { site } from '../../data/site';
@@ -45,7 +45,7 @@ const jsonLd = [
         <p class="mono muted">{upcoming ? 'Release date' : 'Released'}: <time datetime={r.releaseDate}>{fmtDate(r.releaseDate)}</time></p>
         <p class="lead">{r.description}</p>
 
-        {r.embed && !upcoming && <Player embed={r.embed} title={r.title} />}
+        {r.preview && <PreviewButton src={r.preview} title={r.title} size="lg" />}
 
         <h2 class="h-small">{upcoming ? 'Pre-save / follow' : 'Listen on'}</h2>
         {hasLinks ? <PlatformLinks links={r.links} variant="chips" /> : <p class="muted">Streaming links will appear here on release day.</p>}

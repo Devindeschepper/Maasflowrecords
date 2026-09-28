@@ -35,8 +35,6 @@ export interface Artist {
   bioHref: string;
   streaming: Links;
   socials: Links;
-  /** Optional Spotify artist embed URL (open.spotify.com/embed/artist/…). */
-  spotifyEmbed?: string;
 }
 
 export type ReleaseType = 'Single' | 'EP' | 'Album' | 'Beat Tape';
@@ -54,10 +52,10 @@ export interface Release {
   tracks?: string[];
   links: Links;
   /**
-   * Optional embedded player. Paste the embed URL from Spotify
-   * ("Share → Embed track") or a YouTube video id.
+   * Optional short audio preview (a few seconds of the song), hosted on the site.
+   * Put an .mp3 in /public/audio/ and write its path here, e.g. '/audio/what-i-live.mp3'.
    */
-  embed?: { provider: 'spotify' | 'youtube' | 'soundcloud'; src: string };
+  preview?: string;
   featured?: boolean;
 }
 

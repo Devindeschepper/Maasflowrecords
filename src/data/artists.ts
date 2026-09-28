@@ -28,8 +28,6 @@ export const artists: Artist[] = [
       tiktok: 'https://www.tiktok.com/@vintheartist010',
       youtube: 'https://www.youtube.com/channel/UC8dDWNLNjAxwDzcRoadqSvg',
     },
-    // Spotify "artist" player (top tracks + covers, always up to date).
-    spotifyEmbed: 'https://open.spotify.com/embed/artist/5bDu5EvUNqdhJfVXYcQiXK',
   },
 ];
 

@@ -2,7 +2,6 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ReleaseCard from '../../components/ReleaseCard.astro';
 import PlatformLinks from '../../components/PlatformLinks.astro';
-import Player from '../../components/Player.astro';
 import { artists } from '../../data/artists';
 import { releasesByArtist } from '../../data/releases';
 import { site } from '../../data/site';
@@ -54,7 +53,6 @@ const jsonLd = [
     <div class="container two-col">
       <div>
         <h2>Listen</h2>
-        {a.spotifyEmbed && <div class="embed"><Player embed={{ provider: 'spotify', src: a.spotifyEmbed }} title={a.name} height={380} /></div>}
         <PlatformLinks links={a.streaming} variant="list" />
       </div>
       <div>
@@ -82,7 +80,6 @@ const jsonLd = [
   .intro h1 { font-size: clamp(5rem, 22vw, 12rem); line-height: 0.85; }
   .intro .muted { max-width: 60ch; }
   .two-col { display: grid; gap: 3rem; }
-  .embed { margin-bottom: 1.5rem; }
   @media (min-width: 860px) {
     .grid-hero { grid-template-columns: 1fr 1.2fr; gap: 4rem; }
     .two-col { grid-template-columns: 1fr 1fr; }
