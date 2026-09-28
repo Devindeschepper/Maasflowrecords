@@ -1,0 +1,65 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import EventCard from '../components/EventCard.astro';
+import { upcomingEvents, pastEvents } from '../data/events';
+import { site } from '../data/site';
+
+const upcoming = upcomingEvents();
+const past = pastEvents();
+
+const jsonLd = upcoming.map((e) => ({
+  '@context': 'https://schema.org',
+  '@type': 'MusicEvent',
+  name: e.title,
+  startDate: e.start,
+  description: e.description,
+  image: new URL(e.image, site.url).href,
+  eventAttendanceMode: e.online
+    ? 'https://schema.org/OnlineEventAttendanceMode'
+    : 'https://schema.org/OfflineEventAttendanceMode',
+  eventStatus: 'https://schema.org/EventScheduled',
+  location: e.online
+    ? { '@type': 'VirtualLocation', url: e.ticketUrl || site.url }
+    : { '@type': 'Place', name: e.venue, address: e.city },
+  organizer: { '@type': 'Organization', name: site.name, url: site.url },
+  performer: { '@type': 'MusicGroup', name: 'VIN' },
+  ...(e.ticketUrl ? { offers: { '@type': 'Offer', url: e.ticketUrl } } : {}),
+}));
+---
+
+<BaseLayout title="Events" description="Concerts, livestreams, performances and label events from Maas Flow Records and VIN." jsonLd={jsonLd}>
+  <PageHero eyebrow="Live" title="Events" lead="Concerts, livestreams, studio sessions and label events." />
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head"><h2>Upcoming</h2></div>
+      {
+        upcoming.length ? (
+          upcoming.map((e) => <EventCard event={e} />)
+        ) : (
+          <p class="empty">No upcoming events right now. Follow us on <a href="/socials/">socials</a> for announcements.</p>
+        )
+      }
+    </div>
+  </section>
+
+  {
+    past.length > 0 && (
+      <section class="section">
+        <div class="container">
+          <div class="section-head"><h2>Past events</h2></div>
+          {past.map((e) => <EventCard event={e} compact />)}
+        </div>
+      </section>
+    )
+  }
+
+  <section class="section">
+    <div class="container book">
+      <h2>Book VIN</h2>
+      <p class="lead muted">Shows, festivals, collaborations and studio sessions.</p>
+      <a class="btn btn-primary" href="/contact/?topic=events">Booking enquiry</a>
+    </div>
+  </section>
+</BaseLayout>

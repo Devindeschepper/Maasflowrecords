@@ -1,0 +1,121 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import { artists } from '../data/artists';
+
+const vin = artists[0];
+---
+
+<BaseLayout title="Bio" description="The story of VIN — producer and rapper from Rotterdam — and of Maas Flow Records, the independent label he founded." type="article">
+  <PageHero eyebrow="Bio" title="The story" lead="The artist and the label." />
+
+  <!-- VIN -->
+  <section class="section" id="vin">
+    <div class="container bio">
+      <div class="side">
+        <img src={vin.image} alt={vin.imageAlt} width="480" height="600" loading="lazy" />
+        <p class="mono muted">VIN — Artist bio<br />Producer / Rapper<br />Rotterdam, NL</p>
+      </div>
+      <article class="prose">
+        <h2>VIN</h2>
+        <p class="first">I'm VIN, born in Rotterdam.</p>
+        <p>
+          My relationship with music started long before I ever thought about becoming an artist. Growing up, I listened
+          to rap and R&amp;B because of my older brother. Those sounds became part of my life early on. I listened,
+          absorbed, and eventually became curious about what was happening behind the music — how a beat was made, how a
+          voice could carry a story, and how artists could turn their own lives into something other people could feel.
+        </p>
+        <p>
+          About five years ago, I started making music as a producer. At the beginning, it was simply about learning,
+          experimenting and trying to turn ideas into sound. I made mistakes, started over, tried different things and
+          slowly began understanding what I liked.
+        </p>
+        <p>A few years later, I started rapping.</p>
+        <p>
+          That gave music a different meaning for me. Producing lets me build the world around a song. Rapping lets me
+          step inside that world and tell my side of the story.
+        </p>
+        <p class="pull">I rap what I live.</p>
+        <p>
+          My experiences, my thoughts, the people around me, the situations I go through and the things I can't always
+          explain in a normal conversation. I don't want to pretend to be someone I'm not just because it sounds better
+          on a record. VIN is me, and the music is another way of showing parts of myself that don't always come out in
+          everyday life.
+        </p>
+        <p>
+          I'm still learning everything I can. Production, songwriting, recording, mixing, mastering, flow and delivery
+          — there is always another part of the game to understand.
+        </p>
+        <p class="pull">I consider myself a student of the game.</p>
+        <p>
+          I study the artists who came before me, especially the rap and R&amp;B that I grew up listening to because of
+          my brother. I listen to what's happening today too, but I'm not trying to become someone else. I take
+          inspiration, learn from it and then try to find my own way of putting it together.
+        </p>
+        <p>
+          I'm still developing my sound. Still making mistakes. Still learning how to turn what's in my head into
+          something people can hear.
+        </p>
+        <p>Five years ago, I started behind the beats.</p>
+        <p>Today, I'm behind the beats and behind the mic.</p>
+        <p>And I'm still learning.</p>
+        <p class="closing">I'm VIN. This is what I live, this is what I hear, and this is what I'm becoming.</p>
+        <div class="btn-row">
+          <a class="btn btn-primary" href="/artists/vin/">Listen to VIN</a>
+          <a class="btn btn-ghost" href="/contact/?topic=press">Press enquiries</a>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- LABEL -->
+  <section class="section" id="label">
+    <div class="container bio">
+      <div class="side">
+        <p class="mono muted">Maas Flow Records — Label bio<br />Independent label<br />Rotterdam, NL</p>
+      </div>
+      <article class="prose">
+        <h2>Maas Flow Records</h2>
+        <p class="first">
+          Maas Flow Records is an independent music label from Rotterdam, created by artist and producer VIN.
+        </p>
+        <p>
+          The name comes from the Maas — the river that runs through the city — and the flow that carries every
+          record. The label was built to give music a home that stays independent: from the first beat in the studio
+          to the final release, every step is handled with care and ownership.
+        </p>
+        <p>
+          Maas Flow Records focuses on four things: <strong>music</strong>, <strong>creativity</strong>,
+          <strong>artist development</strong> and <strong>independent releases</strong>. That means producing,
+          recording, mixing and releasing music in-house, learning every part of the process, and growing artists at
+          their own pace — without losing who they are.
+        </p>
+        <p>
+          Today the roster is VIN. The label is open to working with singers, rappers, producers, musicians and
+          engineers who share the same mindset: honest music, constant learning, and building something of our own.
+        </p>
+        <div class="btn-row">
+          <a class="btn btn-primary" href="/artists/">The roster</a>
+          <a class="btn btn-ghost" href="/casting/">Work with us</a>
+        </div>
+      </article>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .bio { display: grid; gap: 2rem; }
+  .side img { width: 100%; max-width: 360px; aspect-ratio: 4 / 5; object-fit: cover; border: 1px solid var(--line); margin-bottom: 1rem; }
+  .side .mono { line-height: 1.9; }
+  .prose h2 { font-size: clamp(3rem, 10vw, 6rem); }
+  .first { font-size: clamp(1.25rem, 3vw, 1.6rem) !important; color: var(--text) !important; }
+  .pull {
+    font-family: var(--font-display); text-transform: uppercase; font-size: clamp(1.6rem, 4.5vw, 2.4rem) !important;
+    line-height: 1.05; color: var(--text) !important; margin: 1.5rem 0; padding-left: 1rem; border-left: 3px solid var(--accent);
+  }
+  .closing { font-weight: 600; color: var(--text) !important; font-size: 1.2rem !important; margin-top: 2rem; margin-bottom: 2rem; }
+  @media (min-width: 900px) {
+    .bio { grid-template-columns: 300px 1fr; gap: 4rem; }
+    .side { position: sticky; top: calc(var(--header-h) + 2rem); align-self: start; }
+  }
+</style>

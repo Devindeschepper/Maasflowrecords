@@ -1,0 +1,97 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PlatformLinks from '../../components/PlatformLinks.astro';
+import Player from '../../components/Player.astro';
+import ReleaseCard from '../../components/ReleaseCard.astro';
+import { releases, isUpcoming, sortedReleases } from '../../data/releases';
+import { site } from '../../data/site';
+import { artistNames, catalogNo, fmtDate } from '../../lib/format';
+import type { Release } from '../../data/types';
+
+export function getStaticPaths() {
+  return releases.map((release) => ({ params: { slug: release.slug }, props: { release } }));
+}
+
+const { release: r } = Astro.props as { release: Release };
+const upcoming = isUpcoming(r);
+const hasLinks = Object.keys(r.links).length > 0;
+const more = sortedReleases().filter((x) => x.slug !== r.slug).slice(0, 4);
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': r.type === 'Single' ? 'MusicRecording' : 'MusicAlbum',
+    name: r.title,
+    byArtist: { '@type': 'MusicGroup', name: artistNames(r) },
+    datePublished: r.releaseDate,
+    image: new URL(r.cover, site.url).href,
+    url: new URL(`/music/${r.slug}/`, site.url).href,
+    recordLabel: { '@type': 'Organization', name: site.name },
+    ...(r.tracks && r.type !== 'Single' ? { numTracks: r.tracks.length } : {}),
+  },
+];
+---
+
+<BaseLayout title={`${r.title} — ${artistNames(r)}`} description={`${r.type} by ${artistNames(r)} on ${site.name}. ${r.description}`} image={r.cover} type={r.type === 'Single' ? 'music.song' : 'music.album'} jsonLd={jsonLd}>
+  <section class="release-hero">
+    <div class="container layout">
+      <div class="cover">
+        <img src={r.cover} alt={`${r.title} cover art`} width="800" height="800" fetchpriority="high" />
+      </div>
+      <div class="info">
+        <p class="eyebrow"><span class="dot"></span>{catalogNo(r)} · {r.type}{upcoming && ' · Upcoming'}</p>
+        <h1>{r.title}</h1>
+        <p class="by">{artistNames(r)}</p>
+        <p class="mono muted">{upcoming ? 'Release date' : 'Released'}: <time datetime={r.releaseDate}>{fmtDate(r.releaseDate)}</time></p>
+        <p class="lead">{r.description}</p>
+
+        {r.embed && !upcoming && <Player embed={r.embed} title={r.title} />}
+
+        <h2 class="h-small">{upcoming ? 'Pre-save / follow' : 'Listen on'}</h2>
+        {hasLinks ? <PlatformLinks links={r.links} variant="chips" /> : <p class="muted">Streaming links will appear here on release day.</p>}
+
+        {
+          r.tracks && (
+            <>
+              <h2 class="h-small">Tracklist</h2>
+              <ol class="tracks">
+                {r.tracks.map((t, i) => (
+                  <li><span class="mono muted">{String(i + 1).padStart(2, '0')}</span> {t}</li>
+                ))}
+              </ol>
+            </>
+          )
+        }
+      </div>
+    </div>
+  </section>
+
+  {
+    more.length > 0 && (
+      <section class="section">
+        <div class="container">
+          <div class="section-head">
+            <h2>More music</h2>
+            <a class="link-arrow" href="/music/">All releases</a>
+          </div>
+          <div class="grid grid-4">{more.map((x) => <ReleaseCard release={x} />)}</div>
+        </div>
+      </section>
+    )
+  }
+</BaseLayout>
+
+<style>
+  .release-hero { padding-block: clamp(2rem, 6vw, 4.5rem); border-bottom: 1px solid var(--line); }
+  .layout { display: grid; gap: 2rem; }
+  .cover img { width: 100%; aspect-ratio: 1; object-fit: cover; border: 1px solid var(--line); }
+  .info h1 { font-size: clamp(3rem, 10vw, 6rem); margin-bottom: 0.15em; }
+  .by { font-family: var(--font-display); font-size: 1.6rem; text-transform: uppercase; margin-bottom: 0.4rem; }
+  .h-small { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.14em; color: var(--muted); margin: 2rem 0 0.9rem; line-height: 1.4; }
+  .tracks { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+  .tracks li { padding: 0.7rem 0; border-bottom: 1px solid var(--line); display: flex; gap: 1rem; }
+  @media (min-width: 900px) {
+    .layout { grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; }
+    .cover { position: sticky; top: calc(var(--header-h) + 2rem); }
+  }
+</style>

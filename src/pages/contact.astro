@@ -1,0 +1,105 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import Turnstile from '../components/Turnstile.astro';
+import { site } from '../data/site';
+
+// Keep in sync with TOPICS in functions/api/contact.ts
+const topics = [
+  { value: 'general', label: 'General', text: 'Questions, feedback, anything else.' },
+  { value: 'artists', label: 'Artists', text: 'Features, collabs and artist questions.' },
+  { value: 'beats', label: 'Beats & production', text: 'Custom beats, leases and exclusives.' },
+  { value: 'casting', label: 'Casting', text: 'Musicians — use the casting form.', href: '/casting/' },
+  { value: 'business', label: 'Business', text: 'Licensing, sync, partnerships.' },
+  { value: 'events', label: 'Events & booking', text: 'Shows, festivals, livestreams.' },
+  { value: 'press', label: 'Press', text: 'Interviews, press kit, media.' },
+  { value: 'shop', label: 'Shop & orders', text: 'Order questions, returns.' },
+];
+---
+
+<BaseLayout title="Contact" description={`Contact Maas Flow Records — general, artists, business, events, press. Email ${site.email}.`}>
+  <PageHero eyebrow="Get in touch" title="Contact">
+    <p class="lead">
+      <a class="mail" href={`mailto:${site.email}`}>{site.email}</a>
+    </p>
+  </PageHero>
+
+  <section class="section">
+    <div class="container contact">
+      <aside>
+        <h2 class="h3">Who to contact</h2>
+        <ul class="topics">
+          {
+            topics.map((t) => (
+              <li>
+                {t.href ? <a href={t.href}><strong>{t.label}</strong></a> : <strong>{t.label}</strong>}
+                <span class="muted">{t.text}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <p class="muted small">Based in {site.city}, the Netherlands. We aim to reply within a few working days.</p>
+      </aside>
+
+      <form class="form card pad" action="/api/contact" method="post" data-ajax data-success="Thanks — your message was sent. We'll get back to you soon.">
+        <div class="form-row">
+          <div class="field">
+            <label for="f-name">Name <span class="req">*</span></label>
+            <input id="f-name" name="name" required maxlength="100" autocomplete="name" />
+          </div>
+          <div class="field">
+            <label for="f-email">Email <span class="req">*</span></label>
+            <input id="f-email" name="email" type="email" required maxlength="200" autocomplete="email" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="f-topic">Topic <span class="req">*</span></label>
+            <select id="f-topic" name="topic" required>
+              {topics.filter((t) => !t.href).map((t) => <option value={t.value}>{t.label}</option>)}
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-subject">Subject <span class="req">*</span></label>
+            <input id="f-subject" name="subject" required maxlength="150" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-msg">Message <span class="req">*</span></label>
+          <textarea id="f-msg" name="message" required maxlength="5000"></textarea>
+        </div>
+
+        <div class="hp" aria-hidden="true">
+          <label for="f-website">Website</label>
+          <input id="f-website" name="website" tabindex="-1" autocomplete="off" />
+        </div>
+        <input type="hidden" name="_ts" value="" />
+
+        <Turnstile />
+        <button class="btn btn-primary" type="submit">Send message</button>
+        <p class="form-status" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { enhanceForms } from '../scripts/forms';
+  // Preselect topic from ?topic=… links (e.g. /contact/?topic=events)
+  const topic = new URLSearchParams(location.search).get('topic');
+  const select = document.querySelector<HTMLSelectElement>('#f-topic');
+  if (topic && select && [...select.options].some((o) => o.value === topic)) select.value = topic;
+  enhanceForms();
+</script>
+
+<style>
+  .mail { font-family: var(--font-display); font-size: clamp(1.6rem, 6vw, 3rem); text-transform: uppercase; text-decoration: none; word-break: break-word; }
+  .mail:hover { color: var(--accent); }
+  .contact { display: grid; gap: 2.5rem; }
+  .h3 { font-size: clamp(1.35rem, 3vw, 1.75rem); }
+  .pad { padding: clamp(1.1rem, 4vw, 2rem); }
+  .topics { list-style: none; margin: 0 0 1.5rem; padding: 0; border-top: 1px solid var(--line); }
+  .topics li { display: grid; gap: 0.15rem; padding: 0.75rem 0; border-bottom: 1px solid var(--line); font-size: 0.92rem; }
+  .small { font-size: 0.85rem; }
+  @media (min-width: 960px) { .contact { grid-template-columns: 1fr 1.7fr; gap: 4rem; align-items: start; } }
+</style>

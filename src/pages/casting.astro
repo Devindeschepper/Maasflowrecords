@@ -1,0 +1,132 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import Turnstile from '../components/Turnstile.astro';
+import { site } from '../data/site';
+
+// Keep in sync with ROLES in functions/api/casting.ts
+const roles = [
+  'Singer', 'Rapper', 'Producer', 'Guitarist', 'Pianist', 'Drummer', 'Bassist',
+  'DJ', 'Songwriter', 'Mixing engineer', 'Mastering engineer', 'Other',
+];
+const MAX_MB = 10;
+---
+
+<BaseLayout title="Casting — Work With Us" description="Singers, rappers, producers, musicians and engineers: send your music to Maas Flow Records and VIN for collaborations.">
+  <PageHero
+    eyebrow="Casting musicians"
+    title="Work with us"
+    lead="Singer, rapper, producer, player or engineer? Send your music. We listen to everything — collaborations, features, session work and beats."
+  />
+
+  <section class="section">
+    <div class="container cast">
+      <aside class="info">
+        <h2>What we look for</h2>
+        <ul class="looking">
+          <li>Artists with their own sound and story</li>
+          <li>Producers &amp; beatmakers — send beat packs</li>
+          <li>Session players: guitar, keys, drums, bass</li>
+          <li>Songwriters and topliners</li>
+          <li>Mixing &amp; mastering engineers</li>
+        </ul>
+        <p class="muted small">
+          Tip: a private SoundCloud, Google Drive, Dropbox or WeTransfer link works best.
+          Uploads are limited to {MAX_MB} MB (MP3, WAV, PDF, ZIP).
+        </p>
+        <p class="muted small">
+          Your details are sent privately to the label and are never published or shared.
+          We usually reply within 2 weeks if there's a fit.
+        </p>
+      </aside>
+
+      <form class="form card pad" action="/api/casting" method="post" enctype="multipart/form-data" data-ajax data-max-file-mb={MAX_MB} data-success="Thanks — your submission was received. We'll be in touch if there's a fit.">
+        <div class="form-row">
+          <div class="field">
+            <label for="c-name">Name <span class="req">*</span></label>
+            <input id="c-name" name="name" required maxlength="100" autocomplete="name" />
+          </div>
+          <div class="field">
+            <label for="c-stage">Artist / stage name</label>
+            <input id="c-stage" name="stageName" maxlength="100" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="c-email">Email <span class="req">*</span></label>
+            <input id="c-email" name="email" type="email" required maxlength="200" autocomplete="email" />
+          </div>
+          <div class="field">
+            <label for="c-role">Instrument / role <span class="req">*</span></label>
+            <select id="c-role" name="role" required>
+              <option value="">Choose…</option>
+              {roles.map((r) => <option>{r}</option>)}
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="c-genre">Genre</label>
+            <input id="c-genre" name="genre" maxlength="100" placeholder="Rap, R&B, Afro, Drill…" />
+          </div>
+          <div class="field">
+            <label for="c-loc">Location</label>
+            <input id="c-loc" name="location" maxlength="100" placeholder="City, country" autocomplete="address-level2" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="c-social">Social media links</label>
+          <textarea id="c-social" name="socials" class="short" maxlength="1000" rows="2" placeholder="Instagram, TikTok, YouTube…"></textarea>
+        </div>
+        <div class="field">
+          <label for="c-port">Music / portfolio links <span class="req">*</span></label>
+          <textarea id="c-port" name="portfolio" class="short" required maxlength="1500" rows="3" placeholder="SoundCloud, Spotify, YouTube, Drive, Dropbox…"></textarea>
+        </div>
+        <div class="field">
+          <label for="c-msg">Short message <span class="req">*</span></label>
+          <textarea id="c-msg" name="message" required maxlength="3000" placeholder="Who are you, what do you do, and what would you like to work on?"></textarea>
+        </div>
+        <div class="field">
+          <label for="c-file">File upload (optional)</label>
+          <input id="c-file" name="file" type="file" accept=".mp3,.wav,.m4a,.pdf,.zip,audio/*,application/pdf,application/zip" />
+          <span class="hint">Max {MAX_MB} MB. For bigger files, paste a link above.</span>
+        </div>
+
+        <!-- spam protection: honeypot + time check + Turnstile -->
+        <div class="hp" aria-hidden="true">
+          <label for="c-website">Website</label>
+          <input id="c-website" name="website" tabindex="-1" autocomplete="off" />
+        </div>
+        <input type="hidden" name="_ts" value="" />
+
+        <label class="check">
+          <input type="checkbox" name="consent" value="yes" required />
+          <span>I agree that Maas Flow Records stores my details to review this submission and contact me about it.</span>
+        </label>
+
+        <Turnstile />
+        <button class="btn btn-primary" type="submit">Send submission</button>
+        <p class="form-status" role="status" aria-live="polite"></p>
+        <noscript><p class="muted small">Or email <a href={`mailto:${site.email}`}>{site.email}</a>.</p></noscript>
+      </form>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { enhanceForms } from '../scripts/forms';
+  enhanceForms();
+</script>
+
+<style>
+  .cast { display: grid; gap: 2.5rem; }
+  .pad { padding: clamp(1.1rem, 4vw, 2rem); }
+  .looking { padding-left: 1.1rem; margin: 0 0 1.5rem; }
+  .looking li { padding: 0.25rem 0; }
+  .looking li::marker { color: var(--accent); }
+  .small { font-size: 0.85rem; }
+  @media (min-width: 960px) {
+    .cast { grid-template-columns: 1fr 1.7fr; gap: 4rem; align-items: start; }
+    .info { position: sticky; top: calc(var(--header-h) + 2rem); }
+  }
+</style>
