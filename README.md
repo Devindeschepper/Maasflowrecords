@@ -49,6 +49,7 @@ functions/
   api/casting.ts   ← POST /api/casting  (with optional file upload, max 10 MB)
   api/checkout.ts  ← POST /api/checkout (re-prices the cart server-side)
   api/subscribe.ts ← POST /api/subscribe (newsletter signup → Resend Audience)
+  api/booking.ts   ← POST /api/booking ("Book an artist" form on the Events page)
   _lib/payments/   ← payment provider adapters (currently "manual")
 public/           ← static files: images, favicon, _headers (security), robots.txt
 ```

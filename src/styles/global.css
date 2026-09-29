@@ -154,7 +154,7 @@ p { margin: 0 0 1em; }
 
 /* ---------- forms ---------- */
 .form { display: grid; gap: 1.1rem; }
-.form-row { display: grid; gap: 1.1rem; }
+.form-row { display: grid; gap: 1.1rem; align-items: start; }
 @media (min-width: 640px) { .form-row { grid-template-columns: 1fr 1fr; } }
 .field { display: grid; gap: 0.4rem; }
 .field label, .field legend { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em; }

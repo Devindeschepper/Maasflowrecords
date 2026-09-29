@@ -1,0 +1,90 @@
+---
+// Booking request form ("Book an artist"). Posts to /api/booking.
+import Turnstile from './Turnstile.astro';
+import { artists } from '../data/artists';
+
+// Keep in sync with EVENT_TYPES in functions/api/booking.ts
+const eventTypes = ['Concert / show', 'Festival', 'Club night', 'Private event', 'Livestream', 'Other'];
+const today = new Date().toISOString().slice(0, 10);
+---
+
+<form class="form card pad" id="booking-form" action="/api/booking" method="post" data-ajax data-success="Thanks — your booking request was sent. We'll get back to you soon.">
+  <div class="form-row">
+    <div class="field">
+      <label for="b-artist">Artist <span class="req">*</span></label>
+      <select id="b-artist" name="artist" required>
+        {artists.map((a) => <option value={a.slug}>{a.name}</option>)}
+      </select>
+    </div>
+    <div class="field">
+      <label for="b-type">Type of event <span class="req">*</span></label>
+      <select id="b-type" name="eventType" required>
+        <option value="">Choose…</option>
+        {eventTypes.map((t) => <option>{t}</option>)}
+      </select>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="field">
+      <label for="b-date">Date</label>
+      <input id="b-date" name="date" type="date" min={today} />
+      <span class="hint">Leave empty if the date is flexible.</span>
+    </div>
+    <div class="field">
+      <label for="b-location">City / venue <span class="req">*</span></label>
+      <input id="b-location" name="location" required maxlength="150" />
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="field">
+      <label for="b-audience">Expected audience</label>
+      <input id="b-audience" name="audience" maxlength="50" placeholder="e.g. 200 people" />
+    </div>
+    <div class="field">
+      <label for="b-budget">Budget / fee</label>
+      <input id="b-budget" name="budget" maxlength="80" placeholder="Optional" />
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="field">
+      <label for="b-name">Your name <span class="req">*</span></label>
+      <input id="b-name" name="name" required maxlength="100" autocomplete="name" />
+    </div>
+    <div class="field">
+      <label for="b-org">Organisation / venue name</label>
+      <input id="b-org" name="organisation" maxlength="150" autocomplete="organization" />
+    </div>
+  </div>
+  <div class="field">
+    <label for="b-email">Email <span class="req">*</span></label>
+    <input id="b-email" name="email" type="email" required maxlength="200" autocomplete="email" />
+  </div>
+  <div class="field">
+    <label for="b-msg">Tell us about the event <span class="req">*</span></label>
+    <textarea id="b-msg" name="message" required maxlength="4000" placeholder="Set length, other artists on the bill, technical setup, travel…"></textarea>
+  </div>
+
+  <div class="hp" aria-hidden="true">
+    <label for="b-website">Website</label>
+    <input id="b-website" name="website" tabindex="-1" autocomplete="off" />
+  </div>
+  <input type="hidden" name="_ts" value="" />
+
+  <Turnstile />
+  <button class="btn btn-primary" type="submit">Send booking request</button>
+  <p class="form-status" role="status" aria-live="polite"></p>
+</form>
+
+<script>
+  import { enhanceForms } from '../scripts/forms';
+  // Preselect the artist from links like /events/?artist=vin#book
+  const artist = new URLSearchParams(location.search).get('artist');
+  const select = document.querySelector<HTMLSelectElement>('#b-artist');
+  if (artist && select && [...select.options].some((o) => o.value === artist)) select.value = artist;
+  enhanceForms();
+</script>
+
+<style>
+  .pad { padding: clamp(1.1rem, 4vw, 2rem); }
+  input[type='date'] { color-scheme: dark; }
+</style>

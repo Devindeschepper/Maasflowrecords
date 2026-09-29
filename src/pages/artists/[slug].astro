@@ -42,6 +42,7 @@ const jsonLd = [
         <p class="muted">{a.description}</p>
         <div class="btn-row">
           <a class="btn btn-primary" href={a.bioHref}>Read full bio</a>
+          <a class="btn btn-ghost" href={`/events/?artist=${a.slug}#book`}>Book {a.name}</a>
           <a class="btn btn-ghost" href="#music">Music</a>
           {a.streaming.beatstars && <a class="btn btn-ghost" href={a.streaming.beatstars} target="_blank" rel="noopener noreferrer">Buy beats</a>}
         </div>
