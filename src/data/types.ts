@@ -29,8 +29,11 @@ export interface Artist {
   /** One or two sentences, used on cards and the artist page. */
   tagline: string;
   description: string;
+  /** Main portrait (shown cropped to 4:5, focused on the upper part). */
   image: string;
   imageAlt: string;
+  /** Extra photos for the artist page gallery. */
+  photos?: { src: string; alt: string }[];
   /** Anchor/page that holds the full bio. */
   bioHref: string;
   streaming: Links;

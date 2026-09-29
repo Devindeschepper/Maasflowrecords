@@ -60,6 +60,7 @@ body::before {
 
 img, svg, video, iframe { display: block; max-width: 100%; }
 img { height: auto; }
+img[src*='/images/artists/'] { object-position: 50% 22%; }
 
 a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 a:hover { color: #fff; }

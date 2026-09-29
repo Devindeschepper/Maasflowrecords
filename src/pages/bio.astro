@@ -4,6 +4,7 @@ import PageHero from '../components/PageHero.astro';
 import { artists } from '../data/artists';
 
 const vin = artists[0];
+const bioPhoto = vin.photos?.[1] ?? { src: vin.image, alt: vin.imageAlt };
 ---
 
 <BaseLayout title="Bio" description="The story of VIN — producer and rapper from Rotterdam — and of Maas Flow Records, the independent label he founded." type="article">
@@ -13,7 +14,7 @@ const vin = artists[0];
   <section class="section" id="vin">
     <div class="container bio">
       <div class="side">
-        <img src={vin.image} alt={vin.imageAlt} width="480" height="600" loading="lazy" />
+        <img src={bioPhoto.src} alt={bioPhoto.alt} width="480" height="600" loading="lazy" />
         <p class="mono muted">VIN — Artist bio<br />Producer / Rapper<br />Rotterdam, NL</p>
       </div>
       <article class="prose">
