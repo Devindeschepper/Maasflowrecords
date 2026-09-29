@@ -73,8 +73,8 @@ export interface LabelEvent {
   slug: string;
   title: string;
   kind: 'Release' | 'Concert' | 'Livestream' | 'Performance' | 'Label event' | 'Listening session' | 'Other';
-  /** ISO date-time with timezone offset, e.g. 2026-11-14T20:00:00+01:00 */
-  start: string;
+  /** ISO date-time with timezone offset, e.g. 2026-11-14T20:00:00+01:00. Leave out for "date TBA". */
+  start?: string;
   venue: string;
   city: string;
   /** For livestreams: where to watch. */

@@ -39,6 +39,6 @@ export const nav = [
   { href: '/music/', label: 'Music' },
   { href: '/events/', label: 'Events' },
   { href: '/casting/', label: 'Casting' },
-  { href: '/shop/', label: 'Shop' },
   { href: '/bio/', label: 'Bio' },
+  { href: '/shop/', label: 'Shop' },
 ];

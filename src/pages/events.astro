@@ -8,7 +8,8 @@ import { site } from '../data/site';
 const upcoming = upcomingEvents();
 const past = pastEvents();
 
-const jsonLd = upcoming.filter((e) => e.kind !== 'Release').map((e) => ({
+// Only dated, real-world events go into search-engine data.
+const jsonLd = upcoming.filter((e) => e.kind !== 'Release' && e.start).map((e) => ({
   '@context': 'https://schema.org',
   '@type': 'MusicEvent',
   name: e.title,
