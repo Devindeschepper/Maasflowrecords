@@ -8,7 +8,7 @@ import { site } from '../data/site';
 const upcoming = upcomingEvents();
 const past = pastEvents();
 
-const jsonLd = upcoming.map((e) => ({
+const jsonLd = upcoming.filter((e) => e.kind !== 'Release').map((e) => ({
   '@context': 'https://schema.org',
   '@type': 'MusicEvent',
   name: e.title,
@@ -38,7 +38,7 @@ const jsonLd = upcoming.map((e) => ({
         upcoming.length ? (
           upcoming.map((e) => <EventCard event={e} />)
         ) : (
-          <p class="empty">No upcoming events right now. Follow us on <a href="/socials/">socials</a> for announcements.</p>
+          <p class="empty">No upcoming events right now. Follow <a href="/artists/vin/">VIN</a> for announcements.</p>
         )
       }
     </div>

@@ -5,7 +5,7 @@ import type { Product, ShippingZone } from './types';
  * so prices/stock here are the source of truth (the browser can't change them).
  *
  * Prices are in euro cents: 2500 = €25.00.
- * TODO: placeholder products — update names, prices, stock and photos.
+ * TODO: placeholder products (music only, no merch) — update prices, stock and photos.
  * Product photos go in /public/images/shop/ (square, 1200x1200 recommended).
  */
 export const products: Product[] = [
@@ -29,48 +29,6 @@ export const products: Product[] = [
     image: '/images/shop/cd.svg',
     stock: 100,
     preorder: true,
-    shippingClass: 'small',
-  },
-  {
-    id: 'mfr-tee-black',
-    name: 'Maas Flow Logo Tee — Black',
-    category: 'T-Shirt',
-    description: 'Heavyweight 240gsm cotton tee, boxy fit. White MFR logo print on chest.',
-    price: 3000,
-    image: '/images/shop/tee.svg',
-    stock: 40,
-    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-    shippingClass: 'small',
-  },
-  {
-    id: 'mfr-hoodie-black',
-    name: 'Maas Flow Hoodie — Black',
-    category: 'Hoodie',
-    description: 'Heavyweight brushed-fleece hoodie. Embroidered logo on the chest, print on the back.',
-    price: 6000,
-    image: '/images/shop/hoodie.svg',
-    stock: 25,
-    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-    shippingClass: 'standard',
-  },
-  {
-    id: 'mfr-cap',
-    name: 'MFR Cap',
-    category: 'Cap',
-    description: 'Six-panel cotton cap with embroidered MFR monogram. One size, adjustable.',
-    price: 2500,
-    image: '/images/shop/cap.svg',
-    stock: 0,
-    shippingClass: 'small',
-  },
-  {
-    id: 'btm-poster',
-    name: '2Real4U — Poster A2',
-    category: 'Poster',
-    description: 'A2 poster on 200gsm matte paper. Shipped rolled in a tube.',
-    price: 1500,
-    image: '/images/shop/poster.svg',
-    stock: 30,
     shippingClass: 'small',
   },
 ];

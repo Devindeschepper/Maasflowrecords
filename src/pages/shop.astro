@@ -25,8 +25,8 @@ const jsonLd = !shopOpen ? [] : products.map((p) => ({
 }));
 ---
 
-<BaseLayout title="Shop" description="Official Maas Flow Records store — vinyl, CDs, t-shirts, hoodies, caps and posters." jsonLd={jsonLd}>
-  <PageHero eyebrow="Official store" title="Shop" lead="Vinyl, CDs and merch. Every order directly supports independent music." />
+<BaseLayout title="Shop" description="Official Maas Flow Records store — vinyl and CDs." jsonLd={jsonLd}>
+  <PageHero eyebrow="Official store" title="Shop" lead="Vinyl and CDs. Every order directly supports independent music." />
 
   {!shopOpen && <ShopComingSoon />}
   {shopOpen && (<>
@@ -53,7 +53,7 @@ const jsonLd = !shopOpen ? [] : products.map((p) => ({
         <h2 class="h3">Shipping</h2>
         <table class="rates">
           <caption class="sr-only">Shipping rates</caption>
-          <thead><tr><th scope="col">Destination</th><th scope="col">Small items</th><th scope="col">Vinyl / hoodies</th><th scope="col">Delivery</th></tr></thead>
+          <thead><tr><th scope="col">Destination</th><th scope="col">CD</th><th scope="col">Vinyl</th><th scope="col">Delivery</th></tr></thead>
           <tbody>
             {shippingZones.map((z) => (
               <tr><th scope="row">{z.label}</th><td>{formatPrice(z.rates.small)}</td><td>{formatPrice(z.rates.standard)}</td><td>{z.estimate}</td></tr>

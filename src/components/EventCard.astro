@@ -26,7 +26,7 @@ const past = isPast(e);
     <p class="eyebrow"><span class="tag">{e.kind}</span></p>
     <h3>{e.title}</h3>
     <p class="where">
-      <time datetime={e.start}>{d.full} · {d.time}</time><br />
+      <time datetime={e.allDay ? e.start.slice(0, 10) : e.start}>{e.dateTentative ? 'Expected ' : ''}{d.full}{e.allDay ? '' : ` · ${d.time}`}</time><br />
       <span class="muted">{e.venue}{e.city ? ` — ${e.city}` : ''}</span>
     </p>
     {!compact && <p class="desc muted">{e.description}</p>}
@@ -37,7 +37,7 @@ const past = isPast(e);
       past ? (
         <span class="tag">Past event</span>
       ) : e.ticketUrl ? (
-        <a class="btn btn-primary" href={e.ticketUrl} target="_blank" rel="noopener noreferrer">
+        <a class="btn btn-primary" href={e.ticketUrl} {...(e.ticketUrl.startsWith('/') ? {} : { target: '_blank', rel: 'noopener noreferrer' })}>
           {e.ticketLabel ?? 'Tickets'} <span class="sr-only">for {e.title}</span>
         </a>
       ) : (
