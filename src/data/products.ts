@@ -11,7 +11,7 @@ import type { Product, ShippingZone } from './types';
 export const products: Product[] = [
   {
     id: 'btm-vinyl',
-    name: 'Behind The Mic — 12" Vinyl',
+    name: '2Real4U — 12" Vinyl',
     category: 'Vinyl',
     description: 'Limited black 12" pressing of the debut EP. Printed inner sleeve with lyrics.',
     price: 2800,
@@ -22,7 +22,7 @@ export const products: Product[] = [
   },
   {
     id: 'btm-cd',
-    name: 'Behind The Mic — CD',
+    name: '2Real4U — CD',
     category: 'CD',
     description: 'Digipak CD of the debut EP. Signed copies while stock lasts.',
     price: 1200,
@@ -65,7 +65,7 @@ export const products: Product[] = [
   },
   {
     id: 'btm-poster',
-    name: 'Behind The Mic — Poster A2',
+    name: '2Real4U — Poster A2',
     category: 'Poster',
     description: 'A2 poster on 200gsm matte paper. Shipped rolled in a tube.',
     price: 1500,

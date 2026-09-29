@@ -19,11 +19,15 @@ export const fmtEventDate = (iso: string) => {
   };
 };
 
+/** Release date for display, or "TBA" when not announced yet. */
+export const releaseDateLabel = (r: Release) => (r.releaseDate ? `${r.dateTentative ? 'Expected ' : ''}${fmtDate(r.releaseDate)}` : 'TBA');
+
 export const artistNames = (r: Release) =>
   r.artists.map((slug) => artists.find((a) => a.slug === slug)?.name ?? slug).join(' & ');
 
 /** Catalogue number, e.g. MFR-003 — assigned by release date (oldest = 001). */
 export const catalogNo = (r: Release) => {
-  const ordered = [...releases].sort((a, b) => a.releaseDate.localeCompare(b.releaseDate));
+  const key = (x: Release) => x.releaseDate ?? '9999-12-31';
+  const ordered = [...releases].sort((a, b) => key(a).localeCompare(key(b)));
   return `MFR-${String(ordered.indexOf(r) + 1).padStart(3, '0')}`;
 };

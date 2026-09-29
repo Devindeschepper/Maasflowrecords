@@ -1,85 +1,73 @@
 import type { Release } from './types';
 
 /**
- * Discography. Newest release first is not required — pages sort by date.
- * A release with a future `releaseDate` is automatically shown as "Upcoming".
+ * Maas Flow Records catalogue. Only releases on the label go here —
+ * older music is reachable through the streaming links on VIN's page.
  *
- * TODO: the entries below are PLACEHOLDERS so the site can be tested.
- * Replace them with VIN's real releases (title, date, cover, links).
- * Covers go in /public/images/releases/ (square, at least 1000x1000, .jpg or .webp).
+ * - `releaseDate`: 'YYYY-MM-DD'. Leave it out while the date is not announced (shows "TBA").
+ *   A future date or no date = shown as "Upcoming".
+ * - Covers go in /public/images/releases/ (square, 1000x1000 or larger).
+ * - `preview`: a short .mp3 clip in /public/audio/ (see README).
  */
 export const releases: Release[] = [
   {
-    slug: 'behind-the-mic',
-    title: 'Behind The Mic',
+    slug: '2real4u',
+    title: '2Real4U',
     artists: ['vin'],
     type: 'EP',
-    releaseDate: '2026-11-20',
-    cover: '/images/releases/cover-2.svg',
-    description:
-      'The first EP on Maas Flow Records. Produced, written and recorded by VIN — five years of learning, in one project.',
-    tracks: ['Intro', 'Rotterdam Nights', 'Student Of The Game', 'What I Live', 'Outro'],
+    releaseDate: '2026-11-27',
+    dateTentative: true, // remove this line once the date is confirmed
+    cover: '/images/releases/2real4u.svg', // TODO: replace with the final EP cover
+    description: 'The debut EP from VIN on Maas Flow Records. Run It Back and Not Enough are out now — two more songs are on the way.',
+    tracks: ['Run It Back', 'Not Enough', 'Coming soon', 'Coming soon'],
     links: {},
-    featured: true,
   },
   {
-    slug: 'what-i-live',
-    title: 'What I Live',
+    slug: 'not-enough',
+    title: 'Not Enough',
     artists: ['vin'],
     type: 'Single',
-    releaseDate: '2026-06-12',
-    cover: '/images/releases/cover-1.svg',
-    description: 'I rap what I live. A single about the people and the situations that shaped VIN.',
-    links: {
-      spotify: '',
-      appleMusic: '',
-      youtube: '',
-      soundcloud: '',
-    },
-    // Example: preview: '/audio/what-i-live.mp3',
+    releaseDate: '2026-06-19',
+    cover: '/images/releases/2real4u.svg', // TODO: replace with the final cover
+    description: 'Single from the upcoming 2Real4U EP.',
+    links: { spotify: 'https://open.spotify.com/track/2ukplGX06n0amTGPO4Tjxl' },
+    preview: '/audio/not-enough.mp3',
   },
   {
-    slug: 'student-of-the-game',
-    title: 'Student Of The Game',
+    slug: 'run-it-back',
+    title: 'Run It Back',
     artists: ['vin'],
     type: 'Single',
-    releaseDate: '2026-03-06',
-    cover: '/images/releases/cover-3.svg',
-    description: 'Still learning. Production, flow, delivery — a single about the process.',
-    links: {
-      spotify: '',
-      appleMusic: '',
-      youtube: '',
-    },
+    releaseDate: '2026-04-30',
+    cover: '/images/releases/2real4u.svg', // TODO: replace with the final cover
+    description: 'Single from the upcoming 2Real4U EP.',
+    links: { spotify: 'https://open.spotify.com/track/19zx4FNvRzGTegy8hOZE60' },
+    preview: '/audio/run-it-back.mp3',
   },
   {
-    slug: 'maas-tapes-vol-1',
-    title: 'Maas Tapes Vol. 1',
+    slug: 'take-your-time',
+    title: 'Take Your Time',
     artists: ['vin'],
-    type: 'Beat Tape',
-    releaseDate: '2025-10-10',
-    cover: '/images/releases/cover-4.svg',
-    description: 'Instrumentals from the early years behind the beats. Leases available on BeatStars.',
-    links: {
-      beatstars: '',
-      soundcloud: '',
-    },
+    type: 'Single',
+    releaseDate: '2025-08-15',
+    cover: '/images/releases/take-your-time.jpg',
+    description: 'Single by VIN.',
+    links: { spotify: 'https://open.spotify.com/track/4xO0Wf7CMtQFVbuNOHQT4R' },
+    preview: '/audio/take-your-time.mp3',
   },
 ];
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-export const isUpcoming = (r: Release) => r.releaseDate > today();
+/** Sort key: releases without a date (TBA) count as the furthest in the future. */
+const dateKey = (r: Release) => r.releaseDate ?? '9999-12-31';
 
-export const sortedReleases = () =>
-  [...releases].sort((a, b) => b.releaseDate.localeCompare(a.releaseDate));
+export const isUpcoming = (r: Release) => !r.releaseDate || r.releaseDate > today();
+
+export const sortedReleases = () => [...releases].sort((a, b) => dateKey(b).localeCompare(dateKey(a)));
 
 export const latestRelease = () => sortedReleases().find((r) => !isUpcoming(r));
 
-export const upcomingReleases = () =>
-  sortedReleases()
-    .filter(isUpcoming)
-    .reverse();
+export const upcomingReleases = () => sortedReleases().filter(isUpcoming).reverse();
 
-export const releasesByArtist = (slug: string) =>
-  sortedReleases().filter((r) => r.artists.includes(slug));
+export const releasesByArtist = (slug: string) => sortedReleases().filter((r) => r.artists.includes(slug));

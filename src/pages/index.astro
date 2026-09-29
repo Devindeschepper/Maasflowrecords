@@ -9,7 +9,7 @@ import { artists } from '../data/artists';
 import { sortedReleases, latestRelease, upcomingReleases } from '../data/releases';
 import { upcomingEvents } from '../data/events';
 import { products } from '../data/products';
-import { artistNames, catalogNo, fmtDate } from '../lib/format';
+import { artistNames, catalogNo, releaseDateLabel } from '../lib/format';
 
 const vin = artists[0];
 const latest = latestRelease();
@@ -76,7 +76,7 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
             </p>
             <h2>{featuredRelease.title}</h2>
             <p class="mono muted">
-              {featuredRelease.type} · {artistNames(featuredRelease)} · {next ? 'Out ' : ''}{fmtDate(featuredRelease.releaseDate)}
+              {featuredRelease.type} · {artistNames(featuredRelease)} · {next && featuredRelease.releaseDate && !featuredRelease.dateTentative ? 'Out ' : ''}{releaseDateLabel(featuredRelease)}
             </p>
             <p class="lead">{featuredRelease.description}</p>
             <div class="btn-row">

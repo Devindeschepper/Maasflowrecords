@@ -21,8 +21,8 @@ export const events: LabelEvent[] = [
     ticketLabel: 'Watch live',
   },
   {
-    slug: 'behind-the-mic-release-show',
-    title: 'Behind The Mic — Release Show',
+    slug: '2real4u-release-show',
+    title: '2Real4U — Release Show',
     kind: 'Concert',
     start: '2026-12-12T20:00:00+01:00',
     venue: 'Venue TBA',

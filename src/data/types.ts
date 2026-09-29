@@ -48,8 +48,10 @@ export interface Release {
   /** Artist slugs (see artists.ts). */
   artists: string[];
   type: ReleaseType;
-  /** ISO date (YYYY-MM-DD). Future dates are shown as "Upcoming". */
-  releaseDate: string;
+  /** ISO date (YYYY-MM-DD). Future dates are shown as "Upcoming"; leave out for "TBA". */
+  releaseDate?: string;
+  /** true = the date is planned, not confirmed (shown as "Expected …"). */
+  dateTentative?: boolean;
   cover: string;
   description: string;
   tracks?: string[];
