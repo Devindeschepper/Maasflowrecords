@@ -1,9 +1,11 @@
 import type { Release } from './types';
 
 /**
- * Maas Flow Records catalogue. Only releases on the label go here —
- * older music is reachable through the streaming links on VIN's page.
+ * Releases. The Music page and home page show only label releases;
+ * an artist's page shows all of that artist's releases here.
+ * Older music is reachable through the streaming links on the artist page.
  *
+ * - `label: false`: released before the label → artist page only, no catalogue number.
  * - `releaseDate`: 'YYYY-MM-DD'. Leave it out while the date is not announced (shows "TBA").
  *   A future date or no date = shown as "Upcoming".
  * - Covers go in /public/images/releases/ (square, 1000x1000 or larger).
@@ -51,7 +53,8 @@ export const releases: Release[] = [
     type: 'Single',
     releaseDate: '2025-08-15',
     cover: '/images/releases/take-your-time.jpg',
-    description: 'Single by VIN.',
+    description: 'Single by VIN, released before Maas Flow Records.',
+    label: false,
     links: { spotify: 'https://open.spotify.com/track/4xO0Wf7CMtQFVbuNOHQT4R' },
     preview: '/audio/take-your-time.mp3',
   },
@@ -66,8 +69,13 @@ export const isUpcoming = (r: Release) => !r.releaseDate || r.releaseDate > toda
 
 export const sortedReleases = () => [...releases].sort((a, b) => dateKey(b).localeCompare(dateKey(a)));
 
-export const latestRelease = () => sortedReleases().find((r) => !isUpcoming(r));
+export const isLabelRelease = (r: Release) => r.label !== false;
 
-export const upcomingReleases = () => sortedReleases().filter(isUpcoming).reverse();
+/** The Maas Flow Records catalogue (newest first). */
+export const labelReleases = () => sortedReleases().filter(isLabelRelease);
+
+export const latestRelease = () => labelReleases().find((r) => !isUpcoming(r));
+
+export const upcomingReleases = () => labelReleases().filter(isUpcoming).reverse();
 
 export const releasesByArtist = (slug: string) => sortedReleases().filter((r) => r.artists.includes(slug));

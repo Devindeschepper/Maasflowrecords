@@ -1,7 +1,7 @@
 ---
 import type { Release } from '../data/types';
 import { isUpcoming } from '../data/releases';
-import { artistNames, catalogNo, releaseDateLabel } from '../lib/format';
+import { artistNames, releaseMeta, releaseDateLabel } from '../lib/format';
 import PreviewButton from './PreviewButton.astro';
 
 interface Props { release: Release; headingLevel?: 'h2' | 'h3' }
@@ -16,7 +16,7 @@ const upcoming = isUpcoming(r);
       {upcoming && <span class="tag tag-accent badge">Upcoming</span>}
     </div>
     <div class="meta">
-      <p class="mono muted">{catalogNo(r)} · {r.type}</p>
+      <p class="mono muted">{releaseMeta(r)}</p>
       <H class="title">{r.title}</H>
       <p class="sub">{artistNames(r)} <span class="muted">— {upcoming && r.releaseDate && !r.dateTentative ? 'Out ' : ''}{releaseDateLabel(r)}</span></p>
     </div>

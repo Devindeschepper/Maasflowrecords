@@ -1,6 +1,6 @@
 # Maas Flow Records — website
 
-Official website of **Maas Flow Records**, the independent music label from Rotterdam founded by **VIN**.
+Official website of **Maas Flow Records**, the independent music label founded by **VIN**.
 Live at **https://maasflowrecords.com**.
 
 - **Astro** — static, fast, SEO-friendly pages (no framework JS shipped)

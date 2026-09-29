@@ -5,11 +5,8 @@ export const site = {
   shortName: 'MFR',
   url: 'https://maasflowrecords.com',
   email: 'info@maasflowrecords.com',
-  city: 'Rotterdam',
-  country: 'NL',
-  founded: 'Rotterdam, NL',
   description:
-    'Maas Flow Records is an independent music label from Rotterdam, founded by producer and rapper VIN. Rap, R&B and beats — made independently.',
+    'Maas Flow Records is an independent music label founded by producer and rapper VIN. Rap, R&B and beats — made independently.',
   /**
    * Default social preview image (1200x630).
    * TODO: replace with a 1200x630 PNG/JPG (Instagram/Facebook/WhatsApp don't show SVG previews).

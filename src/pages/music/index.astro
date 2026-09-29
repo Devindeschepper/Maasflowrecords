@@ -3,11 +3,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import PageHero from '../../components/PageHero.astro';
 import ReleaseCard from '../../components/ReleaseCard.astro';
 import PlatformLinks from '../../components/PlatformLinks.astro';
-import { sortedReleases, isUpcoming } from '../../data/releases';
+import { labelReleases, isUpcoming } from '../../data/releases';
 import { artists } from '../../data/artists';
 import type { ReleaseType } from '../../data/types';
 
-const all = sortedReleases();
+const all = labelReleases();
 const upcoming = all.filter(isUpcoming).reverse();
 const out = all.filter((r) => !isUpcoming(r));
 const types: ReleaseType[] = ['Album', 'EP', 'Single', 'Beat Tape'];

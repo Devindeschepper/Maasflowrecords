@@ -32,7 +32,7 @@ export interface Artist {
   /** Main portrait (shown cropped to 4:5, focused on the upper part). */
   image: string;
   imageAlt: string;
-  /** Extra photos for the artist page gallery. */
+  /** Extra photos (the second one is used on the Bio page). */
   photos?: { src: string; alt: string }[];
   /** Anchor/page that holds the full bio. */
   bioHref: string;
@@ -62,6 +62,11 @@ export interface Release {
    */
   preview?: string;
   featured?: boolean;
+  /**
+   * false = released before/outside the label: shown only on the artist's page,
+   * not in the label catalogue (Music page, home page) and without a catalogue number.
+   */
+  label?: boolean;
 }
 
 export interface LabelEvent {

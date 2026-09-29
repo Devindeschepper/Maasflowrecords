@@ -6,7 +6,7 @@ import ProductCard from '../components/ProductCard.astro';
 import PlatformLinks from '../components/PlatformLinks.astro';
 import { site, labelSocials, shopOpen } from '../data/site';
 import { artists } from '../data/artists';
-import { sortedReleases, latestRelease, upcomingReleases } from '../data/releases';
+import { labelReleases, latestRelease, upcomingReleases } from '../data/releases';
 import { upcomingEvents } from '../data/events';
 import { products } from '../data/products';
 import { artistNames, catalogNo, releaseDateLabel } from '../lib/format';
@@ -15,7 +15,7 @@ const vin = artists[0];
 const latest = latestRelease();
 const next = upcomingReleases()[0];
 const featuredRelease = next ?? latest;
-const moreReleases = sortedReleases().slice(0, 4);
+const moreReleases = labelReleases().slice(0, 4);
 const events = upcomingEvents().slice(0, 3);
 const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
 ---
@@ -30,10 +30,10 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
   <section class="hero">
     <div class="container hero-grid">
       <div class="hero-copy">
-        <p class="eyebrow"><span class="dot"></span>Independent label · {site.city}</p>
+        <p class="eyebrow"><span class="dot"></span>Independent music label</p>
         <h1>Maas<br />Flow<br /><span class="outline">Records</span></h1>
         <p class="lead">
-          An independent music label from Rotterdam, founded by producer and rapper <strong>VIN</strong>.
+          An independent music label founded by producer and rapper <strong>VIN</strong>.
           Rap, R&amp;B and beats — built from the ground up.
         </p>
         <div class="btn-row">
@@ -55,7 +55,7 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
     <div class="ticker" aria-hidden="true">
       <div class="ticker-track mono">
         {Array.from({ length: 2 }).map(() => (
-          <span>MAAS FLOW RECORDS ✦ ROTTERDAM ✦ INDEPENDENT ✦ BEHIND THE BEATS ✦ BEHIND THE MIC ✦ STUDENT OF THE GAME ✦ </span>
+          <span>MAAS FLOW RECORDS ✦ INDEPENDENT ✦ BEHIND THE BEATS ✦ BEHIND THE MIC ✦ STUDENT OF THE GAME ✦ </span>
         ))}
       </div>
     </div>

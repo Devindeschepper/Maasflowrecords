@@ -46,7 +46,7 @@ export const products: Product[] = [
     id: 'mfr-hoodie-black',
     name: 'Maas Flow Hoodie — Black',
     category: 'Hoodie',
-    description: 'Heavyweight brushed-fleece hoodie. Embroidered logo, Rotterdam print on the back.',
+    description: 'Heavyweight brushed-fleece hoodie. Embroidered logo on the chest, print on the back.',
     price: 6000,
     image: '/images/shop/hoodie.svg',
     stock: 25,
