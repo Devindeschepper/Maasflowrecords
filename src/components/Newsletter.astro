@@ -1,0 +1,53 @@
+---
+// "Stay connected" newsletter signup, shown above the footer on every page.
+import Turnstile from './Turnstile.astro';
+---
+
+<section class="newsletter" aria-labelledby="nl-title">
+  <div class="container inner">
+    <p class="eyebrow"><span class="dot"></span>Newsletter</p>
+    <h2 id="nl-title">Stay connected</h2>
+    <p class="lead muted">Be the first to know about new music, release dates and events from Maas Flow Records.</p>
+
+    <form class="nl-form" action="/api/subscribe" method="post" data-ajax data-success="You're in. Thanks for signing up!">
+      <div class="row">
+        <label class="sr-only" for="nl-email">Email address</label>
+        <input id="nl-email" name="email" type="email" required maxlength="200" autocomplete="email" placeholder="Your email" />
+        <button class="btn btn-primary" type="submit">Join</button>
+      </div>
+
+      <div class="hp" aria-hidden="true">
+        <label for="nl-website">Website</label>
+        <input id="nl-website" name="website" tabindex="-1" autocomplete="off" />
+      </div>
+      <input type="hidden" name="_ts" value="" />
+
+      <label class="check">
+        <input type="checkbox" name="consent" value="yes" required />
+        <span>I agree to receive emails from Maas Flow Records. Unsubscribe anytime. See our <a href="/privacy/">Privacy Policy</a>.</span>
+      </label>
+
+      <Turnstile appearance="interaction-only" />
+      <p class="form-status" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</section>
+
+<script>
+  import { enhanceForms } from '../scripts/forms';
+  enhanceForms();
+</script>
+
+<style>
+  .newsletter { border-top: 1px solid var(--line); padding-block: clamp(3.5rem, 8vw, 6rem); margin-top: 2rem; }
+  .inner { max-width: 760px; text-align: center; }
+  .inner .eyebrow { display: flex; justify-content: center; align-items: center; }
+  h2 { font-size: clamp(2.6rem, 9vw, 5rem); }
+  .lead { margin-inline: auto; }
+  .nl-form { display: grid; gap: 1rem; margin-top: 2rem; text-align: left; }
+  .row { display: grid; gap: 0.75rem; }
+  .row .btn { min-width: 140px; }
+  .check { justify-content: center; }
+  .form-status { text-align: center; }
+  @media (min-width: 560px) { .row { grid-template-columns: 1fr auto; } }
+</style>

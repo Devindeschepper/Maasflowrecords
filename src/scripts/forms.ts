@@ -7,6 +7,8 @@ declare global {
 
 export function enhanceForms() {
   document.querySelectorAll<HTMLFormElement>('form[data-ajax]').forEach((form) => {
+    if (form.dataset.enhanced) return; // several scripts may call enhanceForms()
+    form.dataset.enhanced = 'true';
     const status = form.querySelector<HTMLElement>('.form-status');
     const button = form.querySelector<HTMLButtonElement>('button[type="submit"]');
     const started = form.querySelector<HTMLInputElement>('input[name="_ts"]');

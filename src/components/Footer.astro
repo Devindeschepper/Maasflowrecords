@@ -22,6 +22,7 @@ const year = new Date().getFullYear();
           <li><a href="/contact/">Contact</a></li>
           {shopOpen && <li><a href="/cart/">Cart</a></li>}
           {shopOpen && <li><a href="/shop/#shipping">Shipping &amp; returns</a></li>}
+          <li><a href="/privacy/">Privacy</a></li>
         </ul>
       </nav>
 
@@ -39,7 +40,7 @@ const year = new Date().getFullYear();
 </footer>
 
 <style>
-  .site-footer { border-top: 1px solid var(--line); padding: 3.5rem 0 1.5rem; margin-top: 2rem; }
+  .site-footer { border-top: 1px solid var(--line); padding: 3.5rem 0 1.5rem; }
   .top { display: grid; gap: 2.5rem; }
   @media (min-width: 900px) { .top { grid-template-columns: 1.3fr 1fr 1fr; } }
   .brand p { margin: 1rem 0 0.5rem; }

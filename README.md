@@ -48,6 +48,7 @@ functions/
   api/contact.ts   ← POST /api/contact
   api/casting.ts   ← POST /api/casting  (with optional file upload, max 10 MB)
   api/checkout.ts  ← POST /api/checkout (re-prices the cart server-side)
+  api/subscribe.ts ← POST /api/subscribe (newsletter signup → Resend Audience)
   _lib/payments/   ← payment provider adapters (currently "manual")
 public/           ← static files: images, favicon, _headers (security), robots.txt
 ```
@@ -80,6 +81,7 @@ Only `/api/*` requests run Worker code (`worker/index.ts` → handlers in `funct
    | `TURNSTILE_SECRET_KEY` | Settings → **Variables and Secrets** (secret) | Turnstile secret key |
    | `RESEND_API_KEY` | Settings → **Variables and Secrets** (secret) | Resend API key |
    | `CONTACT_FROM_EMAIL` | Settings → **Variables and Secrets** (text) | `Maas Flow Records <noreply@maasflowrecords.com>` |
+   | `RESEND_AUDIENCE_ID` | Settings → **Variables and Secrets** (text) | Resend → Audiences → id of the newsletter list (optional: without it, signups are emailed to you) |
 5. **Turnstile**: Cloudflare dashboard → Turnstile → Add widget → domain `maasflowrecords.com`.
 6. **Resend**: create an account, add & verify the domain `maasflowrecords.com` (DNS records), create an API key.
 7. Optional nightly rebuild (keeps "upcoming/past" dates fresh): create a deploy hook in the Worker's build

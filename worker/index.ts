@@ -6,6 +6,7 @@ import { jsonResponse } from '../functions/_lib/http';
 import { onRequestPost as contact } from '../functions/api/contact';
 import { onRequestPost as casting } from '../functions/api/casting';
 import { onRequestPost as checkout } from '../functions/api/checkout';
+import { onRequestPost as subscribe } from '../functions/api/subscribe';
 
 interface WorkerEnv extends Env {
   ASSETS: Fetcher;
@@ -18,6 +19,7 @@ const routes: Record<string, Handler> = {
   '/api/contact': contact as unknown as Handler,
   '/api/casting': casting as unknown as Handler,
   '/api/checkout': checkout as unknown as Handler,
+  '/api/subscribe': subscribe as unknown as Handler,
 };
 
 export default {

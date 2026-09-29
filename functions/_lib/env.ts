@@ -5,4 +5,6 @@ export interface Env {
   CONTACT_TO_EMAIL?: string;
   CONTACT_FROM_EMAIL?: string;
   PAYMENT_PROVIDER?: string;
+  /** Resend Audience id for newsletter signups (optional; without it signups are emailed to the label). */
+  RESEND_AUDIENCE_ID?: string;
 }
