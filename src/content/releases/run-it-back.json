@@ -1,0 +1,17 @@
+{
+  "title": "Run It Back",
+  "artists": [
+    "vin"
+  ],
+  "type": "Single",
+  "releaseDate": "2026-04-30",
+  "dateTentative": false,
+  "label": true,
+  "cover": "/images/releases/2real4u.svg",
+  "description": "Single from the upcoming 2Real4U EP.",
+  "tracks": [],
+  "links": {
+    "spotify": "https://open.spotify.com/track/19zx4FNvRzGTegy8hOZE60"
+  },
+  "preview": "/audio/run-it-back.mp3"
+}

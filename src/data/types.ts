@@ -32,8 +32,9 @@ export interface Artist {
   /** Main portrait (shown cropped to 4:5, focused on the upper part). */
   image: string;
   imageAlt: string;
-  /** Extra photos (the second one is used on the Bio page). */
-  photos?: { src: string; alt: string }[];
+  /** Optional second photo for the Bio page. */
+  bioPhoto?: string;
+  bioPhotoAlt?: string;
   /** Anchor/page that holds the full bio. */
   bioHref: string;
   streaming: Links;

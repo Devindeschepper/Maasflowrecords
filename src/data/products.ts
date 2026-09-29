@@ -1,37 +1,32 @@
-import type { Product, ShippingZone } from './types';
+import type { Product, ProductCategory, ShippingZone } from './types';
+import data from '../content/products.json';
+import { list, opt } from './clean';
 
 /**
- * Shop catalogue. This file is ALSO read by the checkout function on the server,
- * so prices/stock here are the source of truth (the browser can't change them).
+ * Shop catalogue — edited in the admin panel (/admin → Shop products) or src/content/products.json.
+ * This is ALSO read by the checkout function on the server, so prices/stock here are the
+ * source of truth (the browser can't change them).
  *
- * Prices are in euro cents: 2500 = €25.00.
- * TODO: placeholder products (music only, no merch) — update prices, stock and photos.
- * Product photos go in /public/images/shop/ (square, 1200x1200 recommended).
+ * In the content file prices are in euros (12.5 = €12.50); here they become cents.
  */
-export const products: Product[] = [
-  {
-    id: 'btm-vinyl',
-    name: '2Real4U — 12" Vinyl',
-    category: 'Vinyl',
-    description: 'Limited black 12" pressing of the debut EP. Printed inner sleeve with lyrics.',
-    price: 2800,
-    image: '/images/shop/vinyl.svg',
-    stock: 50,
-    preorder: true,
-    shippingClass: 'standard',
-  },
-  {
-    id: 'btm-cd',
-    name: '2Real4U — CD',
-    category: 'CD',
-    description: 'Digipak CD of the debut EP. Signed copies while stock lasts.',
-    price: 1200,
-    image: '/images/shop/cd.svg',
-    stock: 100,
-    preorder: true,
-    shippingClass: 'small',
-  },
-];
+type RawProduct = (typeof data.products)[number] & Record<string, unknown>;
+
+export const products: Product[] = (data.products as RawProduct[])
+  .map(
+    (p): Product => ({
+      id: p.id,
+      name: p.name,
+      category: p.category as ProductCategory,
+      description: p.description ?? '',
+      price: Math.round(Number(p.price) * 100),
+      image: p.image,
+      stock: Math.max(0, Math.floor(Number(p.stock) || 0)),
+      preorder: p.preorder === true,
+      sizes: list(p.sizes).length ? list(p.sizes) : undefined,
+      shippingClass: p.shippingClass === 'standard' ? 'standard' : 'small',
+    }),
+  )
+  .filter((p) => opt(p.id) && opt(p.name));
 
 export const shippingZones: ShippingZone[] = [
   { id: 'nl', label: 'Netherlands', rates: { small: 495, standard: 695 }, estimate: '1–3 business days' },

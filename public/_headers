@@ -16,3 +16,11 @@
 
 /api/*
   Cache-Control: no-store
+
+# Admin panel (Sveltia CMS): loads its app from unpkg and talks to the GitHub API,
+# so it gets its own, looser policy instead of the site-wide one.
+/admin/*
+  ! Content-Security-Policy
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' data: https://cdn.jsdelivr.net https://fonts.gstatic.com https://unpkg.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' blob: data: https://api.github.com https://www.githubstatus.com https://unpkg.com https://cdn.jsdelivr.net https://raw.githubusercontent.com https://*.githubusercontent.com; frame-src 'self' blob:; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
+  X-Robots-Tag: noindex
+  Cache-Control: no-store

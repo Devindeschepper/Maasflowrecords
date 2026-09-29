@@ -1,7 +1,9 @@
 import type { Release } from './types';
+import { cleanLinks, list, opt, slugFromPath } from './clean';
 
 /**
- * Releases. The Music page and home page show only label releases;
+ * Releases — edited in the admin panel (/admin → Releases) or in src/content/releases/*.json.
+ * The Music page and home page show only label releases;
  * an artist's page shows all of that artist's releases here.
  * Older music is reachable through the streaming links on the artist page.
  *
@@ -11,54 +13,37 @@ import type { Release } from './types';
  * - Covers go in /public/images/releases/ (square, 1000x1000 or larger).
  * - `preview`: a short .mp3 clip in /public/audio/ (see README).
  */
-export const releases: Release[] = [
-  {
-    slug: '2real4u',
-    title: '2Real4U',
-    artists: ['vin'],
-    type: 'EP',
-    releaseDate: '2026-11-27',
-    dateTentative: true, // remove this line once the date is confirmed
-    cover: '/images/releases/2real4u.svg', // TODO: replace with the final EP cover
-    description: 'The debut EP from VIN on Maas Flow Records. Run It Back and Not Enough are out now — two more songs are on the way.',
-    tracks: ['Run It Back', 'Not Enough', 'Coming soon', 'Coming soon'],
-    links: {},
-  },
-  {
-    slug: 'not-enough',
-    title: 'Not Enough',
-    artists: ['vin'],
-    type: 'Single',
-    releaseDate: '2026-06-19',
-    cover: '/images/releases/2real4u.svg', // TODO: replace with the final cover
-    description: 'Single from the upcoming 2Real4U EP.',
-    links: { spotify: 'https://open.spotify.com/track/2ukplGX06n0amTGPO4Tjxl' },
-    preview: '/audio/not-enough.mp3',
-  },
-  {
-    slug: 'run-it-back',
-    title: 'Run It Back',
-    artists: ['vin'],
-    type: 'Single',
-    releaseDate: '2026-04-30',
-    cover: '/images/releases/2real4u.svg', // TODO: replace with the final cover
-    description: 'Single from the upcoming 2Real4U EP.',
-    links: { spotify: 'https://open.spotify.com/track/19zx4FNvRzGTegy8hOZE60' },
-    preview: '/audio/run-it-back.mp3',
-  },
-  {
-    slug: 'take-your-time',
-    title: 'Take Your Time',
-    artists: ['vin'],
-    type: 'Single',
-    releaseDate: '2025-08-15',
-    cover: '/images/releases/take-your-time.jpg',
-    description: 'Single by VIN, released before Maas Flow Records.',
-    label: false,
-    links: { spotify: 'https://open.spotify.com/track/4xO0Wf7CMtQFVbuNOHQT4R' },
-    preview: '/audio/take-your-time.mp3',
-  },
-];
+type RawRelease = {
+  title: string;
+  artists?: string[];
+  type: Release['type'];
+  releaseDate?: string;
+  dateTentative?: boolean;
+  label?: boolean;
+  cover: string;
+  description?: string;
+  tracks?: string[];
+  links?: Record<string, unknown>;
+  preview?: string;
+};
+
+// One JSON file per release in src/content/releases/ (the file name is the URL slug).
+const files = import.meta.glob<RawRelease>('../content/releases/*.json', { eager: true, import: 'default' });
+
+export const releases: Release[] = Object.entries(files).map(([path, r]) => ({
+  slug: slugFromPath(path),
+  title: r.title,
+  artists: list(r.artists).length ? list(r.artists) : ['vin'],
+  type: r.type,
+  releaseDate: opt(r.releaseDate)?.slice(0, 10),
+  dateTentative: r.dateTentative === true,
+  label: r.label !== false,
+  cover: r.cover,
+  description: r.description ?? '',
+  tracks: list(r.tracks).length ? list(r.tracks) : undefined,
+  links: cleanLinks(r.links),
+  preview: opt(r.preview),
+}));
 
 const today = () => new Date().toISOString().slice(0, 10);
 

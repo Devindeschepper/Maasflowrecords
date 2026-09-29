@@ -12,33 +12,28 @@ Live at **https://maasflowrecords.com**.
 
 ## Updating the site (no coding needed)
 
-Everything on the site is generated from the files in **`src/data/`**. Edit a file on GitHub
-(pencil icon → *Commit changes*) and Cloudflare rebuilds the site in ~1 minute.
+Use the admin panel at **https://maasflowrecords.com/admin/** — see **[HOW-TO-UPDATE.md](HOW-TO-UPDATE.md)**
+for step-by-step instructions (releases, events, artists, shop, socials).
 
-| I want to…                         | Edit this file              | Images go in                 |
-| ---------------------------------- | --------------------------- | ---------------------------- |
-| Add a release (single, EP, album)  | `src/data/releases.ts`      | `public/images/releases/`    |
-| Add / change an event              | `src/data/events.ts`        | `public/images/events/`      |
-| Add a product / change price/stock | `src/data/products.ts`      | `public/images/shop/`        |
-| Add an artist to the label         | `src/data/artists.ts`       | `public/images/artists/`     |
-| Add social / streaming links       | `src/data/site.ts`, `src/data/artists.ts` | —              |
-| Change shipping prices             | `src/data/products.ts` (`shippingZones`) | —               |
+The admin panel (Sveltia CMS, config in `public/admin/config.yml`) edits the content files in
+**`src/content/`** and commits them to `main`; Cloudflare rebuilds the site automatically.
 
-Tips
-- Copy an existing entry, paste it, and change the values. Keep the commas and quotes.
-- Dates: `'2026-11-20'` (releases), `'2026-12-12T20:00:00+01:00'` (events). Future = "Upcoming", past = "Past" automatically.
-- Prices are in **cents**: `2500` = €25.00. `stock: 0` = sold out.
-- An empty link (`''`) shows the platform greyed out as "soon". Remove the line to hide it.
-- Song preview on a release: put a short clip (a few seconds, .mp3) in `public/audio/` and add
-  `preview: '/audio/<file>.mp3'` to the release. A play button appears on the cover.
-  (There is deliberately no Spotify player: embedded plays by logged-out visitors don't count as streams,
-  so the site sends people to the streaming apps instead.)
+| Content | File(s) |
+| --- | --- |
+| Releases | `src/content/releases/<slug>.json` (file name = URL) |
+| Events | `src/content/events/<slug>.json` |
+| Artists | `src/content/artists.json` |
+| Shop products | `src/content/products.json` (prices in euros) |
+| Shop switch + label socials | `src/content/settings.json` |
+
+`src/data/*.ts` loads and cleans these files for the pages (empty links are hidden, dates → "TBA", etc.).
 
 ## Project structure
 
 ```
 src/
-  data/         ← all content (artists, releases, events, products, socials)
+  content/      ← all content (edited through /admin)
+  data/         ← loaders + types for the content
   components/   ← reusable UI (ReleaseCard, EventCard, ProductCard, PlatformLinks, …)
   layouts/      ← BaseLayout (SEO meta, header, footer)
   pages/        ← one file per page; artists/[slug] and music/[slug] generate detail pages
