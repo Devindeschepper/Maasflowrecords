@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PlatformLinks from '../../components/PlatformLinks.astro';
 import PreviewButton from '../../components/PreviewButton.astro';
+import Countdown from '../../components/Countdown.astro';
 import ReleaseCard from '../../components/ReleaseCard.astro';
 import { releases, isUpcoming, releasesByArtist } from '../../data/releases';
 import { site } from '../../data/site';
@@ -44,6 +45,7 @@ const jsonLd = [
         <h1>{r.title}</h1>
         <p class="by">{artistNames(r)}</p>
         <p class="mono muted">{upcoming ? 'Release date' : 'Released'}: {r.releaseDate ? <time datetime={r.releaseDate}>{releaseDateLabel(r)}</time> : 'TBA'}</p>
+        {upcoming && r.releaseDate && <Countdown date={r.releaseDate} tentative={r.dateTentative} />}
         <p class="lead">{r.description}</p>
 
         {r.preview && <PreviewButton src={r.preview} title={r.title} size="lg" />}

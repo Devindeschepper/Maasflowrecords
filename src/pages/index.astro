@@ -4,6 +4,7 @@ import ReleaseCard from '../components/ReleaseCard.astro';
 import EventCard from '../components/EventCard.astro';
 import ProductCard from '../components/ProductCard.astro';
 import PlatformLinks from '../components/PlatformLinks.astro';
+import Countdown from '../components/Countdown.astro';
 import { labelSocials, shopOpen } from '../data/site';
 import { artists } from '../data/artists';
 import { labelReleases, latestRelease, upcomingReleases } from '../data/releases';
@@ -78,6 +79,7 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
             <p class="mono muted">
               {featuredRelease.type} · {artistNames(featuredRelease)} · {next && featuredRelease.releaseDate && !featuredRelease.dateTentative ? 'Out ' : ''}{releaseDateLabel(featuredRelease)}
             </p>
+            {next && featuredRelease.releaseDate && <Countdown date={featuredRelease.releaseDate} tentative={featuredRelease.dateTentative} />}
             <p class="lead">{featuredRelease.description}</p>
             <div class="btn-row">
               <a class="btn btn-primary" href={`/music/${featuredRelease.slug}/`}>
