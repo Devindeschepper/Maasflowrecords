@@ -41,5 +41,4 @@ export const nav = [
   { href: '/casting/', label: 'Casting' },
   { href: '/shop/', label: 'Shop' },
   { href: '/bio/', label: 'Bio' },
-  { href: '/contact/', label: 'Contact' },
 ];

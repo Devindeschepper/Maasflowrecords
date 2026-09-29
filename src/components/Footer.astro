@@ -13,11 +13,13 @@ const year = new Date().getFullYear();
         <Logo size="lg" />
         <p class="muted">Independent music label.</p>
         <a class="mail" href={`mailto:${site.email}`}>{site.email}</a>
+        <p><a class="btn btn-ghost contact-btn" href="/contact/">Contact &amp; bookings</a></p>
       </div>
 
       <nav aria-label="Footer">
         <ul class="links">
           {nav.map((i) => <li><a href={i.href}>{i.label}</a></li>)}
+          <li><a href="/contact/">Contact</a></li>
           {shopOpen && <li><a href="/cart/">Cart</a></li>}
           {shopOpen && <li><a href="/shop/#shipping">Shipping &amp; returns</a></li>}
         </ul>
@@ -42,6 +44,7 @@ const year = new Date().getFullYear();
   @media (min-width: 900px) { .top { grid-template-columns: 1.3fr 1fr 1fr; } }
   .brand p { margin: 1rem 0 0.5rem; }
   .mail { font-weight: 500; }
+  .contact-btn { margin-top: 1rem; }
   .links { list-style: none; margin: 0; padding: 0; columns: 2; column-gap: 2rem; }
   .links a { display: inline-block; padding: 0.35rem 0; text-decoration: none; color: var(--muted); font-size: 0.9rem; }
   .links a:hover { color: var(--text); }
