@@ -1,0 +1,58 @@
+---
+// Play/pause button for a short audio preview hosted on the site (public/audio/).
+// Only one preview plays at a time; nothing is downloaded until the visitor presses play.
+interface Props { src: string; title: string; size?: 'sm' | 'lg' }
+const { src, title, size = 'sm' } = Astro.props;
+---
+
+<button type="button" class:list={['preview', `preview--${size}`]} data-preview={src} aria-pressed="false" aria-label={`Play preview of ${title}`}>
+  <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" /></svg>
+  <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor" /></svg>
+  {size === 'lg' && <span class="label">Preview</span>}
+</button>
+
+<script>
+  let audio: HTMLAudioElement | null = null;
+  let current: HTMLButtonElement | null = null;
+
+  const setState = (btn: HTMLButtonElement | null, playing: boolean) => {
+    if (!btn) return;
+    btn.setAttribute('aria-pressed', String(playing));
+    btn.setAttribute('aria-label', btn.getAttribute('aria-label')!.replace(/^(Play|Pause)/, playing ? 'Pause' : 'Play'));
+  };
+
+  document.querySelectorAll<HTMLButtonElement>('[data-preview]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (current === btn && audio && !audio.paused) {
+        audio.pause();
+        return;
+      }
+      audio?.pause();
+      setState(current, false);
+      audio = new Audio(btn.dataset.preview);
+      current = btn;
+      audio.addEventListener('play', () => setState(btn, true));
+      audio.addEventListener('pause', () => setState(btn, false));
+      audio.addEventListener('ended', () => setState(btn, false));
+      audio.play().catch(() => setState(btn, false));
+    });
+  });
+</script>
+
+<style>
+  .preview {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    width: 48px; height: 48px; border-radius: 50%; border: 0; cursor: pointer;
+    background: var(--text); color: var(--bg); transition: background-color 0.15s, transform 0.15s;
+  }
+  .preview:hover { background: var(--accent); color: #fff; transform: scale(1.05); }
+  .preview svg { width: 22px; height: 22px; }
+  .i-pause { display: none; }
+  .preview[aria-pressed='true'] { background: var(--accent); color: #fff; }
+  .preview[aria-pressed='true'] .i-play { display: none; }
+  .preview[aria-pressed='true'] .i-pause { display: block; }
+  .preview--lg { width: auto; height: 48px; border-radius: var(--radius); padding: 0 1.2rem 0 1rem; }
+  .preview--lg .label { font: 600 0.8rem/1 var(--font-body); letter-spacing: 0.12em; text-transform: uppercase; }
+</style>

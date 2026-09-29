@@ -3,7 +3,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import PageHero from '../../components/PageHero.astro';
 import ReleaseCard from '../../components/ReleaseCard.astro';
 import PlatformLinks from '../../components/PlatformLinks.astro';
-import Player from '../../components/Player.astro';
 import { sortedReleases, isUpcoming } from '../../data/releases';
 import { artists } from '../../data/artists';
 import type { ReleaseType } from '../../data/types';
@@ -23,11 +22,10 @@ const vin = artists[0];
     <div class="container listen">
       <div>
         <p class="eyebrow"><span class="dot"></span>Listen now</p>
-        <h2>VIN on Spotify</h2>
-        <p class="lead muted">Stream VIN's music, or follow on your favourite platform.</p>
-        <PlatformLinks links={vin.streaming} variant="chips" />
+        <h2>Stream VIN</h2>
+        <p class="lead muted">Listen to every release on your favourite platform.</p>
       </div>
-      {vin.spotifyEmbed && <Player embed={{ provider: 'spotify', src: vin.spotifyEmbed }} title="VIN" height={380} />}
+      <PlatformLinks links={vin.streaming} variant="list" />
     </div>
   </section>
 

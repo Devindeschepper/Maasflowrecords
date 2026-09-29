@@ -13,8 +13,13 @@ export const artists: Artist[] = [
     tagline: 'Behind the beats and behind the mic.',
     description:
       'Born in Rotterdam, VIN grew up on rap and R&B through his older brother. He started out as a producer about five years ago and later stepped behind the mic. He raps what he lives — and calls himself a student of the game, always learning production, songwriting, recording, mixing and mastering.',
-    image: '/images/artists/vin.svg',
-    imageAlt: 'Portrait of VIN (placeholder)',
+    image: '/images/artists/vin-stairs-bw.jpg',
+    imageAlt: 'VIN leaning against a concrete wall on a staircase, black and white',
+    photos: [
+      { src: '/images/artists/vin-stairs-bw.jpg', alt: 'VIN on a staircase, black and white' },
+      { src: '/images/artists/vin-stairs-blue.jpg', alt: 'VIN in a blue Arizona 36 jersey on a staircase, looking at his phone' },
+      { src: '/images/artists/vin-street-blue.jpg', alt: 'VIN in a blue jersey and cargo jeans, standing in front of a glass building' },
+    ],
     bioHref: '/bio/#vin',
     // Streaming / store profiles. Add a platform by adding a line; remove a line to hide it.
     streaming: {
@@ -28,8 +33,6 @@ export const artists: Artist[] = [
       tiktok: 'https://www.tiktok.com/@vintheartist010',
       youtube: 'https://www.youtube.com/channel/UC8dDWNLNjAxwDzcRoadqSvg',
     },
-    // Spotify "artist" player (top tracks + covers, always up to date).
-    spotifyEmbed: 'https://open.spotify.com/embed/artist/5bDu5EvUNqdhJfVXYcQiXK',
   },
 ];
 

@@ -1,11 +1,11 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PlatformLinks from '../../components/PlatformLinks.astro';
-import Player from '../../components/Player.astro';
+import PreviewButton from '../../components/PreviewButton.astro';
 import ReleaseCard from '../../components/ReleaseCard.astro';
 import { releases, isUpcoming, sortedReleases } from '../../data/releases';
 import { site } from '../../data/site';
-import { artistNames, catalogNo, fmtDate } from '../../lib/format';
+import { artistNames, catalogNo, releaseDateLabel } from '../../lib/format';
 import type { Release } from '../../data/types';
 
 export function getStaticPaths() {
@@ -23,7 +23,7 @@ const jsonLd = [
     '@type': r.type === 'Single' ? 'MusicRecording' : 'MusicAlbum',
     name: r.title,
     byArtist: { '@type': 'MusicGroup', name: artistNames(r) },
-    datePublished: r.releaseDate,
+    ...(r.releaseDate ? { datePublished: r.releaseDate } : {}),
     image: new URL(r.cover, site.url).href,
     url: new URL(`/music/${r.slug}/`, site.url).href,
     recordLabel: { '@type': 'Organization', name: site.name },
@@ -42,10 +42,10 @@ const jsonLd = [
         <p class="eyebrow"><span class="dot"></span>{catalogNo(r)} · {r.type}{upcoming && ' · Upcoming'}</p>
         <h1>{r.title}</h1>
         <p class="by">{artistNames(r)}</p>
-        <p class="mono muted">{upcoming ? 'Release date' : 'Released'}: <time datetime={r.releaseDate}>{fmtDate(r.releaseDate)}</time></p>
+        <p class="mono muted">{upcoming ? 'Release date' : 'Released'}: {r.releaseDate ? <time datetime={r.releaseDate}>{releaseDateLabel(r)}</time> : 'TBA'}</p>
         <p class="lead">{r.description}</p>
 
-        {r.embed && !upcoming && <Player embed={r.embed} title={r.title} />}
+        {r.preview && <PreviewButton src={r.preview} title={r.title} size="lg" />}
 
         <h2 class="h-small">{upcoming ? 'Pre-save / follow' : 'Listen on'}</h2>
         {hasLinks ? <PlatformLinks links={r.links} variant="chips" /> : <p class="muted">Streaming links will appear here on release day.</p>}

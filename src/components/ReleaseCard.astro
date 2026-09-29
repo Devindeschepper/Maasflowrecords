@@ -1,7 +1,8 @@
 ---
 import type { Release } from '../data/types';
 import { isUpcoming } from '../data/releases';
-import { artistNames, catalogNo, fmtDate } from '../lib/format';
+import { artistNames, catalogNo, releaseDateLabel } from '../lib/format';
+import PreviewButton from './PreviewButton.astro';
 
 interface Props { release: Release; headingLevel?: 'h2' | 'h3' }
 const { release: r, headingLevel: H = 'h3' } = Astro.props;
@@ -17,12 +18,16 @@ const upcoming = isUpcoming(r);
     <div class="meta">
       <p class="mono muted">{catalogNo(r)} · {r.type}</p>
       <H class="title">{r.title}</H>
-      <p class="sub">{artistNames(r)} <span class="muted">— {upcoming ? 'Out ' : ''}{fmtDate(r.releaseDate)}</span></p>
+      <p class="sub">{artistNames(r)} <span class="muted">— {upcoming && r.releaseDate && !r.dateTentative ? 'Out ' : ''}{releaseDateLabel(r)}</span></p>
     </div>
   </a>
+  {r.preview && <div class="play"><PreviewButton src={r.preview} title={r.title} /></div>}
 </article>
 
 <style>
+  .release { position: relative; }
+  .play { position: absolute; top: 0; right: 0; aspect-ratio: 1; width: 100%; pointer-events: none; display: flex; align-items: flex-end; justify-content: flex-end; padding: 0.75rem; }
+  .play :global(button) { pointer-events: auto; }
   .cover-link { display: block; text-decoration: none; }
   .cover { position: relative; aspect-ratio: 1; overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
   .cover img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease, filter 0.3s; filter: grayscale(0.15); }
