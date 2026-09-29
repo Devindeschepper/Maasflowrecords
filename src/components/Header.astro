@@ -1,5 +1,5 @@
 ---
-import { nav } from '../data/site';
+import { nav, shopOpen } from '../data/site';
 import Logo from './Logo.astro';
 
 const path = Astro.url.pathname.replace(/\/?$/, '/');
@@ -25,12 +25,16 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     </nav>
 
     <div class="actions">
-      <a href="/cart/" class="cart-link" aria-label="Shopping cart">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-          <path d="M5 7h14l-1.2 12.2a1 1 0 0 1-1 .8H7.2a1 1 0 0 1-1-.8L5 7Z" /><path d="M9 7V5a3 3 0 0 1 6 0v2" />
-        </svg>
-        <span class="cart-count" data-cart-count hidden>0</span>
-      </a>
+      {
+        shopOpen && (
+          <a href="/cart/" class="cart-link" aria-label="Shopping cart">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M5 7h14l-1.2 12.2a1 1 0 0 1-1 .8H7.2a1 1 0 0 1-1-.8L5 7Z" /><path d="M9 7V5a3 3 0 0 1 6 0v2" />
+            </svg>
+            <span class="cart-count" data-cart-count hidden>0</span>
+          </a>
+        )
+      }
       <button class="menu-btn" type="button" aria-controls="site-nav" aria-expanded="false">
         <span class="sr-only">Menu</span>
         <span class="bars" aria-hidden="true"><span></span><span></span></span>

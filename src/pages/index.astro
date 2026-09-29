@@ -4,7 +4,7 @@ import ReleaseCard from '../components/ReleaseCard.astro';
 import EventCard from '../components/EventCard.astro';
 import ProductCard from '../components/ProductCard.astro';
 import PlatformLinks from '../components/PlatformLinks.astro';
-import { site, labelSocials } from '../data/site';
+import { site, labelSocials, shopOpen } from '../data/site';
 import { artists } from '../data/artists';
 import { sortedReleases, latestRelease, upcomingReleases } from '../data/releases';
 import { upcomingEvents } from '../data/events';
@@ -83,7 +83,7 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
               <a class="btn btn-primary" href={`/music/${featuredRelease.slug}/`}>
                 {next ? 'Release details' : '▶ Listen now'}
               </a>
-              {next && products.some((p) => p.preorder) && <a class="btn" href="/shop/">Pre-order vinyl &amp; CD</a>}
+              {shopOpen && next && products.some((p) => p.preorder) && <a class="btn" href="/shop/">Pre-order vinyl &amp; CD</a>}
             </div>
             {latest && next && (
               <p class="also muted">
@@ -155,11 +155,17 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
     <div class="container">
       <div class="section-head">
         <h2>Shop</h2>
-        <a class="link-arrow" href="/shop/">Full shop</a>
+        <a class="link-arrow" href="/shop/">{shopOpen ? 'Full shop' : 'More info'}</a>
       </div>
-      <div class="grid grid-3">
-        {shopItems.map((p) => <ProductCard product={p} />)}
-      </div>
+      {
+        shopOpen ? (
+          <div class="grid grid-3">
+            {shopItems.map((p) => <ProductCard product={p} />)}
+          </div>
+        ) : (
+          <p class="empty">Vinyl, CDs and Maas Flow merch — <strong>coming soon</strong>.</p>
+        )
+      }
     </div>
   </section>
 

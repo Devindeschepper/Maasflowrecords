@@ -30,6 +30,12 @@ export const labelSocials: Links = {
   beatstars: 'https://www.beatstars.com/devindeschepper48605',
 };
 
+/**
+ * Shop switch. false = the shop shows "Coming soon", the cart is hidden and the
+ * checkout API refuses orders. Set to true when the first products are ready.
+ */
+export const shopOpen = false;
+
 export const nav = [
   { href: '/', label: 'Home' },
   { href: '/artists/', label: 'Artists' },

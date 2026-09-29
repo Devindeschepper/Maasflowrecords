@@ -1,5 +1,5 @@
 ---
-import { site, nav, labelSocials } from '../data/site';
+import { site, nav, labelSocials, shopOpen } from '../data/site';
 import Logo from './Logo.astro';
 import PlatformLinks from './PlatformLinks.astro';
 
@@ -18,8 +18,8 @@ const year = new Date().getFullYear();
       <nav aria-label="Footer">
         <ul class="links">
           {nav.map((i) => <li><a href={i.href}>{i.label}</a></li>)}
-          <li><a href="/cart/">Cart</a></li>
-          <li><a href="/shop/#shipping">Shipping &amp; returns</a></li>
+          {shopOpen && <li><a href="/cart/">Cart</a></li>}
+          {shopOpen && <li><a href="/shop/#shipping">Shipping &amp; returns</a></li>}
         </ul>
       </nav>
 

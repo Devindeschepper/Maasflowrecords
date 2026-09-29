@@ -5,11 +5,13 @@ import { getProvider } from '../_lib/payments';
 import type { Order, OrderLine } from '../_lib/payments/types';
 // The same catalogue the website is built from — prices can't be tampered with by the browser.
 import { products, shippingZones, MAX_QTY_PER_ITEM } from '../../src/data/products';
+import { shopOpen } from '../../src/data/site';
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   // Checkout is JS-only (the cart lives in the browser), so always answer with JSON.
   const json = jsonResponse;
 
+  if (!shopOpen) return json(503, { ok: false, error: 'The shop is not open yet.' });
   if (!sameOrigin(request)) return json(403, { ok: false, error: 'Forbidden.' });
 
   let fd: FormData;

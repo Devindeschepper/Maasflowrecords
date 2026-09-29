@@ -3,11 +3,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from '../components/PageHero.astro';
 import ProductCard from '../components/ProductCard.astro';
 import { products, shippingZones, formatPrice } from '../data/products';
-import { site } from '../data/site';
+import ShopComingSoon from '../components/ShopComingSoon.astro';
+import { site, shopOpen } from '../data/site';
 
 const categories = [...new Set(products.map((p) => p.category))];
 
-const jsonLd = products.map((p) => ({
+const jsonLd = !shopOpen ? [] : products.map((p) => ({
   '@context': 'https://schema.org',
   '@type': 'Product',
   name: p.name,
@@ -26,6 +27,9 @@ const jsonLd = products.map((p) => ({
 
 <BaseLayout title="Shop" description="Official Maas Flow Records store — vinyl, CDs, t-shirts, hoodies, caps and posters." jsonLd={jsonLd}>
   <PageHero eyebrow="Official store" title="Shop" lead="Vinyl, CDs and merch. Every order directly supports independent music." />
+
+  {!shopOpen && <ShopComingSoon />}
+  {shopOpen && (<>
 
   <section class="section">
     <div class="container">
@@ -76,6 +80,7 @@ const jsonLd = products.map((p) => ({
       </div>
     </div>
   </section>
+  </>)}
 </BaseLayout>
 
 <script>
