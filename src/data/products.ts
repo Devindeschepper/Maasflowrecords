@@ -1,5 +1,6 @@
 import type { Product, ProductCategory, ShippingZone } from './types';
 import data from '../content/products.json';
+import shop from '../content/shop.json';
 import { list, opt } from './clean';
 
 /**
@@ -28,11 +29,23 @@ export const products: Product[] = (data.products as RawProduct[])
   )
   .filter((p) => opt(p.id) && opt(p.name));
 
-export const shippingZones: ShippingZone[] = [
-  { id: 'nl', label: 'Netherlands', rates: { small: 495, standard: 695 }, estimate: '1–3 business days' },
-  { id: 'eu', label: 'European Union', rates: { small: 995, standard: 1495 }, estimate: '3–7 business days' },
-  { id: 'world', label: 'Rest of the world', rates: { small: 1695, standard: 2495 }, estimate: '7–15 business days' },
-];
+/** Shipping from Luxembourg — edited in the admin panel (Site → Shipping & VAT). Prices in € there, cents here. */
+export const shippingZones: ShippingZone[] = (shop.shipping as Record<string, unknown>[])
+  .map((z): ShippingZone => {
+    const raw = z.price;
+    const n = raw === '' || raw === null || raw === undefined ? NaN : Number(String(raw).replace(',', '.'));
+    return {
+      id: String(z.id ?? ''),
+      label: String(z.label ?? ''),
+      price: Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : undefined,
+      estimate: String(z.estimate ?? ''),
+      inEU: z.inEU !== false,
+    };
+  })
+  .filter((z) => z.id && z.label);
+
+/** Zones customers can order to (shipping price is set). */
+export const orderableZones = shippingZones.filter((z) => z.price !== undefined);
 
 export const MAX_QTY_PER_ITEM = 10;
 

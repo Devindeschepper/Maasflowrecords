@@ -111,7 +111,9 @@ export interface Product {
 export interface ShippingZone {
   id: string;
   label: string;
-  /** Price in euro cents per shipping class. */
-  rates: Record<Product['shippingClass'], number>;
+  /** Shipping price in euro cents (VAT included), one charge per order. Missing = not set yet: can't order to this zone. */
+  price?: number;
   estimate: string;
+  /** false = outside the EU (export, no EU VAT). */
+  inEU: boolean;
 }

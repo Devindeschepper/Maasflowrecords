@@ -4,7 +4,8 @@ import { checkSpam } from '../_lib/spam';
 import { getProvider } from '../_lib/payments';
 import type { Order, OrderLine, PaymentMethod } from '../_lib/payments/types';
 // The same catalogue the website is built from — prices can't be tampered with by the browser.
-import { products, shippingZones, MAX_QTY_PER_ITEM } from '../../src/data/products';
+import { products, orderableZones, MAX_QTY_PER_ITEM } from '../../src/data/products';
+import { priceForZone, vatIn, vatNote } from '../../src/data/vat';
 import { shopOpen, paymentMethods } from '../../src/data/site';
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
@@ -24,6 +25,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const spam = await checkSpam(request, fd, env);
   if (spam) return json(400, { ok: false, error: spam });
 
+  // ---- destination (prices depend on it: no EU VAT outside the EU) ----
+  const zone = orderableZones.find((z) => z.id === str(fd, 'zone', 20));
+  if (!zone) return json(400, { ok: false, error: 'Please choose a shipping destination.' });
+
   // ---- cart: re-price every line from the catalogue ----
   let raw: unknown;
   try {
@@ -42,14 +47,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     if (p.stock < qty) return json(409, { ok: false, error: `Sorry, "${p.name}" is sold out or has limited stock.` });
     const size = typeof item.size === 'string' && item.size ? item.size : undefined;
     if (p.sizes ? !size || !p.sizes.includes(size) : size) return json(400, { ok: false, error: `Please choose a valid size for "${p.name}".` });
-    lines.push({ id: p.id, name: p.name, size, qty, unitPrice: p.price, preorder: !!p.preorder });
+    lines.push({ id: p.id, name: p.name, size, qty, unitPrice: priceForZone(p.price, zone.inEU), preorder: !!p.preorder });
   }
 
-  const zone = shippingZones.find((z) => z.id === str(fd, 'zone', 20));
-  if (!zone) return json(400, { ok: false, error: 'Please choose a shipping destination.' });
-  const shippingClass = lines.some((l) => products.find((p) => p.id === l.id)!.shippingClass === 'standard') ? 'standard' : 'small';
   const subtotal = lines.reduce((s, l) => s + l.unitPrice * l.qty, 0);
-  const shipping = zone.rates[shippingClass];
+  const shipping = priceForZone(zone.price!, zone.inEU);
 
   // ---- customer ----
   const customer = {
@@ -88,6 +90,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     subtotal,
     shipping,
     total: subtotal + shipping,
+    vat: vatIn(subtotal + shipping, zone.inEU),
+    vatNote: vatNote(zone.inEU),
     currency: 'EUR',
     shippingZone: zone.label,
     customer,

@@ -232,6 +232,36 @@ collections:
               - { name: preorder, label: Pre-order, widget: boolean, default: false }
               - { name: shippingClass, label: Package size, widget: hidden, default: small }
 
+      - name: shop
+        label: Shipping & VAT
+        file: src/content/shop.json
+        format: json
+        fields:
+          - name: vat
+            label: VAT (Luxembourg)
+            widget: object
+            fields:
+              - name: mode
+                label: VAT
+                widget: select
+                default: included
+                options:
+                  - { label: 'Prices include VAT (charged on EU orders)', value: included }
+                  - { label: 'No VAT — small business exemption', value: exempt }
+                hint: 'Ask your accountant / the AED which one applies to you. Under €50,000 turnover a year you may be exempt.'
+              - { name: rate, label: 'VAT rate (%)', widget: number, value_type: int, min: 0, max: 30, default: 17, hint: 'Luxembourg standard rate: 17' }
+          - name: shipping
+            label: Shipping (from Luxembourg)
+            label_singular: Destination
+            widget: list
+            summary: '{{fields.label}} — €{{fields.price}}'
+            fields:
+              - { name: id, label: Code, widget: string, pattern: ['^[a-z0-9-]+$', 'Lowercase letters, numbers and - only'], hint: 'e.g. lu, eu, world — don''t change it once the shop is open' }
+              - { name: label, label: Destination, widget: string }
+              - { name: price, label: 'Shipping price (€, VAT incl.)', widget: string, required: false, pattern: ['^$|^[0-9]+([.,][0-9]{1,2})?$', 'A price like 4.50'], hint: 'Empty = customers can''t choose this destination yet' }
+              - { name: estimate, label: Delivery time, widget: string, required: false }
+              - { name: inEU, label: In the EU, widget: boolean, default: true, hint: 'Off = outside the EU (export): no VAT is charged' }
+
       - name: settings
         label: Settings
         file: src/content/settings.json
@@ -248,10 +278,10 @@ collections:
             default: false
             hint: 'On = a "test shop" banner shows, Stripe only works with TEST keys (sk_test_…) and crypto uses the NOWPayments sandbox. Turn OFF (and use live keys) to sell for real.'
           - name: acceptCard
-            label: 'Accept card / iDEAL / PayPal (Stripe)'
+            label: 'Accept card / PayPal (Stripe)'
             widget: boolean
             default: true
-            hint: 'Needs STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET in Cloudflare. Which methods show (card, iDEAL, PayPal, Apple Pay…) is chosen in the Stripe dashboard.'
+            hint: 'Needs STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET in Cloudflare. Which methods show (card, PayPal, Apple Pay, Bancontact…) is chosen in the Stripe dashboard.'
           - name: acceptCrypto
             label: 'Accept crypto (NOWPayments)'
             widget: boolean

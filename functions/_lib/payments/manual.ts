@@ -1,6 +1,6 @@
 import type { PaymentProvider } from './types';
 import { sendMail } from '../mail';
-import { eur, itemsText } from './notify';
+import { eur, itemsText, vatText } from './notify';
 
 /**
  * "Manual" provider — no payment processor needed.
@@ -24,6 +24,7 @@ export const manualProvider: PaymentProvider = {
         ['Subtotal', eur(order.subtotal)],
         ['Shipping', `${eur(order.shipping)} (${order.shippingZone})`],
         ['Total', eur(order.total)],
+        ['VAT', vatText(order)],
         ['Name', c.name],
         ['Email', c.email],
         ['Address', `${c.address}\n${c.postalCode} ${c.city}\n${c.country}`],
@@ -41,6 +42,7 @@ export const manualProvider: PaymentProvider = {
         ['Order', order.orderId],
         ['Items', items],
         ['Total', `${eur(order.total)} (incl. ${eur(order.shipping)} shipping)`],
+        ['VAT', vatText(order)],
         ['Questions', 'Reply to this email or write to info@maasflowrecords.com'],
       ],
     }).catch((err) => console.error('Customer confirmation failed', err));

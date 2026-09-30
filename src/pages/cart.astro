@@ -4,7 +4,8 @@ import PageHero from '../components/PageHero.astro';
 import Turnstile from '../components/Turnstile.astro';
 import ShopComingSoon from '../components/ShopComingSoon.astro';
 import TestModeBanner from '../components/TestModeBanner.astro';
-import { products, shippingZones, MAX_QTY_PER_ITEM } from '../data/products';
+import { products, orderableZones, MAX_QTY_PER_ITEM } from '../data/products';
+import { vat } from '../data/vat';
 import { shopOpen, shopTestMode, paymentMethods } from '../data/site';
 
 const online = paymentMethods.card || paymentMethods.crypto;
@@ -21,7 +22,7 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
   {!shopOpen && <ShopComingSoon />}
   {shopOpen && shopTestMode && <TestModeBanner />}
   {shopOpen && (<>
-  <script type="application/json" id="catalogue" set:html={JSON.stringify({ catalogue, zones: shippingZones, max: MAX_QTY_PER_ITEM }).replace(/</g, '\\u003c')} />
+  <script type="application/json" id="catalogue" set:html={JSON.stringify({ catalogue, zones: orderableZones, vat, max: MAX_QTY_PER_ITEM }).replace(/</g, '\\u003c')} />
 
   <section class="section">
     <div class="container checkout">
@@ -35,17 +36,19 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
         <h2 class="h3">Checkout</h2>
         <p class="notice" id="pay-cancelled" hidden>Payment cancelled — nothing was charged. You can try again.</p>
         <form class="form" id="checkout-form" action="/api/checkout" method="post">
+          {orderableZones.length === 0 && <p class="notice">Shipping prices are coming soon — orders open shortly.</p>}
           <div class="field">
             <label for="o-zone">Ship to <span class="req">*</span></label>
             <select id="o-zone" name="zone" required>
-              {shippingZones.map((z) => <option value={z.id}>{z.label}</option>)}
+              {orderableZones.map((z) => <option value={z.id}>{z.label}</option>)}
             </select>
           </div>
 
           <dl class="totals">
             <div><dt>Subtotal</dt><dd id="t-sub">—</dd></div>
             <div><dt>Shipping</dt><dd id="t-ship">—</dd></div>
-            <div class="grand"><dt>Total (incl. VAT)</dt><dd id="t-total">—</dd></div>
+            <div class="grand"><dt>Total</dt><dd id="t-total">—</dd></div>
+            <div class="vat"><dt id="t-vat-note">—</dt><dd id="t-vat"></dd></div>
           </dl>
 
           <fieldset class="fs">
@@ -67,7 +70,7 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
               {paymentMethods.card && (
                 <label class="opt">
                   <input type="radio" name="method" value="card" required checked />
-                  <span><strong>Card, iDEAL or PayPal</strong><small class="muted">Also Apple Pay / Google Pay · secure checkout by Stripe</small></span>
+                  <span><strong>Card or PayPal</strong><small class="muted">Also Apple Pay / Google Pay · secure checkout by Stripe</small></span>
                 </label>
               )}
               {paymentMethods.crypto && (
@@ -114,10 +117,13 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
   function initCart(catalogueEl: HTMLElement) {
 
   type Item = { id: string; name: string; price: number; image: string; stock: number; preorder?: boolean; shippingClass: 'small' | 'standard' };
-  type Zone = { id: string; label: string; rates: Record<'small' | 'standard', number>; estimate: string };
-  const { catalogue, zones, max } = JSON.parse(catalogueEl.textContent!) as {
-    catalogue: Item[]; zones: Zone[]; max: number;
+  type Zone = { id: string; label: string; price: number; estimate: string; inEU: boolean };
+  const { catalogue, zones, vat, max } = JSON.parse(catalogueEl.textContent!) as {
+    catalogue: Item[]; zones: Zone[]; vat: { mode: 'included' | 'exempt'; rate: number }; max: number;
   };
+  // Same rules as src/data/vat.ts (the server recalculates everything at checkout).
+  const exVat = (gross: number) => Math.round((gross * 100) / (100 + vat.rate));
+  const forZone = (gross: number, z: Zone) => (vat.mode === 'included' && !z.inEU ? exVat(gross) : gross);
 
   const eur = (c: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' }).format(c / 100);
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -180,13 +186,19 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
   }
 
   function totals(ls = lines()) {
-    const sub = ls.reduce((s, l) => s + l.item.price * l.qty, 0);
     const zone = zones.find((z) => z.id === zoneSel.value) ?? zones[0];
-    const cls = ls.some((l) => l.item.shippingClass === 'standard') ? 'standard' : 'small';
-    const ship = ls.length ? zone.rates[cls] : 0;
+    if (!zone) return;
+    const sub = ls.reduce((s, l) => s + forZone(l.item.price, zone) * l.qty, 0);
+    const ship = ls.length ? forZone(zone.price, zone) : 0;
+    const total = sub + ship;
     $('t-sub').textContent = eur(sub);
     $('t-ship').textContent = `${eur(ship)} · ${zone.estimate}`;
-    $('t-total').textContent = eur(sub + ship);
+    $('t-total').textContent = eur(total);
+    const included = vat.mode === 'included' && zone.inEU;
+    $('t-vat-note').textContent =
+      vat.mode === 'exempt' ? 'No VAT charged (small business exemption)'
+      : zone.inEU ? `Incl. ${vat.rate}% VAT` : 'No EU VAT (export). Import taxes may apply in your country.';
+    $('t-vat').textContent = included ? eur(total - exVat(total)) : '';
   }
 
   if (new URLSearchParams(location.search).get('payment') === 'cancelled') $('pay-cancelled').hidden = false;
@@ -249,6 +261,7 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
   .totals div { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.92rem; }
   .totals dd { margin: 0; text-align: right; }
   .totals .grand { font-weight: 700; font-size: 1.05rem; }
+  .totals .vat { font-size: 0.8rem; color: var(--muted); margin-top: -0.25rem; }
   .fs { border: 0; padding: 0; margin: 0; display: grid; gap: 1rem; }
   .pay { gap: 0.6rem; }
   .opt { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.85rem 1rem; border: 1px solid var(--line); cursor: pointer; }

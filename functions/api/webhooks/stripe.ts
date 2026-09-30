@@ -37,10 +37,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   try {
     await mailPaidOrder(env, {
       orderId: m.order_id ?? s.id,
-      via: 'Stripe (card / iDEAL / PayPal)',
+      via: 'Stripe (card / PayPal / Apple Pay…)',
       reference: s.payment_intent ?? s.id,
       items: m.items ?? '',
       paid: eur(s.amount_total ?? 0),
+      vat: m.vat,
       shippingZone: m.zone,
       customer: { name: m.name ?? s.customer_details?.name ?? undefined, email: s.customer_details?.email ?? undefined, address: m.address },
       notes: m.notes,

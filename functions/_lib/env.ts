@@ -4,7 +4,7 @@ export interface Env {
   RESEND_API_KEY?: string;
   CONTACT_TO_EMAIL?: string;
   CONTACT_FROM_EMAIL?: string;
-  /** Stripe secret key (sk_live_… / sk_test_…) — card, iDEAL, PayPal, Apple/Google Pay. */
+  /** Stripe secret key (sk_live_… / sk_test_…) — card, PayPal, Apple/Google Pay. */
   STRIPE_SECRET_KEY?: string;
   /** Signing secret of the Stripe webhook endpoint (whsec_…). */
   STRIPE_WEBHOOK_SECRET?: string;
