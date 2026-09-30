@@ -21,7 +21,7 @@ const stockLabel = comingSoon ? 'Coming soon' : soldOut ? 'Sold out' : p.preorde
   <div class="info">
     <p class="mono muted cat">{p.category}</p>
     <h3>{p.name}</h3>
-    <p class="price">{formatPrice(p.price)}</p>
+    {!comingSoon && <p class="price">{formatPrice(p.price)}</p>}
     <p class="desc muted">{p.description}</p>
 
     {comingSoon ? (
