@@ -2,17 +2,21 @@
 import type { Product } from '../data/types';
 import { formatPrice } from '../data/products';
 
-interface Props { product: Product }
-const { product: p } = Astro.props;
+interface Props {
+  product: Product;
+  /** Shop closed: show the product, but no ordering. */
+  comingSoon?: boolean;
+}
+const { product: p, comingSoon = false } = Astro.props;
 const soldOut = p.stock <= 0;
 const low = !soldOut && p.stock <= 5;
-const stockLabel = soldOut ? 'Sold out' : p.preorder ? 'Pre-order' : low ? `Only ${p.stock} left` : 'In stock';
+const stockLabel = comingSoon ? 'Coming soon' : soldOut ? 'Sold out' : p.preorder ? 'Pre-order' : low ? `Only ${p.stock} left` : 'In stock';
 ---
 
 <article class="product" data-product-id={p.id}>
   <div class="img">
     <img src={p.image} alt={p.name} width="600" height="600" loading="lazy" decoding="async" />
-    <span class:list={['tag', 'stock', { 'tag-accent': low || p.preorder }]}>{stockLabel}</span>
+    <span class:list={['tag', 'stock', { 'tag-accent': comingSoon || low || p.preorder }]}>{stockLabel}</span>
   </div>
   <div class="info">
     <p class="mono muted cat">{p.category}</p>
@@ -20,24 +24,30 @@ const stockLabel = soldOut ? 'Sold out' : p.preorder ? 'Pre-order' : low ? `Only
     <p class="price">{formatPrice(p.price)}</p>
     <p class="desc muted">{p.description}</p>
 
-    <form class="add" data-add-to-cart data-max={Math.min(10, p.stock)}>
-      <input type="hidden" name="id" value={p.id} />
-      {
-        p.sizes && (
-          <div class="field">
-            <label for={`size-${p.id}`}>Size</label>
-            <select id={`size-${p.id}`} name="size" required disabled={soldOut}>
-              <option value="">Choose size</option>
-              {p.sizes.map((s) => <option value={s}>{s}</option>)}
-            </select>
-          </div>
-        )
-      }
-      <button class="btn btn-primary" type="submit" disabled={soldOut}>
-        {soldOut ? 'Sold out' : p.preorder ? 'Pre-order' : 'Add to cart'}
-      </button>
-      <p class="added mono" role="status" aria-live="polite"></p>
-    </form>
+    {comingSoon ? (
+      <div class="add">
+        <button class="btn" type="button" disabled>Coming soon</button>
+      </div>
+    ) : (
+      <form class="add" data-add-to-cart data-max={Math.min(10, p.stock)}>
+        <input type="hidden" name="id" value={p.id} />
+        {
+          p.sizes && (
+            <div class="field">
+              <label for={`size-${p.id}`}>Size</label>
+              <select id={`size-${p.id}`} name="size" required disabled={soldOut}>
+                <option value="">Choose size</option>
+                {p.sizes.map((s) => <option value={s}>{s}</option>)}
+              </select>
+            </div>
+          )
+        }
+        <button class="btn btn-primary" type="submit" disabled={soldOut}>
+          {soldOut ? 'Sold out' : p.preorder ? 'Pre-order' : 'Add to cart'}
+        </button>
+        <p class="added mono" role="status" aria-live="polite"></p>
+      </form>
+    )}
   </div>
 </article>
 
@@ -53,5 +63,6 @@ const stockLabel = soldOut ? 'Sold out' : p.preorder ? 'Pre-order' : low ? `Only
   .desc { font-size: 0.88rem; }
   .add { margin-top: auto; display: grid; gap: 0.75rem; }
   .add .btn { width: 100%; }
+  .add .btn:disabled { opacity: 0.6; cursor: not-allowed; }
   .added { min-height: 1.2em; margin: 0; font-size: 0.72rem; color: var(--ok); }
 </style>

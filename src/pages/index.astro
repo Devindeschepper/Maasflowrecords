@@ -165,7 +165,9 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
             {shopItems.map((p) => <ProductCard product={p} />)}
           </div>
         ) : (
-          <p class="empty">The 2Real4U CD — <strong>coming soon</strong>.</p>
+          <div class="grid grid-3">
+            {shopItems.map((p) => <ProductCard product={p} comingSoon />)}
+          </div>
         )
       }
     </div>
