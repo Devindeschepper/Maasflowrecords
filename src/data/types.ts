@@ -11,6 +11,7 @@ export type PlatformId =
   | 'tidal'
   | 'amazonMusic'
   | 'beatstars'
+  | 'youtubeBeats'
   | 'instagram'
   | 'tiktok'
   | 'facebook'

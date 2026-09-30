@@ -12,6 +12,7 @@ export const platforms: Record<PlatformId, { label: string; kind: 'stream' | 'so
   amazonMusic: { label: 'Amazon Music', kind: 'stream' },
   bandcamp: { label: 'Bandcamp', kind: 'store' },
   beatstars: { label: 'BeatStars', kind: 'store' },
+  youtubeBeats: { label: 'Beats (YouTube)', kind: 'store' },
   instagram: { label: 'Instagram', kind: 'social' },
   tiktok: { label: 'TikTok', kind: 'social' },
   facebook: { label: 'Facebook', kind: 'social' },

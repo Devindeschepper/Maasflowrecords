@@ -193,6 +193,7 @@ collections:
                   - { name: amazonMusic, label: 'Amazon Music', widget: string, required: false }
                   - { name: bandcamp, label: 'Bandcamp', widget: string, required: false }
                   - { name: beatstars, label: 'BeatStars', widget: string, required: false }
+                  - { name: youtubeBeats, label: 'Beats (YouTube channel)', widget: string, required: false }
               - name: socials
                 label: Social media
                 widget: object
