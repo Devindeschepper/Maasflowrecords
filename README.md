@@ -76,9 +76,13 @@ Only `/api/*` requests run Worker code (`worker/index.ts` → handlers in `funct
    | `PUBLIC_TURNSTILE_SITE_KEY` | Settings → Build → **Build variables** | Turnstile site key |
    | `TURNSTILE_SECRET_KEY` | Settings → **Variables and Secrets** (secret) | Turnstile secret key |
    | `RESEND_API_KEY` | Settings → **Variables and Secrets** (secret) | Resend API key |
-   | `CONTACT_FROM_EMAIL` | Settings → **Variables and Secrets** (text) | `Maas Flow Records <noreply@maasflowrecords.com>` |
-   | `RESEND_AUDIENCE_ID` | Settings → **Variables and Secrets** (text) | Resend → Audiences → id of the newsletter list (optional: without it, signups are emailed to you) |
-5. **Turnstile**: Cloudflare dashboard → Turnstile → Add widget → domain `maasflowrecords.com`.
+   | `CONTACT_FROM_EMAIL` | Settings → **Variables and Secrets** (**secret**) | `Maas Flow Records <noreply@maasflowrecords.com>` (before the domain is verified in Resend: `Maas Flow Records <onboarding@resend.dev>`) |
+   | `RESEND_AUDIENCE_ID` | Settings → **Variables and Secrets** (**secret**) | Resend → Audiences → id of the newsletter list (optional: without it, signups are emailed to you) |
+   Add dashboard values as **Secret**: every deploy from GitHub replaces plain dashboard variables with the
+   `[vars]` in `wrangler.toml`, secrets are kept. After changing a **build** variable, start a new build
+   (Deployments → Retry build, or push a commit) — `PUBLIC_*` values are baked into the pages at build time.
+5. **Turnstile**: Cloudflare dashboard → Turnstile → Add widget → hostnames `maasflowrecords.com` and the
+   `*.workers.dev` address of the Worker.
 6. **Resend**: create an account, add & verify the domain `maasflowrecords.com` (DNS records), create an API key.
 7. Optional nightly rebuild (keeps "upcoming/past" dates fresh): create a deploy hook in the Worker's build
    settings and add its URL as GitHub secret `CLOUDFLARE_DEPLOY_HOOK`.
