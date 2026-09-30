@@ -96,7 +96,32 @@ payments"), email (Resend) must work, and your business details (Luxembourg busi
 
 ---
 
-## 6. Label socials (footer icons)
+## 6. Visitor stats (free)
+
+**Site → Settings → Cloudflare Web Analytics token.** In Cloudflare: Analytics & Logs → Web
+Analytics → Add a site → maasflowrecords.com → copy the token (32 letters/numbers) from the code
+snippet → paste it here → Save. Stats appear in Cloudflare. No cookies, so no cookie banner needed.
+
+---
+
+## 7. Opening the shop (next year) — checklist
+
+The shop is fully built; it only needs switching on when the business is registered.
+
+1. Register the business in Luxembourg (business permit + RCS; VAT number if you charge VAT).
+2. Ask an accountant / the AED: **VAT included (17%)** or **small business exemption**?
+   → Site → Shipping & VAT → set it.
+3. Fill in the **shipping prices** (Site → Shipping & VAT).
+4. CD: real photo, price, stock (Site → Shop (CDs)).
+5. Make accounts: **Stripe** (add your IBAN) and, if you want crypto, **NOWPayments** (add your
+   wallet address). Put their keys in Cloudflare (see README "Shop & payments").
+6. Ask for a **legal notice** page with your business details (required when selling).
+7. Test with **Test mode** on first, then turn Test mode off.
+8. Site → Settings → **Shop is open** → Save.
+
+---
+
+## 8. Label socials (footer icons)
 
 **Site → Settings → Label socials** — paste links, or empty a field to hide an icon.
 

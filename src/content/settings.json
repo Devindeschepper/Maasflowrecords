@@ -10,5 +10,6 @@
     "spotify": "https://open.spotify.com/artist/5bDu5EvUNqdhJfVXYcQiXK",
     "appleMusic": "https://music.apple.com/us/artist/vin/1717180938",
     "beatstars": "https://www.beatstars.com/devindeschepper48605"
-  }
+  },
+  "analyticsToken": ""
 }

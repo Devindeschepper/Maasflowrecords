@@ -29,7 +29,7 @@ const orgLd = {
   name: site.name,
   url: site.url,
   email: site.email,
-  logo: new URL('/favicon.svg', site.url).href,
+  logo: new URL('/icon-512.png', site.url).href,
   sameAs: Object.values(labelSocials).filter(Boolean),
 };
 ---
@@ -45,6 +45,9 @@ const orgLd = {
     {noindex && <meta name="robots" content="noindex" />}
     <meta name="theme-color" content="#0a0a0a" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="sitemap" href="/sitemap-index.xml" />
 
     <meta property="og:site_name" content={site.name} />
@@ -53,6 +56,7 @@ const orgLd = {
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={ogImage} />
+    {image === site.ogImage && <><meta property="og:image:width" content="1200" /><meta property="og:image:height" content="630" /></>}
     <meta property="og:locale" content="en_US" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={fullTitle} />
@@ -61,6 +65,9 @@ const orgLd = {
 
     <script type="application/ld+json" set:html={JSON.stringify([orgLd, ...jsonLd]).replace(/</g, '\\u003c')} />
     {import.meta.env.PUBLIC_TURNSTILE_SITE_KEY && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />}
+    {site.analyticsToken && (
+      <script is:inline defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({ token: site.analyticsToken })} />
+    )}
     <slot name="head" />
   </head>
   <body>
