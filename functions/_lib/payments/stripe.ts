@@ -1,5 +1,6 @@
 import type { PaymentProvider } from './types';
 import { itemsText } from './notify';
+import { shopTestMode } from '../../../src/data/site';
 
 /**
  * Stripe Checkout (https://docs.stripe.com/api/checkout/sessions/create).
@@ -9,7 +10,9 @@ import { itemsText } from './notify';
  */
 export const stripeProvider: PaymentProvider = {
   id: 'card',
-  configured: (env) => !!env.STRIPE_SECRET_KEY && !!env.STRIPE_WEBHOOK_SECRET,
+  // In test mode only a test key is accepted, so no real card can be charged by accident.
+  configured: (env) =>
+    !!env.STRIPE_SECRET_KEY && !!env.STRIPE_WEBHOOK_SECRET && (!shopTestMode || env.STRIPE_SECRET_KEY.startsWith('sk_test_')),
   async createCheckout(order, env, origin) {
     const c = order.customer;
     const p = new URLSearchParams({

@@ -1,6 +1,10 @@
 import type { PaymentProvider } from './types';
 import { sendMail } from '../mail';
 import { eur, itemsText } from './notify';
+import { shopTestMode } from '../../../src/data/site';
+
+// Test mode uses the sandbox (separate account + API key at account-sandbox.nowpayments.io).
+const API = shopTestMode ? 'https://api-sandbox.nowpayments.io' : 'https://api.nowpayments.io';
 
 /**
  * Crypto payments via a NOWPayments hosted invoice (https://documenter.getpostman.com/view/7907941/2s93JusNJt).
@@ -17,7 +21,7 @@ export const nowPaymentsProvider: PaymentProvider = {
     const c = order.customer;
     const items = itemsText(order.lines);
 
-    const res = await fetch('https://api.nowpayments.io/v1/invoice', {
+    const res = await fetch(`${API}/v1/invoice`, {
       method: 'POST',
       headers: { 'x-api-key': env.NOWPAYMENTS_API_KEY!, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -35,7 +39,7 @@ export const nowPaymentsProvider: PaymentProvider = {
     if (!res.ok || !data.invoice_url) throw new Error(`NOWPayments: ${res.status} ${data.message ?? ''}`);
 
     await sendMail(env, {
-      subject: `[Awaiting crypto payment] Order ${order.orderId} — ${eur(order.total)}`,
+      subject: `${shopTestMode ? '[TEST] ' : ''}[Awaiting crypto payment] Order ${order.orderId} — ${eur(order.total)}`,
       replyTo: c.email,
       fields: [
         ['Status', 'AWAITING CRYPTO PAYMENT — do not ship until you receive the "[PAID]" email for this order.'],

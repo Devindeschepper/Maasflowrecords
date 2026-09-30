@@ -25,6 +25,12 @@ export const labelSocials = cleanLinks(settings.labelSocials);
 export const shopOpen: boolean = settings.shopOpen === true;
 
 /**
+ * Test mode (admin panel → Settings): shows a "test shop" banner, only accepts Stripe TEST keys
+ * (sk_test_…) and uses the NOWPayments sandbox. Nothing is really charged.
+ */
+export const shopTestMode: boolean = settings.shopTestMode === true;
+
+/**
  * Payment methods offered at checkout (admin panel → Settings).
  * card   = Stripe Checkout: card, iDEAL, PayPal, Apple/Google Pay… (enabled in the Stripe dashboard)
  * crypto = NOWPayments invoice (BTC, ETH, USDT, …)

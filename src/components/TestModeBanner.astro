@@ -1,0 +1,20 @@
+---
+// Shown on the shop and cart while test mode is on (admin panel → Settings).
+import { paymentMethods } from '../data/site';
+---
+
+<div class="container">
+  <p class="test" role="note">
+    <strong>Test shop</strong> — no real payments, nothing is charged or shipped.
+    {paymentMethods.card && <> Test card: <span class="mono">4242 4242 4242 4242</span>, any future date, any CVC.</>}
+  </p>
+</div>
+
+<style>
+  .test {
+    margin: 1.5rem 0 0; padding: 0.8rem 1rem; border: 1px dashed var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent); font-size: 0.9rem;
+  }
+  .test strong { color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.8rem; margin-right: 0.25rem; }
+  .mono { font-family: var(--font-mono); white-space: nowrap; }
+</style>
