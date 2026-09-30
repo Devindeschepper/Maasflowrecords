@@ -1,6 +1,9 @@
 import type { Env } from '../env';
 import type { OrderLine } from './types';
 import { sendMail } from '../mail';
+import { shopTestMode } from '../../../src/data/site';
+
+const test = shopTestMode ? '[TEST] ' : '';
 
 export const eur = (cents: number) => `€${(cents / 100).toFixed(2)}`;
 
@@ -26,7 +29,7 @@ export interface PaidOrder {
 /** Emails a confirmed payment to the label and a confirmation to the customer. */
 export async function mailPaidOrder(env: Env, o: PaidOrder): Promise<void> {
   await sendMail(env, {
-    subject: `[PAID] Order ${o.orderId} — ${o.paid}`,
+    subject: `${test}[PAID] Order ${o.orderId} — ${o.paid}`,
     replyTo: o.customer.email,
     fields: [
       ['Status', 'PAID — ready to ship'],
@@ -45,7 +48,7 @@ export async function mailPaidOrder(env: Env, o: PaidOrder): Promise<void> {
   if (o.customer.email) {
     await sendMail(env, {
       to: o.customer.email,
-      subject: `Payment received — Maas Flow Records order ${o.orderId}`,
+      subject: `${test}Payment received — Maas Flow Records order ${o.orderId}`,
       fields: [
         ['Thank you', `${o.customer.name ? `Hi ${o.customer.name}, t` : 'T'}hanks for your order! Your payment was received. Pre-orders ship on or around the release date; you'll get an email when it's on the way.`],
         ['Order', o.orderId],

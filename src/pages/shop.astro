@@ -4,7 +4,8 @@ import PageHero from '../components/PageHero.astro';
 import ProductCard from '../components/ProductCard.astro';
 import { products, shippingZones, formatPrice } from '../data/products';
 import ShopComingSoon from '../components/ShopComingSoon.astro';
-import { site, shopOpen, paymentMethods } from '../data/site';
+import TestModeBanner from '../components/TestModeBanner.astro';
+import { site, shopOpen, shopTestMode, paymentMethods } from '../data/site';
 
 const categories = [...new Set(products.map((p) => p.category))];
 
@@ -29,6 +30,7 @@ const jsonLd = !shopOpen ? [] : products.map((p) => ({
   <PageHero eyebrow="Official store" title="Shop" lead="Physical CDs, straight from the label. Every order directly supports independent music." />
 
   {!shopOpen && <ShopComingSoon />}
+  {shopOpen && shopTestMode && <TestModeBanner />}
   {shopOpen && (<>
 
   <section class="section">

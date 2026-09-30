@@ -242,6 +242,11 @@ collections:
             widget: boolean
             default: false
             hint: Off = the shop shows “Coming soon” and orders are refused. Only turn on when products, prices and payments are ready.
+          - name: shopTestMode
+            label: Test mode (no real payments)
+            widget: boolean
+            default: false
+            hint: 'On = a "test shop" banner shows, Stripe only works with TEST keys (sk_test_…) and crypto uses the NOWPayments sandbox. Turn OFF (and use live keys) to sell for real.'
           - name: acceptCard
             label: 'Accept card / iDEAL / PayPal (Stripe)'
             widget: boolean

@@ -79,6 +79,10 @@ photo and links. Their page appears at `/artists/newname/` and they're added to 
 the CD → lower the stock in the admin panel. (Crypto orders first send "Awaiting crypto payment" —
 **don't ship until the [PAID] email arrives**.)
 
+**Test mode** (Site → Settings → **Test mode**): a "Test shop" banner shows and nothing is really
+charged. Use Stripe **test** keys (`sk_test_…`) and a NOWPayments **sandbox** key. Pay with the test
+card `4242 4242 4242 4242`. To sell for real: put the **live** keys in Cloudflare, then turn Test mode off.
+
 **Open the shop:** Site → Settings → **Shop is open** on → Save.
 
 ⚠️ Before turning it on: Stripe and/or NOWPayments accounts must be connected (see README "Shop &
