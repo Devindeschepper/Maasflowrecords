@@ -19,6 +19,10 @@ export interface Order {
   subtotal: number;
   shipping: number;
   total: number;
+  /** VAT contained in the total (cents); 0 when exempt or exported. */
+  vat: number;
+  /** e.g. "Incl. 17% VAT" */
+  vatNote: string;
   currency: 'EUR';
   shippingZone: string;
   customer: {

@@ -1,6 +1,6 @@
 import type { PaymentProvider } from './types';
 import { sendMail } from '../mail';
-import { eur, itemsText } from './notify';
+import { eur, itemsText, vatText } from './notify';
 import { shopTestMode } from '../../../src/data/site';
 
 // Test mode uses the sandbox (separate account + API key at account-sandbox.nowpayments.io).
@@ -49,6 +49,7 @@ export const nowPaymentsProvider: PaymentProvider = {
         ['Subtotal', eur(order.subtotal)],
         ['Shipping', `${eur(order.shipping)} (${order.shippingZone})`],
         ['Total', eur(order.total)],
+        ['VAT', vatText(order)],
         ['Name', c.name],
         ['Email', c.email],
         ['Address', `${c.address}\n${c.postalCode} ${c.city}\n${c.country}`],

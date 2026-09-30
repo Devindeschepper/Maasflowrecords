@@ -90,15 +90,19 @@ The `functions/` folder also works unchanged on Cloudflare **Pages** if you ever
 The cart runs in the browser; the checkout function re-checks every price, size and stock level
 against `src/data/products.ts` so prices can't be manipulated.
 
-The shop sells CDs only. At checkout the customer chooses how to pay (switch each method on/off in
+The shop sells CDs only and ships from Luxembourg. Shipping prices and VAT live in
+`src/content/shop.json` (admin → Shipping & VAT) and are applied by `src/data/vat.ts` in both the cart and
+the checkout function: with VAT "included" (17%), EU orders contain Luxembourg VAT and orders outside the EU
+are charged ex-VAT; "exempt" charges no VAT (small-business scheme). A zone without a shipping price can't be
+ordered to. Note: once EU-wide B2C sales pass €10,000/year, destination-country VAT (OSS) applies. At checkout the customer chooses how to pay (switch each method on/off in
 the admin panel → Settings):
 
 | Method | Provider | Secrets (Cloudflare → Worker → Settings → Variables and Secrets) | Webhook |
 | --- | --- | --- | --- |
-| Card, iDEAL, PayPal, Apple/Google Pay | Stripe Checkout (`functions/_lib/payments/stripe.ts`) | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | `https://maasflowrecords.com/api/webhooks/stripe` — events `checkout.session.completed`, `checkout.session.async_payment_succeeded` |
+| Card, PayPal, Apple/Google Pay, Bancontact | Stripe Checkout (`functions/_lib/payments/stripe.ts`) | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | `https://maasflowrecords.com/api/webhooks/stripe` — events `checkout.session.completed`, `checkout.session.async_payment_succeeded` |
 | Crypto (BTC, ETH, USDT…) | NOWPayments invoice (`functions/_lib/payments/nowpayments.ts`) | `NOWPAYMENTS_API_KEY`, `NOWPAYMENTS_IPN_SECRET` | set automatically per invoice (`/api/webhooks/crypto`) |
 
-Which Stripe methods appear (card, iDEAL, PayPal, Bancontact, Apple Pay…) is chosen in the Stripe
+Which Stripe methods appear (card, PayPal, Bancontact, Apple Pay…) is chosen in the Stripe
 dashboard → Settings → Payment methods. When a payment is confirmed, the webhook emails a **[PAID]**
 order to the label and a confirmation to the customer (needs Resend). Crypto orders also send an
 "awaiting payment" email with the shipping address first. With both methods off, orders are emailed

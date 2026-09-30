@@ -32,7 +32,7 @@ export const shopTestMode: boolean = settings.shopTestMode === true;
 
 /**
  * Payment methods offered at checkout (admin panel → Settings).
- * card   = Stripe Checkout: card, iDEAL, PayPal, Apple/Google Pay… (enabled in the Stripe dashboard)
+ * card   = Stripe Checkout: card, PayPal, Apple/Google Pay, Bancontact… (enabled in the Stripe dashboard)
  * crypto = NOWPayments invoice (BTC, ETH, USDT, …)
  * With both off, orders are emailed and the label sends a payment request by hand.
  */

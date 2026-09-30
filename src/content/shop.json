@@ -1,0 +1,11 @@
+{
+  "vat": {
+    "mode": "included",
+    "rate": 17
+  },
+  "shipping": [
+    { "id": "lu", "label": "Luxembourg", "price": "", "estimate": "1–2 business days", "inEU": true },
+    { "id": "eu", "label": "Other EU countries", "price": "", "estimate": "3–7 business days", "inEU": true },
+    { "id": "world", "label": "Rest of the world", "price": "", "estimate": "7–15 business days", "inEU": false }
+  ]
+}

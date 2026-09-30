@@ -1,5 +1,5 @@
 import type { PaymentProvider } from './types';
-import { itemsText } from './notify';
+import { itemsText, vatText } from './notify';
 import { shopTestMode } from '../../../src/data/site';
 
 /**
@@ -41,6 +41,7 @@ export const stripeProvider: PaymentProvider = {
       name: c.name,
       address: `${c.address}\n${c.postalCode} ${c.city}\n${c.country}`,
       zone: order.shippingZone,
+      vat: vatText(order),
       notes: c.notes,
     };
     for (const [k, v] of Object.entries(meta)) if (v) p.set(`metadata[${k}]`, v.slice(0, 500));

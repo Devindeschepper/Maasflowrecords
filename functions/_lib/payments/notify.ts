@@ -12,15 +12,19 @@ export const itemsText = (lines: OrderLine[]) =>
     .map((l) => `${l.qty} × ${l.name}${l.size ? ` (${l.size})` : ''} — ${eur(l.unitPrice * l.qty)}${l.preorder ? ' [PRE-ORDER]' : ''}`)
     .join('\n');
 
+/** "Incl. 17% VAT: €2.47" */
+export const vatText = (o: { vat: number; vatNote: string }) => (o.vat ? `${o.vatNote}: ${eur(o.vat)}` : o.vatNote);
+
 export interface PaidOrder {
   orderId: string;
-  /** e.g. "Stripe (card / iDEAL / PayPal)" or "Crypto (NOWPayments)" */
+  /** e.g. "Stripe (card / PayPal / Apple Pay…)" or "Crypto (NOWPayments)" */
   via: string;
   /** Payment reference at the provider (Stripe payment intent, NOWPayments payment id). */
   reference: string;
   items: string;
   /** Amount actually charged, as text (e.g. "€16.95" or "0.00041 BTC (€16.95)"). */
   paid: string;
+  vat?: string;
   shippingZone?: string;
   customer: { name?: string; email?: string; address?: string };
   notes?: string;
@@ -36,6 +40,7 @@ export async function mailPaidOrder(env: Env, o: PaidOrder): Promise<void> {
       ['Order', o.orderId],
       ['Paid via', `${o.via} · ref ${o.reference}`],
       ['Amount', o.paid],
+      ['VAT', o.vat ?? ''],
       ['Items', o.items],
       ['Ship to', o.customer.address ? `${o.customer.name ?? ''}\n${o.customer.address}` : 'See the "awaiting payment" email for this order number.'],
       ['Shipping zone', o.shippingZone ?? ''],
@@ -54,6 +59,7 @@ export async function mailPaidOrder(env: Env, o: PaidOrder): Promise<void> {
         ['Order', o.orderId],
         ['Items', o.items],
         ['Paid', o.paid],
+        ['VAT', o.vat ?? ''],
         ['Questions', 'Reply to this email or write to info@maasflowrecords.com'],
       ],
     }).catch((err) => console.error('Customer confirmation failed', err));

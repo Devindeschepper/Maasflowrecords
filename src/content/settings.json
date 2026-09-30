@@ -1,6 +1,6 @@
 {
-  "shopOpen": true,
-  "shopTestMode": true,
+  "shopOpen": false,
+  "shopTestMode": false,
   "acceptCard": true,
   "acceptCrypto": true,
   "labelSocials": {

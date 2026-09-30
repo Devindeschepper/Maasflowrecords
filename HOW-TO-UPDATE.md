@@ -71,8 +71,14 @@ photo and links. Their page appears at `/artists/newname/` and they're added to 
 
 **Site → Shop (CDs)**: name, price (in €), photo, stock (0 = sold out) and pre-order on/off.
 
+**Shipping & VAT** (Site → Shipping & VAT):
+- **Shipping prices** per destination (Luxembourg, other EU countries, rest of the world), VAT included.
+  A destination without a price can't be chosen yet.
+- **VAT**: "Prices include VAT" (17% on EU orders; orders outside the EU are charged without VAT)
+  or "No VAT — small business exemption". Ask your accountant / the AED which one is right for you.
+
 **Payments** (Site → Settings):
-- **Accept card / iDEAL / PayPal (Stripe)** — the customer pays on Stripe's secure page.
+- **Accept card / PayPal (Stripe)** — the customer pays on Stripe's secure page.
 - **Accept crypto (NOWPayments)** — the customer pays in Bitcoin, Ethereum, USDT…
 
 **When someone pays** you get an email **"[PAID] Order MFR-…"** with the address → pack and ship
@@ -86,7 +92,7 @@ card `4242 4242 4242 4242`. To sell for real: put the **live** keys in Cloudflar
 **Open the shop:** Site → Settings → **Shop is open** on → Save.
 
 ⚠️ Before turning it on: Stripe and/or NOWPayments accounts must be connected (see README "Shop &
-payments"), email (Resend) must work, and your business details (KvK) must be on the site.
+payments"), email (Resend) must work, and your business details (Luxembourg business permit / RCS number, and VAT number if you have one) must be on the site.
 
 ---
 
