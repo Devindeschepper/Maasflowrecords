@@ -8,6 +8,8 @@ import { onRequestPost as casting } from '../functions/api/casting';
 import { onRequestPost as checkout } from '../functions/api/checkout';
 import { onRequestPost as subscribe } from '../functions/api/subscribe';
 import { onRequestPost as booking } from '../functions/api/booking';
+import { onRequestPost as stripeWebhook } from '../functions/api/webhooks/stripe';
+import { onRequestPost as cryptoWebhook } from '../functions/api/webhooks/crypto';
 
 interface WorkerEnv extends Env {
   ASSETS: Fetcher;
@@ -22,6 +24,8 @@ const routes: Record<string, Handler> = {
   '/api/checkout': checkout as unknown as Handler,
   '/api/subscribe': subscribe as unknown as Handler,
   '/api/booking': booking as unknown as Handler,
+  '/api/webhooks/stripe': stripeWebhook as unknown as Handler,
+  '/api/webhooks/crypto': cryptoWebhook as unknown as Handler,
 };
 
 export default {

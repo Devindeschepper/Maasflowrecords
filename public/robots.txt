@@ -4,5 +4,6 @@ Disallow: /api/
 Disallow: /admin/
 Disallow: /cart/
 Disallow: /thanks/
+Disallow: /order/
 
 Sitemap: https://maasflowrecords.com/sitemap-index.xml

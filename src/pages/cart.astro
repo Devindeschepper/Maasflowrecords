@@ -4,7 +4,9 @@ import PageHero from '../components/PageHero.astro';
 import Turnstile from '../components/Turnstile.astro';
 import ShopComingSoon from '../components/ShopComingSoon.astro';
 import { products, shippingZones, MAX_QTY_PER_ITEM } from '../data/products';
-import { shopOpen } from '../data/site';
+import { shopOpen, paymentMethods } from '../data/site';
+
+const online = paymentMethods.card || paymentMethods.crypto;
 
 // Only what the browser needs to display the cart. The server re-prices everything.
 const catalogue = products.map(({ id, name, price, image, stock, preorder, shippingClass }) => ({
@@ -29,6 +31,7 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
 
       <aside class="summary card" id="checkout-box" hidden>
         <h2 class="h3">Checkout</h2>
+        <p class="notice" id="pay-cancelled" hidden>Payment cancelled — nothing was charged. You can try again.</p>
         <form class="form" id="checkout-form" action="/api/checkout" method="post">
           <div class="field">
             <label for="o-zone">Ship to <span class="req">*</span></label>
@@ -56,6 +59,24 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
             <div class="field"><label for="o-notes">Order notes</label><textarea id="o-notes" name="notes" class="short" maxlength="1000" rows="3"></textarea></div>
           </fieldset>
 
+          {online && (
+            <fieldset class="fs pay">
+              <legend>Payment</legend>
+              {paymentMethods.card && (
+                <label class="opt">
+                  <input type="radio" name="method" value="card" required checked />
+                  <span><strong>Card, iDEAL or PayPal</strong><small class="muted">Also Apple Pay / Google Pay · secure checkout by Stripe</small></span>
+                </label>
+              )}
+              {paymentMethods.crypto && (
+                <label class="opt">
+                  <input type="radio" name="method" value="crypto" required checked={!paymentMethods.card} />
+                  <span><strong>Crypto</strong><small class="muted">Bitcoin, Ethereum, USDT and more · via NOWPayments</small></span>
+                </label>
+              )}
+            </fieldset>
+          )}
+
           <div class="hp" aria-hidden="true"><label for="o-website">Website</label><input id="o-website" name="website" tabindex="-1" autocomplete="off" /></div>
           <input type="hidden" name="_ts" value="" />
           <input type="hidden" name="cart" value="" />
@@ -66,7 +87,8 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
           </label>
 
           <Turnstile />
-          <button class="btn btn-primary" type="submit">Place order</button>
+          <button class="btn btn-primary" type="submit">{online ? 'Continue to payment' : 'Place order'}</button>
+          {online && <p class="muted fine">You'll be sent to a secure payment page. Payment details never touch this website.</p>}
           <p class="form-status" role="status" aria-live="polite"></p>
         </form>
       </aside>
@@ -165,6 +187,8 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
     $('t-total').textContent = eur(sub + ship);
   }
 
+  if (new URLSearchParams(location.search).get('payment') === 'cancelled') $('pay-cancelled').hidden = false;
+
   zoneSel.addEventListener('change', () => totals());
   onCartChange(render);
   render();
@@ -177,13 +201,13 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
     const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
     btn.disabled = true;
     status.dataset.state = '';
-    status.textContent = 'Placing order…';
+    status.textContent = form.querySelector('input[name="method"]') ? 'Opening the payment page…' : 'Placing order…';
     try {
       const res = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string; redirectUrl?: string; message?: string };
       if (!res.ok || !data.ok) throw new Error(data.error || 'Checkout failed. Please try again.');
       if (data.redirectUrl) {
-        // A payment provider returned a hosted checkout page.
+        // Hosted payment page (Stripe / NOWPayments). The cart is cleared on /order/ after paying.
         location.href = data.redirectUrl;
         return;
       }
@@ -224,6 +248,14 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
   .totals dd { margin: 0; text-align: right; }
   .totals .grand { font-weight: 700; font-size: 1.05rem; }
   .fs { border: 0; padding: 0; margin: 0; display: grid; gap: 1rem; }
+  .pay { gap: 0.6rem; }
+  .opt { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.85rem 1rem; border: 1px solid var(--line); cursor: pointer; }
+  .opt:has(input:checked) { border-color: var(--text); background: var(--surface-2); }
+  .opt input { margin-top: 0.2rem; accent-color: var(--accent); width: 18px; height: 18px; flex: none; }
+  .opt span { display: grid; gap: 0.15rem; }
+  .opt small { font-size: 0.8rem; }
+  .fine { font-size: 0.8rem; margin: 0; }
+  .notice { border-left: 3px solid var(--accent); padding: 0.6rem 0.8rem; background: var(--surface-2); font-size: 0.9rem; }
   .fs legend { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.75rem; }
   @media (min-width: 960px) {
     .checkout { grid-template-columns: 1.5fr 1fr; gap: 3rem; }

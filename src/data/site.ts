@@ -24,6 +24,17 @@ export const labelSocials = cleanLinks(settings.labelSocials);
  */
 export const shopOpen: boolean = settings.shopOpen === true;
 
+/**
+ * Payment methods offered at checkout (admin panel → Settings).
+ * card   = Stripe Checkout: card, iDEAL, PayPal, Apple/Google Pay… (enabled in the Stripe dashboard)
+ * crypto = NOWPayments invoice (BTC, ETH, USDT, …)
+ * With both off, orders are emailed and the label sends a payment request by hand.
+ */
+export const paymentMethods = {
+  card: settings.acceptCard !== false,
+  crypto: settings.acceptCrypto !== false,
+};
+
 export const nav = [
   { href: '/', label: 'Home' },
   { href: '/artists/', label: 'Artists' },

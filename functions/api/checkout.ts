@@ -2,10 +2,10 @@ import type { Env } from '../_lib/env';
 import { jsonResponse, sameOrigin, str, isEmail } from '../_lib/http';
 import { checkSpam } from '../_lib/spam';
 import { getProvider } from '../_lib/payments';
-import type { Order, OrderLine } from '../_lib/payments/types';
+import type { Order, OrderLine, PaymentMethod } from '../_lib/payments/types';
 // The same catalogue the website is built from — prices can't be tampered with by the browser.
 import { products, shippingZones, MAX_QTY_PER_ITEM } from '../../src/data/products';
-import { shopOpen } from '../../src/data/site';
+import { shopOpen, paymentMethods } from '../../src/data/site';
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   // Checkout is JS-only (the cart lives in the browser), so always answer with JSON.
@@ -67,7 +67,22 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (!isEmail(customer.email)) return json(400, { ok: false, error: 'Please enter a valid email address.' });
   if (str(fd, 'terms', 5) !== 'yes') return json(400, { ok: false, error: 'Please accept the shipping & returns terms.' });
 
+  // ---- payment method (switched on/off in the admin panel) ----
+  const enabled = (['card', 'crypto'] as const).filter((m) => paymentMethods[m]);
+  let method: PaymentMethod = 'manual';
+  if (enabled.length) {
+    const chosen = str(fd, 'method', 10);
+    const match = enabled.find((m) => m === chosen);
+    if (!match) return json(400, { ok: false, error: 'Please choose a payment method.' });
+    method = match;
+  }
+  const provider = getProvider(method);
+  if (!provider.configured(env)) {
+    return json(503, { ok: false, error: 'This payment method is not available right now. Please choose another one or email us.' });
+  }
+
   const order: Order = {
+    method,
     orderId: `MFR-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`,
     lines,
     subtotal,
@@ -77,9 +92,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     shippingZone: zone.label,
     customer,
   };
-
-  const provider = getProvider(env.PAYMENT_PROVIDER);
-  if (!provider) return json(503, { ok: false, error: 'Checkout is not available right now.' });
 
   try {
     const result = await provider.createCheckout(order, env, new URL(request.url).origin);

@@ -90,11 +90,20 @@ The `functions/` folder also works unchanged on Cloudflare **Pages** if you ever
 The cart runs in the browser; the checkout function re-checks every price, size and stock level
 against `src/data/products.ts` so prices can't be manipulated.
 
-With `PAYMENT_PROVIDER=manual` an order is emailed to the label and the customer gets a confirmation;
-the label sends a payment request by hand. To take online payments, add a provider adapter in
-`functions/_lib/payments/` (interface in `types.ts`), register it in `index.ts`, add a webhook
-function to confirm payment, and switch `PAYMENT_PROVIDER`. Popular choices in NL: Mollie (iDEAL), Stripe, PayPal.
-For a larger catalogue, a hosted store (Shopify Starter / Lemon Squeezy / Big Cartel) can also be linked instead.
+The shop sells CDs only. At checkout the customer chooses how to pay (switch each method on/off in
+the admin panel → Settings):
+
+| Method | Provider | Secrets (Cloudflare → Worker → Settings → Variables and Secrets) | Webhook |
+| --- | --- | --- | --- |
+| Card, iDEAL, PayPal, Apple/Google Pay | Stripe Checkout (`functions/_lib/payments/stripe.ts`) | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | `https://maasflowrecords.com/api/webhooks/stripe` — events `checkout.session.completed`, `checkout.session.async_payment_succeeded` |
+| Crypto (BTC, ETH, USDT…) | NOWPayments invoice (`functions/_lib/payments/nowpayments.ts`) | `NOWPAYMENTS_API_KEY`, `NOWPAYMENTS_IPN_SECRET` | set automatically per invoice (`/api/webhooks/crypto`) |
+
+Which Stripe methods appear (card, iDEAL, PayPal, Bancontact, Apple Pay…) is chosen in the Stripe
+dashboard → Settings → Payment methods. When a payment is confirmed, the webhook emails a **[PAID]**
+order to the label and a confirmation to the customer (needs Resend). Crypto orders also send an
+"awaiting payment" email with the shipping address first. With both methods off, orders are emailed
+and the label sends a payment request by hand (`manual.ts`). Stock is not lowered automatically —
+update it in the admin panel after shipping.
 
 ## Security
 

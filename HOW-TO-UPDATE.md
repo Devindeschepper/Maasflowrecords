@@ -67,13 +67,22 @@ photo and links. Their page appears at `/artists/newname/` and they're added to 
 
 ---
 
-## 5. Open the shop (when you're ready to sell)
+## 5. The shop (CDs)
 
-1. **Site → Shop products**: set the real name, price (in €), photo and stock (0 = sold out).
-2. **Site → Settings → Shop is open**: turn it **on** → Save.
+**Site → Shop (CDs)**: name, price (in €), photo, stock (0 = sold out) and pre-order on/off.
 
-⚠️ Before turning it on: payments must be set up (see README "Shop & payments") and your
-business details (KvK) must be on the site.
+**Payments** (Site → Settings):
+- **Accept card / iDEAL / PayPal (Stripe)** — the customer pays on Stripe's secure page.
+- **Accept crypto (NOWPayments)** — the customer pays in Bitcoin, Ethereum, USDT…
+
+**When someone pays** you get an email **"[PAID] Order MFR-…"** with the address → pack and ship
+the CD → lower the stock in the admin panel. (Crypto orders first send "Awaiting crypto payment" —
+**don't ship until the [PAID] email arrives**.)
+
+**Open the shop:** Site → Settings → **Shop is open** on → Save.
+
+⚠️ Before turning it on: Stripe and/or NOWPayments accounts must be connected (see README "Shop &
+payments"), email (Resend) must work, and your business details (KvK) must be on the site.
 
 ---
 

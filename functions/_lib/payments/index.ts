@@ -1,11 +1,13 @@
-import type { PaymentProvider } from './types';
+import type { PaymentMethod, PaymentProvider } from './types';
 import { manualProvider } from './manual';
+import { stripeProvider } from './stripe';
+import { nowPaymentsProvider } from './nowpayments';
 
-/** Registered providers. Add new ones here (see types.ts). */
-const providers: Record<string, PaymentProvider> = {
-  [manualProvider.id]: manualProvider,
+/** One provider per payment method the customer can pick at checkout. */
+const providers: Record<PaymentMethod, PaymentProvider> = {
+  card: stripeProvider,
+  crypto: nowPaymentsProvider,
+  manual: manualProvider,
 };
 
-export function getProvider(id: string | undefined): PaymentProvider | undefined {
-  return providers[id || 'manual'];
-}
+export const getProvider = (method: PaymentMethod): PaymentProvider => providers[method];

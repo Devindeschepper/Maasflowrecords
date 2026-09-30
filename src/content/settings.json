@@ -1,5 +1,7 @@
 {
   "shopOpen": false,
+  "acceptCard": true,
+  "acceptCrypto": true,
   "labelSocials": {
     "instagram": "https://www.instagram.com/vintheartist/",
     "tiktok": "https://www.tiktok.com/@vintheartist010",

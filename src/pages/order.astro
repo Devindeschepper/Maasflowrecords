@@ -1,0 +1,42 @@
+---
+// Where Stripe / NOWPayments send the customer back after paying.
+// The actual confirmation comes from the payment webhooks (email to label + customer).
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { site } from '../data/site';
+---
+
+<BaseLayout title="Order" noindex>
+  <section class="section">
+    <div class="container">
+      <p class="eyebrow"><span class="dot"></span>Order</p>
+      <h1>Thank you.</h1>
+      <p class="lead muted" id="order-msg">
+        Your payment is being processed. You'll receive a confirmation email as soon as it's confirmed.
+      </p>
+      <p class="muted" id="order-ref" hidden>Order number: <strong class="mono" id="order-id"></strong></p>
+      <p class="muted">Questions? <a href={`mailto:${site.email}`}>{site.email}</a></p>
+      <div class="btn-row">
+        <a class="btn btn-primary" href="/music/">Listen to the music</a>
+        <a class="btn btn-ghost" href="/shop/">Back to shop</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { clearCart } from '../scripts/cart';
+
+  const q = new URLSearchParams(location.search);
+  const order = q.get('order');
+  if (q.get('status') === 'paid') {
+    clearCart();
+    if (q.get('method') === 'crypto') {
+      document.getElementById('order-msg')!.textContent =
+        "Crypto payments need a few network confirmations. You'll get a confirmation email once the payment is complete — this can take from a few minutes up to an hour.";
+    }
+  }
+  if (order && /^[A-Z0-9-]{6,40}$/.test(order)) {
+    document.getElementById('order-id')!.textContent = order;
+    document.getElementById('order-ref')!.hidden = false;
+  }
+</script>

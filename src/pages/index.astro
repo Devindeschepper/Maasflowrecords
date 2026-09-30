@@ -85,7 +85,7 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
               <a class="btn btn-primary" href={`/music/${featuredRelease.slug}/`}>
                 {next ? 'Release details' : '▶ Listen now'}
               </a>
-              {shopOpen && next && products.some((p) => p.preorder) && <a class="btn" href="/shop/">Pre-order vinyl &amp; CD</a>}
+              {shopOpen && next && products.some((p) => p.preorder) && <a class="btn" href="/shop/">Pre-order the CD</a>}
             </div>
             {latest && next && (
               <p class="also muted">
@@ -165,7 +165,7 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
             {shopItems.map((p) => <ProductCard product={p} />)}
           </div>
         ) : (
-          <p class="empty">Vinyl and CDs — <strong>coming soon</strong>.</p>
+          <p class="empty">The 2Real4U CD — <strong>coming soon</strong>.</p>
         )
       }
     </div>

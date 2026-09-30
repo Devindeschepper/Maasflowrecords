@@ -208,13 +208,13 @@ collections:
                   - { name: twitch, label: 'Twitch', widget: string, required: false }
 
       - name: products
-        label: Shop products
+        label: Shop (CDs)
         file: src/content/products.json
         format: json
         fields:
           - name: products
-            label: Products
-            label_singular: Product
+            label: CDs
+            label_singular: CD
             widget: list
             summary: '{{fields.name}} — €{{fields.price}}'
             fields:
@@ -224,14 +224,13 @@ collections:
                 pattern: ['^[a-z0-9-]+$', 'Lowercase letters, numbers and - only']
                 hint: Unique, e.g. 2real4u-cd — don't change it once the shop is open.
               - { name: name, label: Name, widget: string }
-              - { name: category, label: Category, widget: select, options: [Vinyl, CD, T-Shirt, Hoodie, Cap, Poster, Other] }
+              - { name: category, label: Category, widget: hidden, default: CD }
               - { name: description, label: Description, widget: text, required: false }
               - { name: price, label: Price (€), widget: number, value_type: float, min: 0, step: 0.01 }
               - { name: image, label: Photo, widget: image, media_folder: /public/images/shop, public_folder: /images/shop, hint: "Square, 1200×1200" }
               - { name: stock, label: In stock, widget: number, value_type: int, min: 0, default: 0, hint: "0 = sold out" }
               - { name: preorder, label: Pre-order, widget: boolean, default: false }
-              - { name: sizes, label: Sizes, widget: list, required: false, hint: "Only for clothing, e.g. S, M, L" }
-              - { name: shippingClass, label: Package size, widget: select, options: [small, standard], default: small, hint: 'small = CD / small items, standard = vinyl' }
+              - { name: shippingClass, label: Package size, widget: hidden, default: small }
 
       - name: settings
         label: Settings
@@ -243,6 +242,16 @@ collections:
             widget: boolean
             default: false
             hint: Off = the shop shows “Coming soon” and orders are refused. Only turn on when products, prices and payments are ready.
+          - name: acceptCard
+            label: 'Accept card / iDEAL / PayPal (Stripe)'
+            widget: boolean
+            default: true
+            hint: 'Needs STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET in Cloudflare. Which methods show (card, iDEAL, PayPal, Apple Pay…) is chosen in the Stripe dashboard.'
+          - name: acceptCrypto
+            label: 'Accept crypto (NOWPayments)'
+            widget: boolean
+            default: true
+            hint: 'Needs NOWPAYMENTS_API_KEY + NOWPAYMENTS_IPN_SECRET in Cloudflare.'
           - name: labelSocials
             label: Label socials (footer)
             widget: object

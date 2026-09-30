@@ -1,18 +1,6 @@
 {
   "products": [
     {
-      "id": "2real4u-vinyl",
-      "name": "2Real4U — 12\" Vinyl",
-      "category": "Vinyl",
-      "description": "Limited black 12\" pressing of the debut EP. Printed inner sleeve with lyrics.",
-      "price": 28,
-      "image": "/images/shop/vinyl.svg",
-      "stock": 50,
-      "preorder": true,
-      "sizes": [],
-      "shippingClass": "standard"
-    },
-    {
       "id": "2real4u-cd",
       "name": "2Real4U — CD",
       "category": "CD",

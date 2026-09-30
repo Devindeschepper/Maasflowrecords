@@ -4,7 +4,7 @@ import PageHero from '../components/PageHero.astro';
 import ProductCard from '../components/ProductCard.astro';
 import { products, shippingZones, formatPrice } from '../data/products';
 import ShopComingSoon from '../components/ShopComingSoon.astro';
-import { site, shopOpen } from '../data/site';
+import { site, shopOpen, paymentMethods } from '../data/site';
 
 const categories = [...new Set(products.map((p) => p.category))];
 
@@ -25,8 +25,8 @@ const jsonLd = !shopOpen ? [] : products.map((p) => ({
 }));
 ---
 
-<BaseLayout title="Shop" description="Official Maas Flow Records store — vinyl and CDs." jsonLd={jsonLd}>
-  <PageHero eyebrow="Official store" title="Shop" lead="Vinyl and CDs. Every order directly supports independent music." />
+<BaseLayout title="Shop" description="Official Maas Flow Records store — CDs." jsonLd={jsonLd}>
+  <PageHero eyebrow="Official store" title="Shop" lead="Physical CDs, straight from the label. Every order directly supports independent music." />
 
   {!shopOpen && <ShopComingSoon />}
   {shopOpen && (<>
@@ -35,10 +35,12 @@ const jsonLd = !shopOpen ? [] : products.map((p) => ({
     <div class="container">
       <div class="section-head">
         <h2 class="sr-only">Products</h2>
-        <div class="filters" role="group" aria-label="Filter products by category">
-          <button type="button" class="filter" aria-pressed="true" data-filter="all">All</button>
-          {categories.map((c) => <button type="button" class="filter" aria-pressed="false" data-filter={c}>{c}</button>)}
-        </div>
+        {categories.length > 1 ? (
+          <div class="filters" role="group" aria-label="Filter products by category">
+            <button type="button" class="filter" aria-pressed="true" data-filter="all">All</button>
+            {categories.map((c) => <button type="button" class="filter" aria-pressed="false" data-filter={c}>{c}</button>)}
+          </div>
+        ) : <span class="eyebrow">CDs</span>}
         <a href="/cart/" class="link-arrow">View cart</a>
       </div>
       <div class="grid grid-3" id="product-grid">
@@ -53,14 +55,14 @@ const jsonLd = !shopOpen ? [] : products.map((p) => ({
         <h2 class="h3">Shipping</h2>
         <table class="rates">
           <caption class="sr-only">Shipping rates</caption>
-          <thead><tr><th scope="col">Destination</th><th scope="col">CD</th><th scope="col">Vinyl</th><th scope="col">Delivery</th></tr></thead>
+          <thead><tr><th scope="col">Destination</th><th scope="col">Shipping</th><th scope="col">Delivery</th></tr></thead>
           <tbody>
             {shippingZones.map((z) => (
-              <tr><th scope="row">{z.label}</th><td>{formatPrice(z.rates.small)}</td><td>{formatPrice(z.rates.standard)}</td><td>{z.estimate}</td></tr>
+              <tr><th scope="row">{z.label}</th><td>{formatPrice(z.rates.small)}</td><td>{z.estimate}</td></tr>
             ))}
           </tbody>
         </table>
-        <p class="muted small">One shipping charge per order, based on the largest item.</p>
+        <p class="muted small">One shipping charge per order, however many CDs you order.</p>
       </div>
       <div>
         <h2 class="h3">Orders &amp; returns</h2>
@@ -74,8 +76,10 @@ const jsonLd = !shopOpen ? [] : products.map((p) => ({
       <div>
         <h2 class="h3">Payment</h2>
         <p class="muted small">
-          All prices in EUR, VAT included. Payment is handled securely by our payment provider —
-          card details never touch this website.
+          All prices in EUR, VAT included.
+          {(paymentMethods.card || paymentMethods.crypto)
+            ? <>Pay with {[paymentMethods.card && 'card, iDEAL, PayPal, Apple Pay or Google Pay (via Stripe)', paymentMethods.crypto && 'crypto (via NOWPayments)'].filter(Boolean).join(' or ')}. Payment details never touch this website.</>
+            : <>After ordering you'll receive a payment request by email.</>}
         </p>
       </div>
     </div>
