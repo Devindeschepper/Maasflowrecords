@@ -287,6 +287,11 @@ collections:
             widget: boolean
             default: true
             hint: 'Needs NOWPAYMENTS_API_KEY + NOWPAYMENTS_IPN_SECRET in Cloudflare.'
+          - name: analyticsToken
+            label: Cloudflare Web Analytics token
+            widget: string
+            required: false
+            hint: 'Free visitor stats, no cookies. Cloudflare → Analytics & Logs → Web Analytics → Add a site → copy the token (32 letters/numbers) from the code snippet. Empty = off.'
           - name: labelSocials
             label: Label socials (footer)
             widget: object
