@@ -5,15 +5,21 @@ import { fmtEventDate } from '../lib/format';
 
 interface Props { event: LabelEvent; compact?: boolean }
 const { event: e, compact = false } = Astro.props;
-const d = fmtEventDate(e.start);
+const d = e.start ? fmtEventDate(e.start) : null;
 const past = isPast(e);
 ---
 
 <article class:list={['event', { compact, past }]} id={e.slug}>
   <div class="date" aria-hidden="true">
-    <span class="day">{d.day}</span>
-    <span class="mon">{d.month}</span>
-    <span class="yr mono">{d.year}</span>
+    {d ? (
+      <>
+        <span class="day">{d.day}</span>
+        <span class="mon">{d.month}</span>
+        <span class="yr mono">{d.year}</span>
+      </>
+    ) : (
+      <span class="day tba">TBA</span>
+    )}
   </div>
 
   {!compact && (
@@ -26,7 +32,11 @@ const past = isPast(e);
     <p class="eyebrow"><span class="tag">{e.kind}</span></p>
     <h3>{e.title}</h3>
     <p class="where">
-      <time datetime={e.start}>{d.full} · {d.time}</time><br />
+      {e.start && d ? (
+        <time datetime={e.allDay ? e.start.slice(0, 10) : e.start}>{e.dateTentative ? 'Expected ' : ''}{d.full}{e.allDay ? '' : ` · ${d.time}`}</time>
+      ) : (
+        <span>Date TBA</span>
+      )}<br />
       <span class="muted">{e.venue}{e.city ? ` — ${e.city}` : ''}</span>
     </p>
     {!compact && <p class="desc muted">{e.description}</p>}
@@ -37,11 +47,11 @@ const past = isPast(e);
       past ? (
         <span class="tag">Past event</span>
       ) : e.ticketUrl ? (
-        <a class="btn btn-primary" href={e.ticketUrl} target="_blank" rel="noopener noreferrer">
+        <a class="btn btn-primary" href={e.ticketUrl} {...(e.ticketUrl.startsWith('/') ? {} : { target: '_blank', rel: 'noopener noreferrer' })}>
           {e.ticketLabel ?? 'Tickets'} <span class="sr-only">for {e.title}</span>
         </a>
       ) : (
-        <span class="btn btn-ghost" aria-disabled="true">{e.online ? 'Link soon' : 'Tickets soon'}</span>
+        <span class="btn btn-ghost" aria-disabled="true">{!e.start ? 'Date soon' : e.online ? 'Link soon' : 'Tickets soon'}</span>
       )
     }
   </div>
@@ -55,6 +65,7 @@ const past = isPast(e);
   .date { display: flex; flex-direction: column; align-items: flex-start; line-height: 1; }
   .day { font-family: var(--font-display); font-size: 2.6rem; }
   .mon { font-family: var(--font-display); font-size: 1.1rem; text-transform: uppercase; color: var(--accent); margin-top: 0.2rem; }
+  .tba { font-size: 1.6rem; color: var(--muted); }
   .yr { font-size: 0.68rem; color: var(--muted); margin-top: 0.3rem; }
   .img { grid-column: 1 / -1; order: -1; aspect-ratio: 16 / 9; overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
   .img img { width: 100%; height: 100%; object-fit: cover; }

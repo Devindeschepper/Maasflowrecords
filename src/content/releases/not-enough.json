@@ -1,0 +1,17 @@
+{
+  "title": "Not Enough",
+  "artists": [
+    "vin"
+  ],
+  "type": "Single",
+  "releaseDate": "2026-06-19",
+  "dateTentative": false,
+  "label": true,
+  "cover": "/images/releases/2real4u.svg",
+  "description": "Single from the upcoming 2Real4U EP.",
+  "tracks": [],
+  "links": {
+    "spotify": "https://open.spotify.com/track/2ukplGX06n0amTGPO4Tjxl"
+  },
+  "preview": "/audio/not-enough.mp3"
+}

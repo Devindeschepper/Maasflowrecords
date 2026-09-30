@@ -2,13 +2,15 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from '../components/PageHero.astro';
 import EventCard from '../components/EventCard.astro';
+import BookingForm from '../components/BookingForm.astro';
 import { upcomingEvents, pastEvents } from '../data/events';
 import { site } from '../data/site';
 
 const upcoming = upcomingEvents();
 const past = pastEvents();
 
-const jsonLd = upcoming.map((e) => ({
+// Only dated, real-world events go into search-engine data.
+const jsonLd = upcoming.filter((e) => e.kind !== 'Release' && e.start).map((e) => ({
   '@context': 'https://schema.org',
   '@type': 'MusicEvent',
   name: e.title,
@@ -38,7 +40,7 @@ const jsonLd = upcoming.map((e) => ({
         upcoming.length ? (
           upcoming.map((e) => <EventCard event={e} />)
         ) : (
-          <p class="empty">No upcoming events right now. Follow us on <a href="/socials/">socials</a> for announcements.</p>
+          <p class="empty">No upcoming events right now. Follow <a href="/artists/vin/">VIN</a> for announcements.</p>
         )
       }
     </div>
@@ -55,11 +57,24 @@ const jsonLd = upcoming.map((e) => ({
     )
   }
 
-  <section class="section">
+  <section class="section" id="book">
     <div class="container book">
-      <h2>Book VIN</h2>
-      <p class="lead muted">Shows, festivals, collaborations and studio sessions.</p>
-      <a class="btn btn-primary" href="/contact/?topic=events">Booking enquiry</a>
+      <div class="intro">
+        <p class="eyebrow"><span class="dot"></span>Bookings</p>
+        <h2>Book an artist</h2>
+        <p class="lead muted">Want a Maas Flow Records artist at your show, festival, club night or event? Send a request and we'll get back to you.</p>
+        <p class="muted small">Prefer email? <a href="mailto:info@maasflowrecords.com">info@maasflowrecords.com</a></p>
+      </div>
+      <BookingForm />
     </div>
   </section>
 </BaseLayout>
+
+<style>
+  .book { display: grid; gap: 2.5rem; }
+  .small { font-size: 0.88rem; }
+  @media (min-width: 960px) {
+    .book { grid-template-columns: 1fr 1.6fr; gap: 4rem; align-items: start; }
+    .intro { position: sticky; top: calc(var(--header-h) + 2rem); }
+  }
+</style>

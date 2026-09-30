@@ -2,10 +2,11 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PlatformLinks from '../../components/PlatformLinks.astro';
 import PreviewButton from '../../components/PreviewButton.astro';
+import Countdown from '../../components/Countdown.astro';
 import ReleaseCard from '../../components/ReleaseCard.astro';
-import { releases, isUpcoming, sortedReleases } from '../../data/releases';
+import { releases, isUpcoming, releasesByArtist } from '../../data/releases';
 import { site } from '../../data/site';
-import { artistNames, catalogNo, releaseDateLabel } from '../../lib/format';
+import { artistNames, releaseMeta, releaseDateLabel } from '../../lib/format';
 import type { Release } from '../../data/types';
 
 export function getStaticPaths() {
@@ -15,7 +16,8 @@ export function getStaticPaths() {
 const { release: r } = Astro.props as { release: Release };
 const upcoming = isUpcoming(r);
 const hasLinks = Object.keys(r.links).length > 0;
-const more = sortedReleases().filter((x) => x.slug !== r.slug).slice(0, 4);
+// "More music" = other releases by the same artist(s).
+const more = releasesByArtist(r.artists[0]).filter((x) => x.slug !== r.slug).slice(0, 4);
 
 const jsonLd = [
   {
@@ -26,7 +28,7 @@ const jsonLd = [
     ...(r.releaseDate ? { datePublished: r.releaseDate } : {}),
     image: new URL(r.cover, site.url).href,
     url: new URL(`/music/${r.slug}/`, site.url).href,
-    recordLabel: { '@type': 'Organization', name: site.name },
+    ...(r.label !== false ? { recordLabel: { '@type': 'Organization', name: site.name } } : {}),
     ...(r.tracks && r.type !== 'Single' ? { numTracks: r.tracks.length } : {}),
   },
 ];
@@ -39,10 +41,11 @@ const jsonLd = [
         <img src={r.cover} alt={`${r.title} cover art`} width="800" height="800" fetchpriority="high" />
       </div>
       <div class="info">
-        <p class="eyebrow"><span class="dot"></span>{catalogNo(r)} · {r.type}{upcoming && ' · Upcoming'}</p>
+        <p class="eyebrow"><span class="dot"></span>{releaseMeta(r)}{upcoming && ' · Upcoming'}</p>
         <h1>{r.title}</h1>
         <p class="by">{artistNames(r)}</p>
         <p class="mono muted">{upcoming ? 'Release date' : 'Released'}: {r.releaseDate ? <time datetime={r.releaseDate}>{releaseDateLabel(r)}</time> : 'TBA'}</p>
+        {upcoming && r.releaseDate && <Countdown date={r.releaseDate} tentative={r.dateTentative} />}
         <p class="lead">{r.description}</p>
 
         {r.preview && <PreviewButton src={r.preview} title={r.title} size="lg" />}

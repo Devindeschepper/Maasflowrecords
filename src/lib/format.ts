@@ -25,9 +25,16 @@ export const releaseDateLabel = (r: Release) => (r.releaseDate ? `${r.dateTentat
 export const artistNames = (r: Release) =>
   r.artists.map((slug) => artists.find((a) => a.slug === slug)?.name ?? slug).join(' & ');
 
-/** Catalogue number, e.g. MFR-003 — assigned by release date (oldest = 001). */
+/**
+ * Catalogue number, e.g. MFR-003 — label releases only, assigned by release date (oldest = 001).
+ * Returns '' for releases outside the label.
+ */
 export const catalogNo = (r: Release) => {
+  if (r.label === false) return '';
   const key = (x: Release) => x.releaseDate ?? '9999-12-31';
-  const ordered = [...releases].sort((a, b) => key(a).localeCompare(key(b)));
+  const ordered = releases.filter((x) => x.label !== false).sort((a, b) => key(a).localeCompare(key(b)));
   return `MFR-${String(ordered.indexOf(r) + 1).padStart(3, '0')}`;
 };
+
+/** "MFR-002 · Single", or just "Single" outside the label. */
+export const releaseMeta = (r: Release) => [catalogNo(r), r.type].filter(Boolean).join(' · ');

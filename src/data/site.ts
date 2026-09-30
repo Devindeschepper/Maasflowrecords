@@ -1,15 +1,13 @@
-import type { Links } from './types';
+import settings from '../content/settings.json';
+import { cleanLinks } from './clean';
 
 export const site = {
   name: 'Maas Flow Records',
   shortName: 'MFR',
   url: 'https://maasflowrecords.com',
   email: 'info@maasflowrecords.com',
-  city: 'Rotterdam',
-  country: 'NL',
-  founded: 'Rotterdam, NL',
   description:
-    'Maas Flow Records is an independent music label from Rotterdam, founded by producer and rapper VIN. Rap, R&B and beats — made independently.',
+    'Maas Flow Records is an independent music label founded by producer and rapper VIN. Rap, R&B and beats — made independently.',
   /**
    * Default social preview image (1200x630).
    * TODO: replace with a 1200x630 PNG/JPG (Instagram/Facebook/WhatsApp don't show SVG previews).
@@ -17,17 +15,24 @@ export const site = {
   ogImage: '/images/og-default.svg',
 };
 
+/** Label socials (footer, shop page) — edited in the admin panel (/admin → Settings). */
+export const labelSocials = cleanLinks(settings.labelSocials);
+
 /**
- * Official label accounts. For now these are VIN's accounts.
- * Add a platform by adding a line (see platforms.ts for the ids); remove a line to hide it.
+ * Shop switch (admin panel → Settings). false = the shop shows "Coming soon", the cart is
+ * hidden and the checkout API refuses orders.
  */
-export const labelSocials: Links = {
-  instagram: 'https://www.instagram.com/vintheartist/',
-  tiktok: 'https://www.tiktok.com/@vintheartist010',
-  youtube: 'https://www.youtube.com/channel/UC8dDWNLNjAxwDzcRoadqSvg',
-  spotify: 'https://open.spotify.com/artist/5bDu5EvUNqdhJfVXYcQiXK',
-  appleMusic: 'https://music.apple.com/us/artist/vin/1717180938',
-  beatstars: 'https://www.beatstars.com/devindeschepper48605',
+export const shopOpen: boolean = settings.shopOpen === true;
+
+/**
+ * Payment methods offered at checkout (admin panel → Settings).
+ * card   = Stripe Checkout: card, iDEAL, PayPal, Apple/Google Pay… (enabled in the Stripe dashboard)
+ * crypto = NOWPayments invoice (BTC, ETH, USDT, …)
+ * With both off, orders are emailed and the label sends a payment request by hand.
+ */
+export const paymentMethods = {
+  card: settings.acceptCard !== false,
+  crypto: settings.acceptCrypto !== false,
 };
 
 export const nav = [
@@ -36,8 +41,6 @@ export const nav = [
   { href: '/music/', label: 'Music' },
   { href: '/events/', label: 'Events' },
   { href: '/casting/', label: 'Casting' },
-  { href: '/shop/', label: 'Shop' },
   { href: '/bio/', label: 'Bio' },
-  { href: '/socials/', label: 'Socials' },
-  { href: '/contact/', label: 'Contact' },
+  { href: '/shop/', label: 'Shop' },
 ];

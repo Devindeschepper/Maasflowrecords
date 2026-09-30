@@ -1,0 +1,276 @@
+# Sveltia CMS configuration — the admin panel at /admin.
+# Every change is saved as a commit on GitHub (branch main); Cloudflare then rebuilds the site (~1–2 min).
+backend:
+  name: github
+  repo: Devindeschepper/Maasflowrecords
+  branch: main
+  auth_methods: [token]
+  commit_messages:
+    create: 'Admin: add {{collection}} “{{slug}}”'
+    update: 'Admin: update {{collection}} “{{slug}}”'
+    delete: 'Admin: delete {{collection}} “{{slug}}”'
+    uploadMedia: 'Admin: upload “{{path}}”'
+    deleteMedia: 'Admin: delete “{{path}}”'
+
+app_title: Maas Flow Records — Admin
+site_url: https://maasflowrecords.com
+media_folder: public/images/uploads
+public_folder: /images/uploads
+
+collections:
+  # ---------------------------------------------------------------- RELEASES
+  - name: releases
+    label: Releases
+    label_singular: Release
+    description: Singles, EPs and albums. Label releases appear on the Music page; releases from before the label only on the artist page.
+    folder: src/content/releases
+    extension: json
+    format: json
+    create: true
+    delete: true
+    identifier_field: title
+    slug: '{{title}}'
+    summary: '{{title}} — {{type}} — {{releaseDate}}'
+    sortable_fields: [releaseDate, title]
+    fields:
+      - { name: title, label: Title, widget: string }
+      - name: type
+        label: Type
+        widget: select
+        options: [Single, EP, Album, Beat Tape]
+        default: Single
+      - name: artists
+        label: Artist(s)
+        widget: list
+        default: [vin]
+        hint: The artist's URL name, e.g. vin
+      - name: releaseDate
+        label: Release date
+        widget: datetime
+        type: date
+        format: YYYY-MM-DD
+        required: false
+        hint: Leave empty if the date is not known yet (shows “TBA”). A future date shows as “Upcoming”.
+      - name: dateTentative
+        label: Date not confirmed yet
+        widget: boolean
+        default: false
+        hint: Shows “Expected …” instead of “Out …”.
+      - name: label
+        label: Released on Maas Flow Records
+        widget: boolean
+        default: true
+        hint: Turn off for music released before the label (then it only shows on the artist page, without a catalogue number).
+      - name: cover
+        label: Cover art
+        widget: image
+        media_folder: /public/images/releases
+        public_folder: /images/releases
+        hint: Square image, at least 1000×1000 (.jpg).
+      - { name: description, label: Short description, widget: text, required: false }
+      - name: tracks
+        label: Tracklist
+        widget: list
+        required: false
+        hint: Only for EPs/albums. One song per line.
+      - name: links
+        label: Streaming links
+        widget: object
+        required: false
+        collapsed: true
+        hint: 'Paste full links (https://…). Leave empty to hide a platform.'
+        fields:
+          - { name: spotify, label: 'Spotify', widget: string, required: false }
+          - { name: appleMusic, label: 'Apple Music', widget: string, required: false }
+          - { name: youtube, label: 'YouTube', widget: string, required: false }
+          - { name: youtubeMusic, label: 'YouTube Music', widget: string, required: false }
+          - { name: soundcloud, label: 'SoundCloud', widget: string, required: false }
+          - { name: deezer, label: 'Deezer', widget: string, required: false }
+          - { name: tidal, label: 'TIDAL', widget: string, required: false }
+          - { name: amazonMusic, label: 'Amazon Music', widget: string, required: false }
+          - { name: bandcamp, label: 'Bandcamp', widget: string, required: false }
+          - { name: beatstars, label: 'BeatStars', widget: string, required: false }
+      - name: preview
+        label: Song preview (mp3)
+        widget: file
+        required: false
+        accept: audio/mpeg
+        media_folder: /public/audio
+        public_folder: /audio
+        hint: A short clip (10–30 seconds, under 1 MB). A play button appears on the cover.
+
+  # ------------------------------------------------------------------ EVENTS
+  - name: events
+    label: Events
+    label_singular: Event
+    description: Shows, release days, livestreams and label events. Past events move to “Past events” automatically.
+    folder: src/content/events
+    extension: json
+    format: json
+    create: true
+    delete: true
+    identifier_field: title
+    slug: '{{title}}'
+    summary: '{{title}} — {{date}}'
+    sortable_fields: [date, title]
+    fields:
+      - { name: title, label: Title, widget: string }
+      - name: kind
+        label: Type
+        widget: select
+        options: [Release, Concert, Livestream, Performance, Label event, Listening session, Other]
+        default: Concert
+      - name: date
+        label: Date
+        widget: datetime
+        type: date
+        format: YYYY-MM-DD
+        required: false
+        hint: Leave empty if there is no date yet (shows “Date TBA”).
+      - name: time
+        label: Start time
+        widget: string
+        required: false
+        pattern: ['^$|^([01][0-9]|2[0-3]):[0-5][0-9]$', 'Use 24h time like 20:00, or leave empty']
+        hint: e.g. 20:00 — leave empty for a whole-day event (like a release day).
+      - { name: dateTentative, label: Date not confirmed yet, widget: boolean, default: false }
+      - { name: venue, label: Venue, widget: string, required: false, hint: "e.g. Club name, “Online” or “Location TBA”" }
+      - { name: city, label: City, widget: string, required: false }
+      - { name: online, label: Online event, widget: boolean, default: false }
+      - { name: description, label: Description, widget: text, required: false }
+      - name: image
+        label: Image
+        widget: image
+        media_folder: /public/images/events
+        public_folder: /images/events
+        hint: Landscape 16:9, e.g. 1600×900.
+      - { name: ticketUrl, label: Ticket / info link, widget: string, required: false, hint: "Full link (https://…) or a page on this site like /music/2real4u/" }
+      - { name: ticketLabel, label: Button text, widget: string, required: false, hint: "e.g. Tickets, Watch live, More info" }
+
+  # ------------------------------------------------------- SINGLE FILES
+  - name: site
+    label: Site
+    files:
+      - name: artists
+        label: Artists
+        file: src/content/artists.json
+        format: json
+        fields:
+          - name: artists
+            label: Artists
+            label_singular: Artist
+            widget: list
+            summary: '{{fields.name}}'
+            fields:
+              - name: slug
+                label: URL name
+                widget: string
+                pattern: ['^[a-z0-9-]+$', 'Lowercase letters, numbers and - only (e.g. vin)']
+                hint: Used in the web address /artists/<URL name>/ — don't change it later.
+              - { name: name, label: Artist name, widget: string }
+              - { name: roles, label: Roles, widget: list, hint: 'e.g. Producer, Rapper' }
+              - { name: origin, label: From, widget: string, required: false }
+              - { name: tagline, label: Tagline, widget: string, required: false }
+              - { name: description, label: Short bio, widget: text, required: false }
+              - { name: image, label: Main photo, widget: image, media_folder: /public/images/artists, public_folder: /images/artists, hint: "Portrait photo" }
+              - { name: imageAlt, label: Main photo description, widget: string, required: false, hint: "For blind visitors and Google, e.g. “VIN on a staircase”" }
+              - { name: bioPhoto, label: Bio page photo, widget: image, required: false, media_folder: /public/images/artists, public_folder: /images/artists }
+              - { name: bioPhotoAlt, label: Bio photo description, widget: string, required: false }
+              - name: streaming
+                label: Music links
+                widget: object
+                required: false
+                collapsed: true
+                hint: 'Paste full links (https://…). Leave empty to hide a platform.'
+                fields:
+                  - { name: spotify, label: 'Spotify', widget: string, required: false }
+                  - { name: appleMusic, label: 'Apple Music', widget: string, required: false }
+                  - { name: youtube, label: 'YouTube', widget: string, required: false }
+                  - { name: youtubeMusic, label: 'YouTube Music', widget: string, required: false }
+                  - { name: soundcloud, label: 'SoundCloud', widget: string, required: false }
+                  - { name: deezer, label: 'Deezer', widget: string, required: false }
+                  - { name: tidal, label: 'TIDAL', widget: string, required: false }
+                  - { name: amazonMusic, label: 'Amazon Music', widget: string, required: false }
+                  - { name: bandcamp, label: 'Bandcamp', widget: string, required: false }
+                  - { name: beatstars, label: 'BeatStars', widget: string, required: false }
+              - name: socials
+                label: Social media
+                widget: object
+                required: false
+                collapsed: true
+                hint: 'Paste full links (https://…). Leave empty to hide a platform.'
+                fields:
+                  - { name: instagram, label: 'Instagram', widget: string, required: false }
+                  - { name: tiktok, label: 'TikTok', widget: string, required: false }
+                  - { name: youtube, label: 'YouTube', widget: string, required: false }
+                  - { name: facebook, label: 'Facebook', widget: string, required: false }
+                  - { name: x, label: 'X / Twitter', widget: string, required: false }
+                  - { name: twitch, label: 'Twitch', widget: string, required: false }
+
+      - name: products
+        label: Shop (CDs)
+        file: src/content/products.json
+        format: json
+        fields:
+          - name: products
+            label: CDs
+            label_singular: CD
+            widget: list
+            summary: '{{fields.name}} — €{{fields.price}}'
+            fields:
+              - name: id
+                label: Product code
+                widget: string
+                pattern: ['^[a-z0-9-]+$', 'Lowercase letters, numbers and - only']
+                hint: Unique, e.g. 2real4u-cd — don't change it once the shop is open.
+              - { name: name, label: Name, widget: string }
+              - { name: category, label: Category, widget: hidden, default: CD }
+              - { name: description, label: Description, widget: text, required: false }
+              - { name: price, label: Price (€), widget: number, value_type: float, min: 0, step: 0.01 }
+              - { name: image, label: Photo, widget: image, media_folder: /public/images/shop, public_folder: /images/shop, hint: "Square, 1200×1200" }
+              - { name: stock, label: In stock, widget: number, value_type: int, min: 0, default: 0, hint: "0 = sold out" }
+              - { name: preorder, label: Pre-order, widget: boolean, default: false }
+              - { name: shippingClass, label: Package size, widget: hidden, default: small }
+
+      - name: settings
+        label: Settings
+        file: src/content/settings.json
+        format: json
+        fields:
+          - name: shopOpen
+            label: Shop is open
+            widget: boolean
+            default: false
+            hint: Off = the shop shows “Coming soon” and orders are refused. Only turn on when products, prices and payments are ready.
+          - name: acceptCard
+            label: 'Accept card / iDEAL / PayPal (Stripe)'
+            widget: boolean
+            default: true
+            hint: 'Needs STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET in Cloudflare. Which methods show (card, iDEAL, PayPal, Apple Pay…) is chosen in the Stripe dashboard.'
+          - name: acceptCrypto
+            label: 'Accept crypto (NOWPayments)'
+            widget: boolean
+            default: true
+            hint: 'Needs NOWPAYMENTS_API_KEY + NOWPAYMENTS_IPN_SECRET in Cloudflare.'
+          - name: labelSocials
+            label: Label socials (footer)
+            widget: object
+            required: false
+            collapsed: true
+            hint: 'Paste full links (https://…). Leave empty to hide a platform.'
+            fields:
+              - { name: spotify, label: 'Spotify', widget: string, required: false }
+              - { name: appleMusic, label: 'Apple Music', widget: string, required: false }
+              - { name: youtube, label: 'YouTube', widget: string, required: false }
+              - { name: youtubeMusic, label: 'YouTube Music', widget: string, required: false }
+              - { name: soundcloud, label: 'SoundCloud', widget: string, required: false }
+              - { name: deezer, label: 'Deezer', widget: string, required: false }
+              - { name: tidal, label: 'TIDAL', widget: string, required: false }
+              - { name: amazonMusic, label: 'Amazon Music', widget: string, required: false }
+              - { name: bandcamp, label: 'Bandcamp', widget: string, required: false }
+              - { name: beatstars, label: 'BeatStars', widget: string, required: false }
+              - { name: instagram, label: 'Instagram', widget: string, required: false }
+              - { name: tiktok, label: 'TikTok', widget: string, required: false }
+              - { name: facebook, label: 'Facebook', widget: string, required: false }
+              - { name: x, label: 'X / Twitter', widget: string, required: false }
+              - { name: twitch, label: 'Twitch', widget: string, required: false }

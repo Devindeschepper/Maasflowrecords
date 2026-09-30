@@ -10,8 +10,11 @@ export interface OrderLine {
   preorder: boolean;
 }
 
+export type PaymentMethod = 'card' | 'crypto' | 'manual';
+
 export interface Order {
   orderId: string;
+  method: PaymentMethod;
   lines: OrderLine[];
   subtotal: number;
   shipping: number;
@@ -38,13 +41,12 @@ export interface CheckoutResult {
 
 /**
  * A payment provider turns a validated, server-priced Order into a payment.
- * To add one (e.g. Mollie, Stripe, PayPal): create a file in this folder that
- * implements this interface using the provider's REST API + a secret from `env`,
- * register it in ./index.ts, and set PAYMENT_PROVIDER to its id.
- * You will also need a webhook function (functions/api/webhooks/<provider>.ts)
- * to confirm payment and update stock.
+ * Providers that redirect to a hosted payment page confirm the payment later
+ * through a webhook (functions/api/webhooks/*), which emails the paid order.
  */
 export interface PaymentProvider {
-  id: string;
+  id: PaymentMethod;
+  /** Whether the secrets this provider needs are set. */
+  configured(env: Env): boolean;
   createCheckout(order: Order, env: Env, origin: string): Promise<CheckoutResult>;
 }

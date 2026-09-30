@@ -1,0 +1,37 @@
+---
+// Shown instead of the shop while `shopOpen` is false (src/data/site.ts).
+import PlatformLinks from './PlatformLinks.astro';
+import { labelSocials, site } from '../data/site';
+
+const coming = ['2Real4U — CD'];
+---
+
+<section class="section">
+  <div class="container soon">
+    <div>
+      <p class="eyebrow"><span class="dot"></span>Coming soon</p>
+      <h2>The first drop is on the way</h2>
+      <p class="lead muted">
+        The 2Real4U CD is in the works. Follow VIN to be the first to know when
+        the shop opens.
+      </p>
+      <PlatformLinks links={labelSocials} variant="chips" hideEmpty />
+      <p class="muted small">Questions or wholesale? <a href={`mailto:${site.email}`}>{site.email}</a></p>
+    </div>
+    <ul class="coming" aria-label="What's coming">
+      {coming.map((c) => <li>{c}</li>)}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .soon { display: grid; gap: 2.5rem; align-items: center; }
+  .soon h2 { max-width: 14ch; }
+  .small { font-size: 0.88rem; margin-top: 1.5rem; }
+  .coming { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+  .coming li {
+    padding: 0.9rem 0; border-bottom: 1px solid var(--line); color: var(--muted);
+    font-family: var(--font-display); font-size: clamp(1.6rem, 5vw, 2.4rem); text-transform: uppercase;
+  }
+  @media (min-width: 900px) { .soon { grid-template-columns: 1.3fr 1fr; gap: 4rem; } }
+</style>

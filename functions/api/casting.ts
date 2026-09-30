@@ -6,7 +6,7 @@ import { sendMail, fileToAttachment, type Attachment } from '../_lib/mail';
 // Keep in sync with src/pages/casting.astro
 const ROLES = [
   'Singer', 'Rapper', 'Producer', 'Guitarist', 'Pianist', 'Drummer', 'Bassist',
-  'DJ', 'Songwriter', 'Mixing engineer', 'Mastering engineer', 'Other',
+  'DJ', 'Mixing engineer', 'Mastering engineer', 'Other',
 ];
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_EXT = /\.(mp3|wav|m4a|pdf|zip)$/i;

@@ -1,5 +1,5 @@
 ---
-import { site, nav, labelSocials } from '../data/site';
+import { site, nav, labelSocials, shopOpen } from '../data/site';
 import Logo from './Logo.astro';
 import PlatformLinks from './PlatformLinks.astro';
 
@@ -11,15 +11,18 @@ const year = new Date().getFullYear();
     <div class="top">
       <div class="brand">
         <Logo size="lg" />
-        <p class="muted">Independent music label. {site.founded}.</p>
+        <p class="muted">Independent music label.</p>
         <a class="mail" href={`mailto:${site.email}`}>{site.email}</a>
+        <p><a class="btn btn-ghost contact-btn" href="/contact/">Contact &amp; bookings</a></p>
       </div>
 
       <nav aria-label="Footer">
         <ul class="links">
           {nav.map((i) => <li><a href={i.href}>{i.label}</a></li>)}
-          <li><a href="/cart/">Cart</a></li>
-          <li><a href="/shop/#shipping">Shipping &amp; returns</a></li>
+          <li><a href="/contact/">Contact</a></li>
+          {shopOpen && <li><a href="/cart/">Cart</a></li>}
+          {shopOpen && <li><a href="/shop/#shipping">Shipping &amp; returns</a></li>}
+          <li><a href="/privacy/">Privacy</a></li>
         </ul>
       </nav>
 
@@ -31,17 +34,18 @@ const year = new Date().getFullYear();
 
     <div class="bottom mono">
       <span>© {year} {site.name}. All rights reserved.</span>
-      <span>Made in Rotterdam</span>
+      <span>Independent since day one</span>
     </div>
   </div>
 </footer>
 
 <style>
-  .site-footer { border-top: 1px solid var(--line); padding: 3.5rem 0 1.5rem; margin-top: 2rem; }
+  .site-footer { border-top: 1px solid var(--line); padding: 3.5rem 0 1.5rem; }
   .top { display: grid; gap: 2.5rem; }
   @media (min-width: 900px) { .top { grid-template-columns: 1.3fr 1fr 1fr; } }
   .brand p { margin: 1rem 0 0.5rem; }
   .mail { font-weight: 500; }
+  .contact-btn { margin-top: 1rem; }
   .links { list-style: none; margin: 0; padding: 0; columns: 2; column-gap: 2rem; }
   .links a { display: inline-block; padding: 0.35rem 0; text-decoration: none; color: var(--muted); font-size: 0.9rem; }
   .links a:hover { color: var(--text); }

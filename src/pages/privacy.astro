@@ -1,0 +1,59 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import { site } from '../data/site';
+// NOTE: a plain-language starting point, not legal advice. Have it checked before relying on it.
+const updated = '29 September 2026';
+---
+
+<BaseLayout title="Privacy Policy" description={`How ${site.name} handles your personal data.`}>
+  <PageHero eyebrow="Legal" title="Privacy" lead={`Last updated: ${updated}`} />
+
+  <section class="section">
+    <div class="container prose">
+      <h2 class="h3">Who we are</h2>
+      <p>
+        This website is run by {site.name}. For any question about your data, email
+        <a href={`mailto:${site.email}`}>{site.email}</a>.
+      </p>
+
+      <h2 class="h3">What we collect and why</h2>
+      <ul>
+        <li><strong>Newsletter:</strong> your email address, only if you sign up and tick the consent box. We use it to send news about music, releases and events. You can unsubscribe at any time via the link in every email or by emailing us.</li>
+        <li><strong>Contact and casting forms:</strong> the details you fill in (such as name, email, links, message and any file you upload). We use them only to answer your message or review your submission. They are sent to us by email and are not published.</li>
+        <li><strong>Orders</strong> (once the shop is open): name, email and shipping address, to process and ship your order.</li>
+      </ul>
+      <p>We do not sell your data and do not use advertising trackers on this website.</p>
+
+      <h2 class="h3">Services we use</h2>
+      <ul>
+        <li><strong>Cloudflare</strong> hosts the website and provides spam protection (Turnstile).</li>
+        <li><strong>Resend</strong> delivers form emails and stores the newsletter list.</li>
+        <li><strong>Stripe</strong> processes card, iDEAL and PayPal payments, and <strong>NOWPayments</strong> processes crypto payments. You pay on their secure pages; we never see your card or wallet details.</li>
+      </ul>
+      <p>
+        Links to Spotify, Apple Music, YouTube, Instagram, TikTok and BeatStars take you to those services, which have
+        their own privacy policies. Song previews on this site are hosted by us and don't load anything from them.
+      </p>
+
+      <h2 class="h3">How long we keep it</h2>
+      <p>
+        Newsletter addresses are kept until you unsubscribe. Messages and submissions are kept as long as needed to
+        handle them. Order details are kept as long as required by law for bookkeeping.
+      </p>
+
+      <h2 class="h3">Your rights</h2>
+      <p>
+        You can ask us to see, correct or delete your personal data, or withdraw your consent at any time, by emailing
+        <a href={`mailto:${site.email}`}>{site.email}</a>. You also have the right to complain to your data protection
+        authority.
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .h3 { font-size: clamp(1.35rem, 3vw, 1.75rem); margin-top: 2.2rem; }
+  .prose ul { padding-left: 1.1rem; color: #d9d5ce; }
+  .prose li { padding: 0.3rem 0; }
+</style>

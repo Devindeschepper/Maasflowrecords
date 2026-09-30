@@ -1,0 +1,16 @@
+{
+  "products": [
+    {
+      "id": "2real4u-cd",
+      "name": "2Real4U — CD",
+      "category": "CD",
+      "description": "Digipak CD of the debut EP. Signed copies while stock lasts.",
+      "price": 12,
+      "image": "/images/shop/cd.svg",
+      "stock": 100,
+      "preorder": true,
+      "sizes": [],
+      "shippingClass": "small"
+    }
+  ]
+}

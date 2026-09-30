@@ -1,0 +1,37 @@
+---
+// "Out in 23 days" countdown to a release date. Computed in the visitor's browser,
+// so it stays correct between site rebuilds. Hidden once the date has passed.
+interface Props { date: string; tentative?: boolean }
+const { date, tentative = false } = Astro.props;
+---
+
+<p class="countdown mono" data-countdown={date} data-tentative={tentative ? '1' : undefined} hidden>
+  <span class="num"></span> <span class="unit"></span>
+</p>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-countdown]').forEach((el) => {
+    const [y, m, d] = el.dataset.countdown!.split('-').map(Number);
+    const today = new Date();
+    const start = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+    const days = Math.round((Date.UTC(y, m - 1, d) - start) / 86400000);
+    if (days < 0) return;
+    const num = el.querySelector<HTMLElement>('.num')!;
+    const unit = el.querySelector<HTMLElement>('.unit')!;
+    if (days === 0) {
+      num.textContent = 'Out today';
+      unit.textContent = '';
+    } else {
+      num.textContent = String(days);
+      unit.textContent = `${days === 1 ? 'day' : 'days'} to go${el.dataset.tentative ? ' (expected)' : ''}`;
+    }
+    el.hidden = false;
+  });
+</script>
+
+<style>
+  .countdown { display: inline-flex; align-items: baseline; gap: 0.6rem; margin: 0 0 1.25rem; padding: 0.5rem 0.9rem; border: 1px solid var(--accent); }
+  .countdown[hidden] { display: none; }
+  .num { font-family: var(--font-display); font-size: 2rem; line-height: 1; color: var(--text); letter-spacing: 0.02em; }
+  .unit { color: var(--muted); text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.72rem; }
+</style>

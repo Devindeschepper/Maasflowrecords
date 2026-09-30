@@ -32,8 +32,9 @@ export interface Artist {
   /** Main portrait (shown cropped to 4:5, focused on the upper part). */
   image: string;
   imageAlt: string;
-  /** Extra photos for the artist page gallery. */
-  photos?: { src: string; alt: string }[];
+  /** Optional second photo for the Bio page. */
+  bioPhoto?: string;
+  bioPhotoAlt?: string;
   /** Anchor/page that holds the full bio. */
   bioHref: string;
   streaming: Links;
@@ -62,18 +63,27 @@ export interface Release {
    */
   preview?: string;
   featured?: boolean;
+  /**
+   * false = released before/outside the label: shown only on the artist's page,
+   * not in the label catalogue (Music page, home page) and without a catalogue number.
+   */
+  label?: boolean;
 }
 
 export interface LabelEvent {
   slug: string;
   title: string;
-  kind: 'Concert' | 'Livestream' | 'Performance' | 'Label event' | 'Listening session' | 'Other';
-  /** ISO date-time with timezone offset, e.g. 2026-11-14T20:00:00+01:00 */
-  start: string;
+  kind: 'Release' | 'Concert' | 'Livestream' | 'Performance' | 'Label event' | 'Listening session' | 'Other';
+  /** ISO date-time with timezone offset, e.g. 2026-11-14T20:00:00+01:00. Leave out for "date TBA". */
+  start?: string;
   venue: string;
   city: string;
   /** For livestreams: where to watch. */
   online?: boolean;
+  /** true = a whole-day event (e.g. a release): no time is shown. */
+  allDay?: boolean;
+  /** true = the date is planned, not confirmed (shown as "Expected"). */
+  dateTentative?: boolean;
   description: string;
   image: string;
   ticketUrl?: string;

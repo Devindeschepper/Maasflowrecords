@@ -1,20 +1,18 @@
 import type { PaymentProvider } from './types';
 import { sendMail } from '../mail';
-
-const eur = (c: number) => `€${(c / 100).toFixed(2)}`;
+import { eur, itemsText } from './notify';
 
 /**
  * "Manual" provider — no payment processor needed.
  * The order is emailed to the label, which then sends the customer a payment
  * link / invoice by hand (e.g. Tikkie, bank transfer or PayPal request).
- * Good for launching the shop before choosing a payment provider.
+ * Used when both online payment methods are switched off in the admin panel.
  */
 export const manualProvider: PaymentProvider = {
   id: 'manual',
+  configured: () => true,
   async createCheckout(order, env) {
-    const items = order.lines
-      .map((l) => `${l.qty} × ${l.name}${l.size ? ` (${l.size})` : ''} — ${eur(l.unitPrice * l.qty)}${l.preorder ? ' [PRE-ORDER]' : ''}`)
-      .join('\n');
+    const items = itemsText(order.lines);
     const c = order.customer;
 
     await sendMail(env, {

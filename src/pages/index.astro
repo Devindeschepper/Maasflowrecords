@@ -4,9 +4,10 @@ import ReleaseCard from '../components/ReleaseCard.astro';
 import EventCard from '../components/EventCard.astro';
 import ProductCard from '../components/ProductCard.astro';
 import PlatformLinks from '../components/PlatformLinks.astro';
-import { site, labelSocials } from '../data/site';
+import Countdown from '../components/Countdown.astro';
+import { labelSocials, shopOpen } from '../data/site';
 import { artists } from '../data/artists';
-import { sortedReleases, latestRelease, upcomingReleases } from '../data/releases';
+import { labelReleases, latestRelease, upcomingReleases } from '../data/releases';
 import { upcomingEvents } from '../data/events';
 import { products } from '../data/products';
 import { artistNames, catalogNo, releaseDateLabel } from '../lib/format';
@@ -15,7 +16,7 @@ const vin = artists[0];
 const latest = latestRelease();
 const next = upcomingReleases()[0];
 const featuredRelease = next ?? latest;
-const moreReleases = sortedReleases().slice(0, 4);
+const moreReleases = labelReleases().slice(0, 4);
 const events = upcomingEvents().slice(0, 3);
 const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
 ---
@@ -30,10 +31,10 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
   <section class="hero">
     <div class="container hero-grid">
       <div class="hero-copy">
-        <p class="eyebrow"><span class="dot"></span>Independent label · {site.city}</p>
+        <p class="eyebrow"><span class="dot"></span>Independent music label</p>
         <h1>Maas<br />Flow<br /><span class="outline">Records</span></h1>
         <p class="lead">
-          An independent music label from Rotterdam, founded by producer and rapper <strong>VIN</strong>.
+          An independent music label founded by producer and rapper <strong>VIN</strong>.
           Rap, R&amp;B and beats — built from the ground up.
         </p>
         <div class="btn-row">
@@ -55,7 +56,7 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
     <div class="ticker" aria-hidden="true">
       <div class="ticker-track mono">
         {Array.from({ length: 2 }).map(() => (
-          <span>MAAS FLOW RECORDS ✦ ROTTERDAM ✦ INDEPENDENT ✦ BEHIND THE BEATS ✦ BEHIND THE MIC ✦ STUDENT OF THE GAME ✦ </span>
+          <span>MAAS FLOW RECORDS ✦ INDEPENDENT ✦ BEHIND THE BEATS ✦ BEHIND THE MIC ✦ STUDENT OF THE GAME ✦ </span>
         ))}
       </div>
     </div>
@@ -78,12 +79,13 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
             <p class="mono muted">
               {featuredRelease.type} · {artistNames(featuredRelease)} · {next && featuredRelease.releaseDate && !featuredRelease.dateTentative ? 'Out ' : ''}{releaseDateLabel(featuredRelease)}
             </p>
+            {next && featuredRelease.releaseDate && <Countdown date={featuredRelease.releaseDate} tentative={featuredRelease.dateTentative} />}
             <p class="lead">{featuredRelease.description}</p>
             <div class="btn-row">
               <a class="btn btn-primary" href={`/music/${featuredRelease.slug}/`}>
                 {next ? 'Release details' : '▶ Listen now'}
               </a>
-              {next && products.some((p) => p.preorder) && <a class="btn" href="/shop/">Pre-order vinyl &amp; CD</a>}
+              {shopOpen && next && products.some((p) => p.preorder) && <a class="btn" href="/shop/">Pre-order the CD</a>}
             </div>
             {latest && next && (
               <p class="also muted">
@@ -155,11 +157,17 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
     <div class="container">
       <div class="section-head">
         <h2>Shop</h2>
-        <a class="link-arrow" href="/shop/">Full shop</a>
+        <a class="link-arrow" href="/shop/">{shopOpen ? 'Full shop' : 'More info'}</a>
       </div>
-      <div class="grid grid-3">
-        {shopItems.map((p) => <ProductCard product={p} />)}
-      </div>
+      {
+        shopOpen ? (
+          <div class="grid grid-3">
+            {shopItems.map((p) => <ProductCard product={p} />)}
+          </div>
+        ) : (
+          <p class="empty">The 2Real4U CD — <strong>coming soon</strong>.</p>
+        )
+      }
     </div>
   </section>
 
