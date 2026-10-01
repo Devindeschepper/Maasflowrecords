@@ -37,6 +37,7 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
           An independent music label founded by producer and rapper <strong>VIN</strong>.
           Rap, R&amp;B and beats — built from the ground up.
         </p>
+        <p><a class="link-arrow" href="/bio/#label">About the label</a></p>
         <div class="btn-row">
           {latest && <a class="btn btn-primary" href={`/music/${latest.slug}/`}>▶ Listen</a>}
           <a class="btn" href="/artists/vin/">Discover VIN</a>
@@ -132,7 +133,7 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
         <p class="lead muted">{vin.description}</p>
         <div class="btn-row">
           <a class="btn btn-primary" href="/artists/vin/">Discover VIN</a>
-          <a class="btn btn-ghost" href="/bio/">Read the bio</a>
+          <a class="btn btn-ghost" href="/bio/#vin">Read the bio</a>
         </div>
       </div>
       <div class="split-cards">
