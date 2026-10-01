@@ -288,6 +288,11 @@ collections:
             widget: boolean
             default: true
             hint: 'Needs NOWPAYMENTS_API_KEY + NOWPAYMENTS_IPN_SECRET in Cloudflare.'
+          - name: turnstileSiteKey
+            label: Turnstile site key (spam protection)
+            widget: string
+            required: false
+            hint: 'Cloudflare → Turnstile → the SHORT key under the widget name (0x4AAA…). Never the Secret Key.'
           - name: analyticsToken
             label: Cloudflare Web Analytics token
             widget: string

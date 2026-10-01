@@ -1,13 +1,14 @@
 ---
 // Cloudflare Turnstile widget (privacy-friendly CAPTCHA alternative).
-// Rendered only when PUBLIC_TURNSTILE_SITE_KEY is set, so local dev works without it.
+// Rendered only when a site key is set (admin Settings or PUBLIC_TURNSTILE_SITE_KEY), so local dev works without it.
 // The Turnstile script itself is loaded once per page in BaseLayout.
+import { turnstileSiteKey as siteKey } from '../data/site';
+
 interface Props {
   /** 'interaction-only' keeps the widget invisible unless Cloudflare needs the visitor to click. */
   appearance?: 'always' | 'interaction-only';
 }
 const { appearance = 'always' } = Astro.props;
-const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
 ---
 
 {

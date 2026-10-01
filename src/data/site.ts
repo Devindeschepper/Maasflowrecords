@@ -40,6 +40,15 @@ export const paymentMethods = {
   crypto: settings.acceptCrypto !== false,
 };
 
+/**
+ * Cloudflare Turnstile SITE key (public — it is printed in every page anyway). Set in the admin panel
+ * (Settings); the build variable PUBLIC_TURNSTILE_SITE_KEY is only a fallback. Site keys are short
+ * (0x4AAA…, ~24 characters); the long key with underscores is the SECRET key and never belongs here.
+ */
+const siteKeyFromSettings = String(settings.turnstileSiteKey ?? '').trim();
+export const turnstileSiteKey: string =
+  /^0x[A-Za-z0-9_-]{10,40}$/.test(siteKeyFromSettings) ? siteKeyFromSettings : ((import.meta as { env?: Record<string, string | undefined> }).env?.PUBLIC_TURNSTILE_SITE_KEY ?? '') // `?.`: this file is also bundled into the Worker, where import.meta.env does not exist;
+
 export const nav = [
   { href: '/', label: 'Home' },
   { href: '/artists/', label: 'Artists' },
