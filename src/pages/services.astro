@@ -1,0 +1,149 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import Turnstile from '../components/Turnstile.astro';
+import PlatformIcon from '../components/PlatformIcon.astro';
+import { beats, mixing, requestTypes } from '../data/services';
+
+const today = new Date().toISOString().slice(0, 10);
+---
+
+<BaseLayout title="Services" description="Beats, mixing and mastering by Maas Flow Records. Leases and exclusives on BeatStars, mix and master requests for artists.">
+  <PageHero
+    eyebrow="Services"
+    title="Beats, mix & master"
+    lead="Production from the Maas Flow Records studio — for your next release."
+  />
+
+  <section class="section" id="beats">
+    <div class="container two">
+      <div>
+        <h2>Beats</h2>
+        <p class="muted">{beats.intro}</p>
+      </div>
+      <div class="links">
+        {beats.beatstars && (
+          <a class="btn btn-primary" href={beats.beatstars} target="_blank" rel="noopener noreferrer">
+            <PlatformIcon id="beatstars" size={18} /> Beats on BeatStars
+          </a>
+        )}
+        {beats.youtube && (
+          <a class="btn" href={beats.youtube} target="_blank" rel="noopener noreferrer">
+            <PlatformIcon id="youtube" size={18} /> Listen on YouTube
+          </a>
+        )}
+        <a class="btn btn-ghost" href="#request">Request a custom beat</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="mixing">
+    <div class="container">
+      <div class="section-head">
+        <h2>Mixing &amp; mastering</h2>
+      </div>
+      <p class="muted intro">{mixing.intro}</p>
+      <ul class="packages">
+        {mixing.packages.map((p) => (
+          <li class="card pkg">
+            <h3>{p.name}</h3>
+            <p class="muted">{p.stems}</p>
+            <p class="price">{p.price}</p>
+          </li>
+        ))}
+      </ul>
+      {mixing.turnaround && <p class="muted small">Delivery: {mixing.turnaround}</p>}
+    </div>
+  </section>
+
+  <section class="section" id="request">
+    <div class="container two">
+      <aside>
+        <h2>Send a request</h2>
+        <p class="muted">Tell us what you need. We reply by email with a price and timing — nothing is charged on this website.</p>
+        <p class="muted small">Tip: share your stems or rough mix as a Google Drive, Dropbox or WeTransfer link.</p>
+      </aside>
+
+      <form class="form card pad" action="/api/services" method="post" data-ajax data-success="Thanks — your request was sent. We'll reply by email soon.">
+        <div class="form-row">
+          <div class="field">
+            <label for="s-name">Name <span class="req">*</span></label>
+            <input id="s-name" name="name" required maxlength="100" autocomplete="name" />
+          </div>
+          <div class="field">
+            <label for="s-artist">Artist name</label>
+            <input id="s-artist" name="artistName" maxlength="100" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="s-email">Email <span class="req">*</span></label>
+          <input id="s-email" name="email" type="email" required maxlength="200" autocomplete="email" />
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="s-type">What do you need? <span class="req">*</span></label>
+            <select id="s-type" name="type" required>
+              <option value="">Choose…</option>
+              {requestTypes.map((t) => <option value={t.value}>{t.label}</option>)}
+            </select>
+          </div>
+          <div class="field">
+            <label for="s-songs">Number of songs</label>
+            <input id="s-songs" name="songs" type="number" min="1" max="999" inputmode="numeric" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="s-deadline">Deadline</label>
+            <input id="s-deadline" name="deadline" type="date" min={today} />
+            <span class="hint">Leave empty if flexible.</span>
+          </div>
+          <div class="field">
+            <label for="s-link">Link to stems / rough mix</label>
+            <input id="s-link" name="link" type="url" maxlength="500" placeholder="https://" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="s-msg">Message <span class="req">*</span></label>
+          <textarea id="s-msg" name="message" required maxlength="4000" placeholder="Genre, reference tracks, what you want it to sound like…"></textarea>
+        </div>
+
+        <div class="hp" aria-hidden="true">
+          <label for="s-website">Website</label>
+          <input id="s-website" name="website" tabindex="-1" autocomplete="off" />
+        </div>
+        <input type="hidden" name="_ts" value="" />
+
+        <Turnstile />
+        <button class="btn btn-primary" type="submit">Send request</button>
+        <p class="form-status" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { enhanceForms } from '../scripts/forms';
+  // Preselect "Custom beat" when coming from the beats button.
+  document.querySelector('a[href="#request"]')?.addEventListener('click', () => {
+    const s = document.querySelector<HTMLSelectElement>('#s-type');
+    if (s) s.value = 'custom-beat';
+  });
+  enhanceForms();
+</script>
+
+<style>
+  .two { display: grid; gap: 2rem; align-items: start; }
+  .links { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+  .links .btn { display: inline-flex; align-items: center; gap: 0.5rem; }
+  .intro { max-width: 60ch; }
+  .packages { list-style: none; margin: 1.5rem 0 1rem; padding: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .pkg { padding: 1.25rem; display: grid; gap: 0.35rem; align-content: start; }
+  .pkg h3 { font-size: 1.35rem; margin: 0; }
+  .pkg p { margin: 0; }
+  .price { font-weight: 600; margin-top: 0.5rem !important; }
+  .small { font-size: 0.88rem; }
+  .pad { padding: clamp(1.1rem, 4vw, 2rem); }
+  input[type='date'] { color-scheme: dark; }
+  @media (min-width: 900px) { .two { grid-template-columns: 1fr 1.4fr; gap: 4rem; } }
+</style>

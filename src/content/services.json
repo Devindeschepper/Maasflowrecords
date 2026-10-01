@@ -1,0 +1,17 @@
+{
+  "beats": {
+    "intro": "Buy a lease or an exclusive on BeatStars, or listen to the latest beats on YouTube. Need a custom beat? Send a request below.",
+    "beatstars": "https://www.beatstars.com/devindeschepper48605",
+    "youtube": "https://www.youtube.com/@VINBeats1"
+  },
+  "mixing": {
+    "intro": "Mixing and mastering for rap, R&B and more. The price depends on how many stems you send.",
+    "turnaround": "",
+    "packages": [
+      { "id": "basic", "name": "Basic mix", "stems": "2 stems (beat + vocals)", "price": "" },
+      { "id": "standard", "name": "Standard mix", "stems": "Up to 15 stems", "price": "" },
+      { "id": "large", "name": "Large mix", "stems": "More than 15 stems", "price": "" },
+      { "id": "mastering", "name": "Mastering only", "stems": "Your finished mix", "price": "" }
+    ]
+  }
+}
