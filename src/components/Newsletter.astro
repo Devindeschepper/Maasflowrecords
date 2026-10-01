@@ -1,6 +1,8 @@
 ---
 // "Stay connected" newsletter signup, shown above the footer on every page.
 import Turnstile from './Turnstile.astro';
+import PlatformLinks from './PlatformLinks.astro';
+import { labelSocials } from '../data/site';
 ---
 
 <section class="newsletter" aria-labelledby="nl-title">
@@ -30,6 +32,13 @@ import Turnstile from './Turnstile.astro';
       <Turnstile appearance="interaction-only" />
       <p class="form-status" role="status" aria-live="polite"></p>
     </form>
+
+    {Object.values(labelSocials).some(Boolean) && (
+      <div class="follow">
+        <p class="mono muted">Or follow the label</p>
+        <PlatformLinks links={labelSocials} variant="chips" />
+      </div>
+    )}
   </div>
 </section>
 
@@ -49,5 +58,7 @@ import Turnstile from './Turnstile.astro';
   .row .btn { min-width: 140px; }
   .check { justify-content: center; }
   .form-status { text-align: center; }
+  .follow { margin-top: 2.5rem; display: grid; justify-items: center; gap: 0.85rem; }
+  .follow :global(ul) { justify-content: center; }
   @media (min-width: 560px) { .row { grid-template-columns: 1fr auto; } }
 </style>
