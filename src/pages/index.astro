@@ -37,6 +37,7 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
           An independent music label founded by producer and rapper <strong>VIN</strong>.
           Rap, R&amp;B and beats — built from the ground up.
         </p>
+        <p><a class="link-arrow" href="#label">About the label</a></p>
         <div class="btn-row">
           {latest && <a class="btn btn-primary" href={`/music/${latest.slug}/`}>▶ Listen</a>}
           <a class="btn" href="/artists/vin/">Discover VIN</a>
@@ -132,7 +133,7 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
         <p class="lead muted">{vin.description}</p>
         <div class="btn-row">
           <a class="btn btn-primary" href="/artists/vin/">Discover VIN</a>
-          <a class="btn btn-ghost" href="/bio/">Read the bio</a>
+          <a class="btn btn-ghost" href="/bio/#vin">Read the bio</a>
         </div>
       </div>
       <div class="split-cards">
@@ -170,6 +171,37 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
           </div>
         )
       }
+    </div>
+  </section>
+
+  <!-- ABOUT THE LABEL -->
+  <section class="section about" id="label">
+    <div class="container about-grid">
+      <div>
+        <p class="eyebrow"><span class="dot"></span>About the label</p>
+        <h2>Maas Flow Records</h2>
+      </div>
+      <div class="prose">
+        <p class="lead">Maas Flow Records is an independent music label, created by artist and producer VIN.</p>
+        <p class="muted">
+          The label was built to give music a home that stays independent: from the first beat in the studio
+          to the final release, every step is handled with care and ownership.
+        </p>
+        <p class="muted">
+          Maas Flow Records focuses on four things: <strong>music</strong>, <strong>creativity</strong>,
+          <strong>artist development</strong> and <strong>independent releases</strong>. That means producing,
+          recording, mixing and releasing music in-house, learning every part of the process, and growing artists at
+          their own pace — without losing who they are.
+        </p>
+        <p class="muted">
+          Today the roster is VIN. The label is open to working with singers, rappers, producers, musicians and
+          engineers who share the same mindset: honest music, constant learning, and building something of our own.
+        </p>
+        <div class="btn-row">
+          <a class="btn btn-primary" href="/artists/">The roster</a>
+          <a class="btn btn-ghost" href="/casting/">Work with us</a>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -224,6 +256,12 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
   .split .mono { margin-bottom: 0.5rem; font-size: 0.68rem; }
   @media (min-width: 900px) { .spotlight-grid { grid-template-columns: 1.3fr 1fr; gap: 4rem; } }
 
+  .about-grid { display: grid; gap: 1.5rem; }
+  .about h2 { font-size: clamp(2.6rem, 8vw, 5rem); }
+  .about .prose p { margin: 0 0 1rem; max-width: 62ch; }
+  .about .prose strong { color: var(--text); }
+  .about .prose .lead { font-size: clamp(1.2rem, 2.6vw, 1.45rem); color: var(--text); }
+  @media (min-width: 900px) { .about-grid { grid-template-columns: 1fr 1.3fr; gap: 4rem; } }
   .socials { display: grid; gap: 1.5rem; align-items: end; }
   @media (min-width: 900px) { .socials { grid-template-columns: 1fr 1fr; } }
 </style>

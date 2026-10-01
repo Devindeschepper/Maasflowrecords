@@ -19,6 +19,7 @@ const year = new Date().getFullYear();
       <nav aria-label="Footer">
         <ul class="links">
           {nav.map((i) => <li><a href={i.href}>{i.label}</a></li>)}
+          <li><a href="/#label">About</a></li>
           <li><a href="/contact/">Contact</a></li>
           {shopOpen && <li><a href="/cart/">Cart</a></li>}
           {shopOpen && <li><a href="/shop/#shipping">Shipping &amp; returns</a></li>}
