@@ -5,6 +5,7 @@ import ReleaseCard from '../../components/ReleaseCard.astro';
 import PlatformLinks from '../../components/PlatformLinks.astro';
 import { labelReleases, isUpcoming } from '../../data/releases';
 import { artists } from '../../data/artists';
+import { beats } from '../../data/services';
 import type { ReleaseType } from '../../data/types';
 
 const all = labelReleases();
@@ -70,14 +71,12 @@ const vin = artists[0];
       <div>
         <p class="eyebrow"><span class="dot"></span>Beats by VIN</p>
         <h2>Need a beat?</h2>
-        <p class="lead muted">VIN sells leases and exclusive beats on BeatStars. For custom production, get in touch.</p>
+        <p class="lead muted">VIN sells leases and exclusive beats on BeatStars. For a custom beat, send a request.</p>
         <div class="btn-row">
-          {vin.streaming.beatstars ? (
-            <a class="btn btn-primary" href={vin.streaming.beatstars} target="_blank" rel="noopener noreferrer">Browse beats on BeatStars</a>
-          ) : (
-            <span class="btn btn-primary" aria-disabled="true">BeatStars link soon</span>
+          {beats.beatstars && (
+            <a class="btn btn-primary" href={beats.beatstars} target="_blank" rel="noopener noreferrer">Browse beats on BeatStars</a>
           )}
-          <a class="btn btn-ghost" href="/contact/?topic=beats">Custom production</a>
+          <a class="btn btn-ghost" href="/services/#request">Custom production</a>
         </div>
       </div>
     </div>

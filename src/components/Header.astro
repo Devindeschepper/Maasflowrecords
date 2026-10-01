@@ -70,9 +70,14 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
 <style>
   .site-header {
     position: sticky; top: 0; z-index: 50;
+    border-bottom: 1px solid var(--line);
+  }
+  /* The blur sits on a pseudo-element: backdrop-filter on the header itself would
+     trap the fixed mobile menu inside the header's 60px box. */
+  .site-header::before {
+    content: ''; position: absolute; inset: 0; z-index: -1;
     background: rgba(10, 10, 10, 0.88);
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--line);
   }
   .bar { height: var(--header-h); display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
   .home-link { text-decoration: none; }
