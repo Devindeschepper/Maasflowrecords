@@ -2,10 +2,8 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ReleaseCard from '../components/ReleaseCard.astro';
 import EventCard from '../components/EventCard.astro';
-import ProductCard from '../components/ProductCard.astro';
-import PlatformLinks from '../components/PlatformLinks.astro';
 import Countdown from '../components/Countdown.astro';
-import { labelSocials, shopOpen } from '../data/site';
+import { shopOpen } from '../data/site';
 import { artists } from '../data/artists';
 import { labelReleases, latestRelease, upcomingReleases } from '../data/releases';
 import { upcomingEvents } from '../data/events';
@@ -16,17 +14,14 @@ const vin = artists[0];
 const latest = latestRelease();
 const next = upcomingReleases()[0];
 const featuredRelease = next ?? latest;
-const moreReleases = labelReleases().slice(0, 4);
-const events = upcomingEvents().slice(0, 3);
-const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
+const moreReleases = labelReleases().filter((r) => r.slug !== featuredRelease?.slug).slice(0, 4);
+// The featured release already has its own block above, so its "Release" event isn't listed again here.
+const events = upcomingEvents()
+  .filter((e) => !(featuredRelease && e.kind === 'Release' && e.ticketUrl === `/music/${featuredRelease.slug}/`))
+  .slice(0, 3);
 ---
 
 <BaseLayout>
-  <script>
-    import { enhanceAddToCart } from '../scripts/shop';
-    enhanceAddToCart();
-  </script>
-
   <!-- HERO -->
   <section class="hero">
     <div class="container hero-grid">
@@ -42,7 +37,6 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
           {latest && <a class="btn btn-primary" href={`/music/${latest.slug}/`}>▶ Listen</a>}
           <a class="btn" href="/artists/vin/">Discover VIN</a>
           <a class="btn btn-ghost" href="/music/">View releases</a>
-          <a class="btn btn-ghost" href="/shop/">Shop</a>
         </div>
       </div>
       <figure class="hero-artist">
@@ -153,27 +147,6 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
     </div>
   </section>
 
-  <!-- SHOP -->
-  <section class="section">
-    <div class="container">
-      <div class="section-head">
-        <h2>Shop</h2>
-        <a class="link-arrow" href="/shop/">{shopOpen ? 'Full shop' : 'More info'}</a>
-      </div>
-      {
-        shopOpen ? (
-          <div class="grid grid-3">
-            {shopItems.map((p) => <ProductCard product={p} />)}
-          </div>
-        ) : (
-          <div class="grid grid-3">
-            {shopItems.map((p) => <ProductCard product={p} comingSoon />)}
-          </div>
-        )
-      }
-    </div>
-  </section>
-
   <!-- ABOUT THE LABEL -->
   <section class="section about" id="label">
     <div class="container about-grid">
@@ -205,17 +178,6 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
     </div>
   </section>
 
-  <!-- SOCIALS -->
-  <section class="section">
-    <div class="container socials">
-      <div>
-        <p class="eyebrow"><span class="dot"></span>Stay connected</p>
-        <h2>Follow the label</h2>
-        <p class="muted">New music, studio sessions and events — first on our socials.</p>
-      </div>
-      <PlatformLinks links={labelSocials} variant="chips" />
-    </div>
-  </section>
 </BaseLayout>
 
 <style>
@@ -262,6 +224,4 @@ const shopItems = products.filter((p) => p.stock > 0).slice(0, 3);
   .about .prose strong { color: var(--text); }
   .about .prose .lead { font-size: clamp(1.2rem, 2.6vw, 1.45rem); color: var(--text); }
   @media (min-width: 900px) { .about-grid { grid-template-columns: 1fr 1.3fr; gap: 4rem; } }
-  .socials { display: grid; gap: 1.5rem; align-items: end; }
-  @media (min-width: 900px) { .socials { grid-template-columns: 1fr 1fr; } }
 </style>
