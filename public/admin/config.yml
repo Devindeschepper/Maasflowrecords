@@ -233,6 +233,36 @@ collections:
               - { name: preorder, label: Pre-order, widget: boolean, default: false }
               - { name: shippingClass, label: Package size, widget: hidden, default: small }
 
+      - name: services
+        label: Services
+        file: src/content/services.json
+        format: json
+        fields:
+          - name: beats
+            label: Beats
+            widget: object
+            fields:
+              - { name: intro, label: Text, widget: text, required: false }
+              - { name: beatstars, label: 'BeatStars link', widget: string, required: false }
+              - { name: youtube, label: 'YouTube beats channel link', widget: string, required: false }
+          - name: mixing
+            label: Mixing & mastering
+            widget: object
+            fields:
+              - { name: intro, label: Text, widget: text, required: false }
+              - { name: turnaround, label: 'Delivery time (e.g. 3–5 days)', widget: string, required: false }
+              - { name: stemOptions, label: 'Stem options (for mixing)', widget: list, required: false, hint: 'e.g. 2 stems (beat + vocals), Up to 15 stems, More than 15 stems' }
+              - name: packages
+                label: Packages
+                label_singular: Package
+                widget: list
+                summary: '{{fields.name}} — {{fields.price}}'
+                fields:
+                  - { name: id, label: Code, widget: string, pattern: ['^[a-z0-9-]+$', 'Lowercase letters, numbers and - only'] }
+                  - { name: name, label: Name, widget: string }
+                  - { name: stems, label: 'What the artist sends', widget: string, required: false }
+                  - { name: price, label: 'Price (€)', widget: string, required: false, hint: 'e.g. 40 — empty shows "Price on request"' }
+
       - name: shop
         label: Shipping & VAT
         file: src/content/shop.json

@@ -56,5 +56,6 @@ export const nav = [
   { href: '/events/', label: 'Events' },
   { href: '/casting/', label: 'Casting' },
   { href: '/bio/', label: 'Bio' },
+  { href: '/services/', label: 'Services' },
   { href: '/shop/', label: 'Shop' },
 ];
