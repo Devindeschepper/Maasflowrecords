@@ -64,7 +64,7 @@ const today = new Date().toISOString().slice(0, 10);
       <aside>
         <h2>Send a request</h2>
         <p class="muted">Tell us what you need. We reply by email with a price and timing — nothing is charged on this website.</p>
-        <p class="muted small">No need to upload here: share your stems or mix as a WeTransfer, Google Drive or Dropbox link, now or later by email.</p>
+        <p class="muted small">We'll talk about the price and how to send your files (stems or mix) by email.</p>
       </aside>
 
       <form class="form card pad" action="/api/services" method="post" data-ajax data-success="Thanks — your request was sent. We'll reply by email soon.">
@@ -104,17 +104,10 @@ const today = new Date().toISOString().slice(0, 10);
             </select>
           </div>
         )}
-        <div class="form-row">
-          <div class="field">
-            <label for="s-deadline">Deadline</label>
-            <input id="s-deadline" name="deadline" type="date" min={today} />
-            <span class="hint">Leave empty if flexible.</span>
-          </div>
-          <div class="field">
-            <label for="s-link">Link to your files (optional)</label>
-            <input id="s-link" name="link" type="text" inputmode="url" maxlength="500" placeholder="wetransfer.com/…" />
-            <span class="hint">WeTransfer, Google Drive or Dropbox — or send them later by email.</span>
-          </div>
+        <div class="field">
+          <label for="s-deadline">Deadline</label>
+          <input id="s-deadline" name="deadline" type="date" min={today} />
+          <span class="hint">Leave empty if flexible.</span>
         </div>
         <div class="field">
           <label for="s-msg">Message <span class="req">*</span></label>

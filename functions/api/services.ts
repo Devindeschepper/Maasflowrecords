@@ -25,9 +25,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const songs = str(fd, 'songs', 10);
   const stems = str(fd, 'stems', 60);
   const deadline = str(fd, 'deadline', 20);
-  // Accept "wetransfer.com/…" without a scheme.
-  const rawLink = str(fd, 'link', 500);
-  const link = rawLink && !/^https?:\/\//i.test(rawLink) ? `https://${rawLink}` : rawLink;
   const message = str(fd, 'message', 4000);
 
   if (!name || !message) return reply(request, 400, { ok: false, error: 'Please fill in all required fields.' });
@@ -36,7 +33,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (stems && !mixing.stemOptions.includes(stems)) return reply(request, 400, { ok: false, error: 'Please choose the number of stems.' });
   if (songs && !/^\d{1,3}$/.test(songs)) return reply(request, 400, { ok: false, error: 'Please enter the number of songs.' });
   if (deadline && !/^\d{4}-\d{2}-\d{2}$/.test(deadline)) return reply(request, 400, { ok: false, error: 'Please enter a valid date.' });
-  if (link && !/^https?:\/\/[^\s/]+\.[^\s]+$/i.test(link)) return reply(request, 400, { ok: false, error: 'Please paste a valid link (e.g. wetransfer.com/…).' });
 
   try {
     await sendMail(env, {
@@ -47,7 +43,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         ['Number of songs', songs || '—'],
         ['Stems', stems || 'Not given'],
         ['Deadline', deadline || 'Flexible'],
-        ['Files (stems / mix)', link],
         ['Name', name],
         ['Artist name', artistName],
         ['Email', email],
