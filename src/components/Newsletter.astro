@@ -1,15 +1,14 @@
 ---
 // "Stay connected" newsletter signup, shown above the footer on every page.
 import Turnstile from './Turnstile.astro';
-import PlatformLinks from './PlatformLinks.astro';
-import { labelSocials } from '../data/site';
 ---
 
 <section class="newsletter" aria-labelledby="nl-title">
   <div class="container inner">
-    <p class="eyebrow"><span class="dot"></span>Newsletter</p>
-    <h2 id="nl-title">Stay connected</h2>
-    <p class="lead muted">Be the first to know about new music, release dates and events from Maas Flow Records.</p>
+    <div class="intro">
+      <h2 id="nl-title">Stay connected</h2>
+      <p class="muted">New music, release dates and events — first in your inbox.</p>
+    </div>
 
     <form class="nl-form" action="/api/subscribe" method="post" data-ajax data-success="You're in. Thanks for signing up!">
       <div class="row">
@@ -32,13 +31,6 @@ import { labelSocials } from '../data/site';
       <Turnstile appearance="interaction-only" />
       <p class="form-status" role="status" aria-live="polite"></p>
     </form>
-
-    {Object.values(labelSocials).some(Boolean) && (
-      <div class="follow">
-        <p class="mono muted">Or follow the label</p>
-        <PlatformLinks links={labelSocials} variant="chips" />
-      </div>
-    )}
   </div>
 </section>
 
@@ -48,17 +40,14 @@ import { labelSocials } from '../data/site';
 </script>
 
 <style>
-  .newsletter { border-top: 1px solid var(--line); padding-block: clamp(3.5rem, 8vw, 6rem); margin-top: 2rem; }
-  .inner { max-width: 760px; text-align: center; }
-  .inner .eyebrow { display: flex; justify-content: center; align-items: center; }
-  h2 { font-size: clamp(2.6rem, 9vw, 5rem); }
-  .lead { margin-inline: auto; }
-  .nl-form { display: grid; gap: 1rem; margin-top: 2rem; text-align: left; }
-  .row { display: grid; gap: 0.75rem; }
-  .row .btn { min-width: 140px; }
-  .check { justify-content: center; }
-  .form-status { text-align: center; }
-  .follow { margin-top: 2.5rem; display: grid; justify-items: center; gap: 0.85rem; }
-  .follow :global(ul) { justify-content: center; }
+  .newsletter { border-top: 1px solid var(--line); padding-block: clamp(2rem, 5vw, 3rem); margin-top: 2rem; }
+  .inner { display: grid; gap: 1.25rem; align-items: center; }
+  h2 { font-size: clamp(1.8rem, 5vw, 2.4rem); margin: 0 0 0.35rem; }
+  .intro p { margin: 0; }
+  .nl-form { display: grid; gap: 0.6rem; }
+  .row { display: grid; gap: 0.6rem; }
+  .row .btn { min-width: 110px; }
+  .check { font-size: 0.8rem; }
   @media (min-width: 560px) { .row { grid-template-columns: 1fr auto; } }
+  @media (min-width: 900px) { .inner { grid-template-columns: 1fr 1.2fr; gap: 3rem; } }
 </style>
