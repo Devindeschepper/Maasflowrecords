@@ -2,22 +2,22 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from '../components/PageHero.astro';
 import Turnstile from '../components/Turnstile.astro';
-import { site } from '../data/site';
+import { site, shopOpen } from '../data/site';
 
 // Keep in sync with TOPICS in functions/api/contact.ts
 const topics = [
   { value: 'general', label: 'General', text: 'Questions, feedback, anything else.' },
   { value: 'artists', label: 'Artists', text: 'Features, collabs and artist questions.' },
-  { value: 'beats', label: 'Beats & production', text: 'Custom beats, leases and exclusives.' },
+  { value: 'beats', label: 'Beats, mixing & mastering', text: 'Leases, custom beats and mix requests — see Services.', href: '/services/' },
   { value: 'casting', label: 'Casting', text: 'Musicians — use the casting form.', href: '/casting/' },
   { value: 'business', label: 'Business', text: 'Licensing, sync, partnerships.' },
-  { value: 'events', label: 'Events & booking', text: 'Shows, festivals, livestreams.' },
-  { value: 'press', label: 'Press', text: 'Interviews, press kit, media.' },
-  { value: 'shop', label: 'Shop & orders', text: 'Order questions, returns.' },
+  { value: 'events', label: 'Booking', text: 'Book an artist — use the booking form.', href: '/events/#book' },
+  { value: 'press', label: 'Press', text: 'Interviews and media.' },
+  ...(shopOpen ? [{ value: 'shop', label: 'Shop & orders', text: 'Order questions, returns.' }] : []),
 ];
 ---
 
-<BaseLayout title="Contact" description={`Contact Maas Flow Records — general, artists, business, events, press. Email ${site.email}.`}>
+<BaseLayout title="Contact" description={`Contact Maas Flow Records — general questions, artists, business and press. Email ${site.email}.`}>
   <PageHero eyebrow="Get in touch" title="Contact">
     <p class="lead">
       <a class="mail" href={`mailto:${site.email}`}>{site.email}</a>

@@ -5,6 +5,7 @@ import EventCard from '../components/EventCard.astro';
 import Countdown from '../components/Countdown.astro';
 import { shopOpen } from '../data/site';
 import { artists } from '../data/artists';
+import { beats } from '../data/services';
 import { labelReleases, latestRelease, upcomingReleases } from '../data/releases';
 import { upcomingEvents } from '../data/events';
 import { products } from '../data/products';
@@ -27,7 +28,7 @@ const events = upcomingEvents()
     <div class="container hero-grid">
       <div class="hero-copy">
         <p class="eyebrow"><span class="dot"></span>Independent music label</p>
-        <h1>Maas<br />Flow<br /><span class="outline">Records</span></h1>
+        <h1>Maas <br />Flow <br /><span class="outline">Records</span></h1>
         <p class="lead">
           An independent music label founded by producer and rapper <strong>VIN</strong>.
           Rap, R&amp;B and beats — built from the ground up.
@@ -131,7 +132,7 @@ const events = upcomingEvents()
         </div>
       </div>
       <div class="split-cards">
-        <a class="split card" href={vin.streaming.beatstars || '/contact/?topic=beats'} {...(vin.streaming.beatstars ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+        <a class="split card" href={beats.beatstars || '/services/'} {...(beats.beatstars ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
           <p class="mono muted">For artists</p>
           <h3>Buy beats</h3>
           <p class="muted">Leases &amp; exclusives from VIN on BeatStars.</p>
