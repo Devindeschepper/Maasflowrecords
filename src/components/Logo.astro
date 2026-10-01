@@ -1,6 +1,5 @@
 ---
-// Wordmark. Swap for an <img> of the real logo once it exists
-// (put it in /public/images/brand/ and keep the aria-label).
+// Label logo: square with "MF" and a red flow line, next to the wordmark.
 interface Props { size?: 'sm' | 'lg' }
 const { size = 'sm' } = Astro.props;
 ---
@@ -8,7 +7,8 @@ const { size = 'sm' } = Astro.props;
 <span class:list={['logo', `logo--${size}`]} aria-label="Maas Flow Records">
   <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
     <rect x="1" y="1" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" />
-    <path d="M6 22 V10 L11 17 L16 10 V22 M20 10 H26 M20 10 V22 M20 16 H25" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="miter" />
+    <path d="M7.83 21.0V8.10H11.75L12.84 15.96L13.92 8.10H17.88V21.0H15.52V11.71L14.04 21.0H11.73L10.16 11.71V21.0Z M19.32 21.0V8.10H24.48V10.62H21.91V12.67H24.34V15.15H21.91V21.0Z" fill="currentColor" />
+    <path d="M7 25.5c3-2 6 2 9 0s6-2 9 0" fill="none" stroke="var(--accent)" stroke-width="1.8" />
   </svg>
   <span class="words" aria-hidden="true">
     <span class="w1">Maas Flow</span>
