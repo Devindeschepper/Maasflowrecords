@@ -83,6 +83,9 @@ Only `/api/*` requests run Worker code (`worker/index.ts` → handlers in `funct
    (Deployments → Retry build, or push a commit) — `PUBLIC_*` values are baked into the pages at build time.
 5. **Turnstile**: Cloudflare dashboard → Turnstile → Add widget → hostnames `maasflowrecords.com` and the
    `*.workers.dev` address of the Worker.
+   The **Site Key** (short, public) goes in the build variable `PUBLIC_TURNSTILE_SITE_KEY`; the **Secret Key**
+   (long, private) goes in the runtime secret `TURNSTILE_SECRET_KEY`. Swapped keys show the widget as a white
+   box with a "Troubleshoot" link.
 6. **Resend**: create an account, add & verify the domain `maasflowrecords.com` (DNS records), create an API key.
 7. Optional nightly rebuild (keeps "upcoming/past" dates fresh): create a deploy hook in the Worker's build
    settings and add its URL as GitHub secret `CLOUDFLARE_DEPLOY_HOOK`.
