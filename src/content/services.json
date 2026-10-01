@@ -5,13 +5,32 @@
     "youtube": "https://www.youtube.com/@VINBeats1"
   },
   "mixing": {
-    "intro": "Mixing and mastering for rap, R&B and more. The price depends on how many stems you send.",
+    "intro": "Mixing, mixing + mastering, or mastering only — for rap, R&B and more. For mixing, the price depends on how many stems you send.",
     "turnaround": "",
     "packages": [
-      { "id": "basic", "name": "Basic mix", "stems": "2 stems (beat + vocals)", "price": "" },
-      { "id": "standard", "name": "Standard mix", "stems": "Up to 15 stems", "price": "" },
-      { "id": "large", "name": "Large mix", "stems": "More than 15 stems", "price": "" },
-      { "id": "mastering", "name": "Mastering only", "stems": "Your finished mix", "price": "" }
+      {
+        "id": "mixing",
+        "name": "Mixing",
+        "stems": "Your beat and vocals mixed — price depends on the stems",
+        "price": ""
+      },
+      {
+        "id": "mix-master",
+        "name": "Mixing + mastering",
+        "stems": "Mixed and mastered, ready for release",
+        "price": ""
+      },
+      {
+        "id": "mastering",
+        "name": "Mastering only",
+        "stems": "You send your finished mix",
+        "price": ""
+      }
+    ],
+    "stemOptions": [
+      "2 stems (beat + vocals)",
+      "Up to 15 stems",
+      "More than 15 stems"
     ]
   }
 }

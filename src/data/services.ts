@@ -36,11 +36,15 @@ export const mixing = {
       price: priceText(p.price),
     }))
     .filter((p) => p.id && p.name),
+  /** How many stems the artist sends (mixing price depends on it). */
+  stemOptions: ((data.mixing as { stemOptions?: unknown[] })?.stemOptions ?? [])
+    .map((x) => String(x ?? '').trim())
+    .filter(Boolean),
 };
 
 /** Request types offered in the services form. */
 export const requestTypes = [
-  ...mixing.packages.map((p) => ({ value: p.id, label: `${p.name} — ${p.stems}` })),
+  ...mixing.packages.map((p) => ({ value: p.id, label: p.name })),
   { value: 'custom-beat', label: 'Custom beat' },
   { value: 'other', label: 'Other / not sure' },
 ];

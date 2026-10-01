@@ -2,7 +2,7 @@ import type { Env } from '../_lib/env';
 import { reply, sameOrigin, str, isEmail } from '../_lib/http';
 import { checkSpam } from '../_lib/spam';
 import { sendMail } from '../_lib/mail';
-import { requestTypes } from '../../src/data/services';
+import { requestTypes, mixing } from '../../src/data/services';
 
 /** Mixing / mastering / custom beat request — emailed to the label. No payment on the site. */
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
@@ -23,6 +23,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const artistName = str(fd, 'artistName', 100);
   const type = requestTypes.find((t) => t.value === str(fd, 'type', 40));
   const songs = str(fd, 'songs', 10);
+  const stems = str(fd, 'stems', 60);
   const deadline = str(fd, 'deadline', 20);
   const link = str(fd, 'link', 500);
   const message = str(fd, 'message', 4000);
@@ -30,6 +31,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (!name || !message) return reply(request, 400, { ok: false, error: 'Please fill in all required fields.' });
   if (!isEmail(email)) return reply(request, 400, { ok: false, error: 'Please enter a valid email address.' });
   if (!type) return reply(request, 400, { ok: false, error: 'Please choose what you need.' });
+  if (stems && !mixing.stemOptions.includes(stems)) return reply(request, 400, { ok: false, error: 'Please choose the number of stems.' });
   if (songs && !/^\d{1,3}$/.test(songs)) return reply(request, 400, { ok: false, error: 'Please enter the number of songs.' });
   if (deadline && !/^\d{4}-\d{2}-\d{2}$/.test(deadline)) return reply(request, 400, { ok: false, error: 'Please enter a valid date.' });
   if (link && !/^https?:\/\/\S+$/i.test(link)) return reply(request, 400, { ok: false, error: 'Please paste a full link (https://…).' });
@@ -41,6 +43,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       fields: [
         ['Request', type.label],
         ['Number of songs', songs || '—'],
+        ['Stems', stems || 'Not given'],
         ['Deadline', deadline || 'Flexible'],
         ['Stems / rough mix / reference', link],
         ['Name', name],
