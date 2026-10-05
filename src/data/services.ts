@@ -28,6 +28,8 @@ export const beats = {
 export const mixing = {
   intro: opt(data.mixing?.intro) ?? '',
   turnaround: opt(data.mixing?.turnaround),
+  /** Short conditions under the packages (revisions, discounts, payment). */
+  terms: opt((data.mixing as { terms?: string })?.terms),
   packages: (data.mixing?.packages ?? [])
     .map((p): ServicePackage => ({
       id: String(p.id ?? '').trim(),

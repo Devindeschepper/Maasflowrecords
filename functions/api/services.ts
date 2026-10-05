@@ -25,6 +25,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const songs = str(fd, 'songs', 10);
   const stems = str(fd, 'stems', 60);
   const deadline = str(fd, 'deadline', 20);
+  const budget = str(fd, 'budget', 40);
   const message = str(fd, 'message', 4000);
 
   if (!name || !message) return reply(request, 400, { ok: false, error: 'Please fill in all required fields.' });
@@ -42,7 +43,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         ['Request', type.label],
         ['Number of songs', songs || '—'],
         ['Stems', stems || 'Not given'],
-        ['Deadline', deadline || 'Flexible'],
+        ['Budget', budget || 'Standard price'],
+        ['Needs to be done by', deadline || 'Flexible'],
         ['Name', name],
         ['Artist name', artistName],
         ['Email', email],

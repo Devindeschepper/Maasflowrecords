@@ -252,6 +252,7 @@ collections:
             fields:
               - { name: intro, label: Text, widget: text, required: false }
               - { name: turnaround, label: 'Delivery time (e.g. 3–5 days)', widget: string, required: false }
+              - { name: terms, label: 'Conditions (revisions, discounts, payment)', widget: text, required: false }
               - { name: stemOptions, label: 'Stem options (for mixing)', widget: list, required: false, hint: 'e.g. 2 stems (beat + vocals), Up to 15 stems, More than 15 stems' }
               - name: packages
                 label: Packages
@@ -262,7 +263,7 @@ collections:
                   - { name: id, label: Code, widget: string, pattern: ['^[a-z0-9-]+$', 'Lowercase letters, numbers and - only'] }
                   - { name: name, label: Name, widget: string }
                   - { name: stems, label: 'What the artist sends', widget: string, required: false }
-                  - { name: price, label: 'Price (€)', widget: string, required: false, hint: 'e.g. 40 — empty shows "Price on request"' }
+                  - { name: price, label: 'Price (€)', widget: string, required: false, hint: 'e.g. 40 or "from €30" — empty shows "Price on request"' }
 
       - name: shop
         label: Shipping & VAT

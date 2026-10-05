@@ -7,24 +7,25 @@
   "mixing": {
     "intro": "Mixing, mixing + mastering, or mastering — for rap, R&B and more. For mixing, the price depends on how many stems you send.",
     "turnaround": "",
+    "terms": "Included: 2 rounds of changes (extra rounds €10) · EP of 4 or more songs: 10% off · 50% upfront, the rest before you get the final files.",
     "packages": [
       {
         "id": "mixing",
         "name": "Mixing",
-        "stems": "Your beat and vocals mixed — price depends on the stems",
-        "price": ""
+        "stems": "2 stems (beat + vocals) €30 · up to 15 stems €50 · more than 15 stems from €70",
+        "price": "from €30"
       },
       {
         "id": "mix-master",
         "name": "Mixing + mastering",
-        "stems": "Mixed and mastered, ready for release",
-        "price": ""
+        "stems": "2 stems €40 · up to 15 stems €60 · more than 15 stems on request",
+        "price": "from €40"
       },
       {
         "id": "mastering",
         "name": "Mastering",
-        "stems": "You send your finished mix",
-        "price": ""
+        "stems": "You send your finished mix · per song",
+        "price": "15"
       }
     ],
     "stemOptions": [
