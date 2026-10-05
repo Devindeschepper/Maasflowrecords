@@ -4,6 +4,7 @@ import PlatformLinks from '../../components/PlatformLinks.astro';
 import PreviewButton from '../../components/PreviewButton.astro';
 import Countdown from '../../components/Countdown.astro';
 import ReleaseCard from '../../components/ReleaseCard.astro';
+import SpotifyPlayer from '../../components/SpotifyPlayer.astro';
 import { releases, isUpcoming, releasesByArtist } from '../../data/releases';
 import { site } from '../../data/site';
 import { artistNames, releaseMeta, releaseDateLabel } from '../../lib/format';
@@ -52,6 +53,7 @@ const jsonLd = [
 
         <h2 class="h-small">{upcoming ? 'Pre-save / follow' : 'Listen on'}</h2>
         {hasLinks ? <PlatformLinks links={r.links} variant="chips" /> : <p class="muted">Streaming links will appear here on release day.</p>}
+        {!upcoming && r.links.spotify && <div class="player"><SpotifyPlayer url={r.links.spotify} title={r.title} /></div>}
 
         {
           r.tracks && (
@@ -91,6 +93,7 @@ const jsonLd = [
   .info h1 { font-size: clamp(3rem, 10vw, 6rem); margin-bottom: 0.15em; }
   .by { font-family: var(--font-display); font-size: 1.6rem; text-transform: uppercase; margin-bottom: 0.4rem; }
   .h-small { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.14em; color: var(--muted); margin: 2rem 0 0.9rem; line-height: 1.4; }
+  .player { margin-top: 1.25rem; }
   .tracks { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
   .tracks li { padding: 0.7rem 0; border-bottom: 1px solid var(--line); display: flex; gap: 1rem; }
   @media (min-width: 900px) {

@@ -15,9 +15,11 @@ interface Props {
   noindex?: boolean;
   /** Extra JSON-LD objects for this page. */
   jsonLd?: Record<string, unknown>[];
+  /** No header, newsletter or footer (used by the /links page). */
+  bare?: boolean;
 }
 
-const { title, description = site.description, image = site.ogImage, type = 'website', noindex = false, jsonLd = [] } = Astro.props;
+const { title, description = site.description, image = site.ogImage, type = 'website', noindex = false, jsonLd = [], bare = false } = Astro.props;
 
 const fullTitle = title ? `${title} — ${site.name}` : `${site.name} — Independent Music Label`;
 const canonical = new URL(Astro.url.pathname, site.url).href;
@@ -72,11 +74,11 @@ const orgLd = {
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
-    <Header />
+    {!bare && <Header />}
     <main id="main">
       <slot />
     </main>
-    <Newsletter />
-    <Footer />
+    {!bare && <Newsletter />}
+    {!bare && <Footer />}
   </body>
 </html>

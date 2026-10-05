@@ -1,0 +1,64 @@
+---
+// Spotify player for a track, album or artist link.
+// Two-click: the Spotify iframe (and its cookies) only loads after the visitor
+// presses play, which keeps pages fast and avoids third-party cookies by default.
+interface Props {
+  /** A normal open.spotify.com link, e.g. https://open.spotify.com/track/… */
+  url?: string;
+  title: string;
+}
+const { url, title } = Astro.props;
+
+const match = url?.match(/open\.spotify\.com\/(?:intl-[a-z-]+\/)?(track|album|artist|playlist)\/([A-Za-z0-9]+)/);
+const kind = match?.[1];
+const embed = match ? `https://open.spotify.com/embed/${kind}/${match[2]}?utm_source=generator&theme=0` : '';
+// Spotify's own sizes: compact for a single track, taller with a track list.
+const height = kind === 'track' ? 152 : 352;
+---
+
+{
+  embed && (
+    <div class="spotify" data-spotify={embed} data-title={title} style={`--h:${height}px`}>
+      <button type="button" class="load">
+        <span class="icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+        </span>
+        <span>
+          <strong>Play {title} on Spotify</strong>
+          <span class="note">Loads the Spotify player · Spotify may set cookies</span>
+        </span>
+      </button>
+    </div>
+  )
+}
+
+<script>
+  document.querySelectorAll<HTMLElement>('.spotify[data-spotify]').forEach((box) => {
+    box.querySelector('button')?.addEventListener('click', () => {
+      const frame = document.createElement('iframe');
+      frame.src = `${box.dataset.spotify}&autoplay=1`;
+      frame.title = `${box.dataset.title} on Spotify`;
+      frame.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
+      frame.loading = 'lazy';
+      box.replaceChildren(frame);
+      box.classList.add('loaded');
+    });
+  });
+</script>
+
+<style>
+  .spotify { min-height: var(--h); border: 1px solid var(--line); background: var(--surface); display: grid; }
+  .spotify.loaded { border: 0; background: none; }
+  .spotify :global(iframe) { width: 100%; height: var(--h); border: 0; border-radius: 12px; }
+  .load {
+    display: flex; align-items: center; gap: 1rem; width: 100%; padding: 1.25rem; text-align: left;
+    background: none; border: 0; color: var(--text); font: inherit; cursor: pointer;
+  }
+  .load:hover .icon, .load:focus-visible .icon { background: var(--accent); color: #fff; }
+  .icon {
+    flex: none; width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--text); color: var(--bg); transition: background 0.15s, color 0.15s;
+  }
+  .load strong { display: block; font-size: 1rem; }
+  .note { display: block; font-size: 0.75rem; color: var(--muted); margin-top: 0.2rem; }
+</style>
