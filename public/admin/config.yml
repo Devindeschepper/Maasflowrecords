@@ -73,6 +73,7 @@ collections:
         widget: list
         required: false
         hint: Only for EPs/albums. One song per line.
+      - { name: credits, label: Credits, widget: string, required: false, hint: 'e.g. Produced, mixed & mastered by VINBeats' }
       - name: links
         label: Streaming links
         widget: object

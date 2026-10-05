@@ -56,6 +56,16 @@ const jsonLd = [
         {!upcoming && r.links.spotify && <div class="player"><SpotifyPlayer url={r.links.spotify} title={r.title} /></div>}
 
         {
+          r.credits && (
+            <>
+              <h2 class="h-small">Credits</h2>
+              <p class="credits">{r.credits}</p>
+              <p class="muted small"><a href="/services/">Mixing &amp; mastering for your music →</a></p>
+            </>
+          )
+        }
+
+        {
           r.tracks && (
             <>
               <h2 class="h-small">Tracklist</h2>
@@ -94,6 +104,8 @@ const jsonLd = [
   .by { font-family: var(--font-display); font-size: 1.6rem; text-transform: uppercase; margin-bottom: 0.4rem; }
   .h-small { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.14em; color: var(--muted); margin: 2rem 0 0.9rem; line-height: 1.4; }
   .player { margin-top: 1.25rem; }
+  .credits { margin: 0 0 0.35rem; }
+  .small { font-size: 0.85rem; }
   .tracks { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
   .tracks li { padding: 0.7rem 0; border-bottom: 1px solid var(--line); display: flex; gap: 1rem; }
   @media (min-width: 900px) {

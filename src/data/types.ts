@@ -57,6 +57,8 @@ export interface Release {
   cover: string;
   description: string;
   tracks?: string[];
+  /** Who made it, e.g. 'Produced, mixed & mastered by VINBeats'. Shown on the release page. */
+  credits?: string;
   links: Links;
   /**
    * Optional short audio preview (a few seconds of the song), hosted on the site.
