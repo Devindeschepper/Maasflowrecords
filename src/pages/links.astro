@@ -1,0 +1,92 @@
+---
+// Link-in-bio page for the Instagram / TikTok bio: maasflowrecords.com/links
+// Everything is filled in from the same data as the rest of the site, so it updates by itself
+// (next release, latest single, streaming links, BeatStars).
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Logo from '../components/Logo.astro';
+import PlatformLinks from '../components/PlatformLinks.astro';
+import PlatformIcon from '../components/PlatformIcon.astro';
+import Newsletter from '../components/Newsletter.astro';
+import { labelSocials } from '../data/site';
+import { artists } from '../data/artists';
+import { latestRelease, upcomingReleases } from '../data/releases';
+import { beats } from '../data/services';
+import { releaseDateLabel } from '../lib/format';
+
+const vin = artists[0];
+const next = upcomingReleases()[0];
+const latest = latestRelease();
+
+type Item = { href: string; title: string; sub?: string; icon?: 'spotify' | 'appleMusic' | 'youtubeMusic' | 'beatstars'; external?: boolean; featured?: boolean };
+
+const items: Item[] = [
+  ...(next ? [{ href: `/music/${next.slug}/`, title: `${next.title} — new ${next.type}`, sub: next.releaseDate ? (next.dateTentative ? releaseDateLabel(next) : `Out ${releaseDateLabel(next)}`) : 'Coming soon', featured: true }] : []),
+  ...(latest
+    ? [
+        latest.links.spotify
+          ? { href: latest.links.spotify, title: `${latest.title} — out now`, sub: 'Listen on Spotify', icon: 'spotify' as const, external: true, featured: !next }
+          : { href: `/music/${latest.slug}/`, title: `${latest.title} — out now`, featured: !next },
+      ]
+    : []),
+  ...(vin.streaming.spotify ? [{ href: vin.streaming.spotify, title: 'VIN on Spotify', sub: 'Follow for new releases', icon: 'spotify' as const, external: true }] : []),
+  ...(vin.streaming.appleMusic ? [{ href: vin.streaming.appleMusic, title: 'VIN on Apple Music', icon: 'appleMusic' as const, external: true }] : []),
+  ...(vin.streaming.youtubeMusic ? [{ href: vin.streaming.youtubeMusic, title: 'VIN on YouTube Music', icon: 'youtubeMusic' as const, external: true }] : []),
+  ...(beats.beatstars ? [{ href: beats.beatstars, title: 'Buy beats', sub: 'Leases & exclusives on BeatStars', icon: 'beatstars' as const, external: true }] : []),
+  { href: '/services/', title: 'Mixing & mastering', sub: 'Send a request' },
+  { href: '/casting/', title: 'Send us your music', sub: 'Singers, rappers, producers, musicians' },
+  { href: '/events/', title: 'Events & booking' },
+  { href: '/', title: 'Website', sub: 'maasflowrecords.com' },
+];
+---
+
+<BaseLayout title="Links" description="All Maas Flow Records links: new music from VIN, streaming, beats, mixing & mastering and casting." bare noindex>
+  <div class="links-page">
+    <header class="top">
+      <a href="/" aria-label="Maas Flow Records — home"><Logo size="lg" /></a>
+      <p class="muted">Independent music label · Founded by VIN</p>
+      <PlatformLinks links={labelSocials} variant="icons" context="Maas Flow Records on" />
+    </header>
+
+    <ul class="list">
+      {
+        items.map((i) => (
+          <li>
+            <a
+              class:list={['item', { featured: i.featured }]}
+              href={i.href}
+              {...(i.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+            >
+              {i.icon && <PlatformIcon id={i.icon} size={22} />}
+              <span class="text">
+                <strong>{i.title}</strong>
+                {i.sub && <span class="sub">{i.sub}</span>}
+              </span>
+              <span class="go" aria-hidden="true">{i.external ? '↗' : '→'}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+  <Newsletter />
+</BaseLayout>
+
+<style>
+  .links-page { max-width: 560px; margin-inline: auto; padding: clamp(2rem, 7vw, 3.5rem) var(--gutter) 1rem; }
+  .top { display: grid; justify-items: center; gap: 0.9rem; text-align: center; margin-bottom: 2rem; }
+  .top p { margin: 0; font-size: 0.9rem; }
+  .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.7rem; }
+  .item {
+    display: flex; align-items: center; gap: 0.9rem; min-height: 64px; padding: 0.85rem 1.1rem;
+    border: 1px solid var(--line); background: var(--surface); color: var(--text); text-decoration: none;
+    transition: border-color 0.15s;
+  }
+  .item:hover, .item:focus-visible { border-color: var(--text); }
+  .item.featured { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .item.featured .sub { color: inherit; opacity: 0.7; }
+  .item.featured:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .text { flex: 1; display: grid; gap: 0.1rem; }
+  .text strong { font-size: 0.98rem; }
+  .sub { font-size: 0.8rem; color: var(--muted); }
+  .go { font-size: 1.1rem; }
+</style>

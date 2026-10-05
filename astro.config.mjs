@@ -13,7 +13,7 @@ export default defineConfig({
   vite: { build: { assetsInlineLimit: 0 } },
   integrations: [
     sitemap({
-      filter: (page) => !/\/(cart|thanks|order)\/?$/.test(page),
+      filter: (page) => !/\/(cart|thanks|order|links)\/?$/.test(page),
     }),
   ],
 });
