@@ -52,9 +52,8 @@ const today = new Date().toISOString().slice(0, 10);
           </li>
         ))}
       </ul>
-      {mixing.stemOptions.length > 0 && (
-        <p class="muted small">Stems: {mixing.stemOptions.join(' · ')} — the more stems, the more work.</p>
-      )}
+      {mixing.terms && <p class="muted small">{mixing.terms}</p>}
+      <p class="muted small">Different budget? Tell us what you can pay in the request form.</p>
       {mixing.turnaround && <p class="muted small">Delivery: {mixing.turnaround}</p>}
     </div>
   </section>
@@ -63,7 +62,7 @@ const today = new Date().toISOString().slice(0, 10);
     <div class="container two">
       <aside>
         <h2>Send a request</h2>
-        <p class="muted">Tell us what you need. We reply by email with a price, timing and how to send your files. Nothing is charged on this website.</p>
+        <p class="muted">Tell us what you need. If you like, add your budget and the date it needs to be done by. We reply by email with the price, timing and how to send your files. Nothing is charged on this website.</p>
       </aside>
 
       <form class="form card pad" action="/api/services" method="post" data-ajax data-success="Thanks — your request was sent. We'll reply by email soon.">
@@ -103,10 +102,17 @@ const today = new Date().toISOString().slice(0, 10);
             </select>
           </div>
         )}
-        <div class="field">
-          <label for="s-deadline">Deadline</label>
-          <input id="s-deadline" name="deadline" type="date" min={today} />
-          <span class="hint">Leave empty if flexible.</span>
+        <div class="form-row">
+          <div class="field">
+            <label for="s-budget">Your budget (optional)</label>
+            <input id="s-budget" name="budget" maxlength="40" inputmode="decimal" placeholder="e.g. €25 per song" />
+            <span class="hint">Want to pay a different price? Tell us.</span>
+          </div>
+          <div class="field">
+            <label for="s-deadline">Needs to be done by (optional)</label>
+            <input id="s-deadline" name="deadline" type="date" min={today} />
+            <span class="hint">Leave empty if there's no rush.</span>
+          </div>
         </div>
         <div class="field">
           <label for="s-msg">Message <span class="req">*</span></label>
