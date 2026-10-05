@@ -23,6 +23,7 @@ type RawRelease = {
   cover: string;
   description?: string;
   tracks?: string[];
+  credits?: string;
   links?: Record<string, unknown>;
   preview?: string;
 };
@@ -41,6 +42,7 @@ export const releases: Release[] = Object.entries(files).map(([path, r]) => ({
   cover: r.cover,
   description: r.description ?? '',
   tracks: list(r.tracks).length ? list(r.tracks) : undefined,
+  credits: opt(r.credits),
   links: cleanLinks(r.links),
   preview: opt(r.preview),
 }));
