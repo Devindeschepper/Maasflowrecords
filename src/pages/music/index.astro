@@ -16,15 +16,15 @@ const present = types.filter((t) => out.some((r) => r.type === t));
 const vin = artists[0];
 ---
 
-<BaseLayout title="Music & Releases" description="Singles, EPs, albums and beat tapes released on Maas Flow Records. Stream on Spotify, Apple Music, YouTube and more.">
-  <PageHero eyebrow="Catalogue" title="Music" lead="Every release on Maas Flow Records — singles, EPs, albums and beat tapes." />
+<BaseLayout title="Music & Releases" description="Every release on Maas Flow Records: singles and EPs by VIN. Stream on Spotify, Apple Music and YouTube Music.">
+  <PageHero eyebrow="Catalogue" title="Music" lead="Every release on Maas Flow Records. Press play." />
 
   <section class="section">
     <div class="container listen">
       <div>
         <p class="eyebrow"><span class="dot"></span>Listen now</p>
         <h2>Stream VIN</h2>
-        <p class="lead muted">Listen to every release on your favourite platform.</p>
+        <p class="lead muted">Every song, on your favourite platform.</p>
       </div>
       <PlatformLinks links={vin.streaming} variant="list" />
     </div>
