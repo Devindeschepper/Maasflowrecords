@@ -54,7 +54,7 @@ public/           ← static files: images, favicon, _headers (security), robots
 ```bash
 npm install
 npm run dev            # http://localhost:4321  (pages only)
-npm run build          # production build → dist/
+npm run build          # production build → dist/ (then shrinks images in dist/images, max 1400px)
 npx wrangler dev       # full site + /api locally, like production (reads .dev.vars)
 ```
 
