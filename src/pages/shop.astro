@@ -28,7 +28,7 @@ const jsonLd = !shopOpen ? [] : products.map((p) => ({
 ---
 
 <BaseLayout title="Shop" description="Official Maas Flow Records store. The 2Real4U CD by VIN is coming soon - follow the label to know when the shop opens." jsonLd={jsonLd}>
-  <PageHero eyebrow="Official store" title="Shop" lead="Physical CDs, straight from the label. Every order directly supports independent music." />
+  <PageHero eyebrow="Official store" title="Shop" lead="CDs, straight from the label." />
 
   {!shopOpen && <ShopComingSoon />}
   {shopOpen && shopTestMode && <TestModeBanner />}

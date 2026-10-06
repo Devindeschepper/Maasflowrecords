@@ -7,7 +7,7 @@ export const site = {
   url: 'https://maasflowrecords.com',
   email: 'info@maasflowrecords.com',
   description:
-    'Maas Flow Records is an independent music label founded by producer and rapper VIN. Rap, R&B and beats - made independently.',
+    'Maas Flow Records is an independent music label founded by producer and rapper VIN. Rap, R&B and beats.',
   /** Default social preview image (1200x630 JPG — WhatsApp/Instagram/Facebook don't show SVG). */
   ogImage: '/images/og-default.jpg',
   /** Cloudflare Web Analytics token (admin panel → Settings). Empty = no analytics. */
