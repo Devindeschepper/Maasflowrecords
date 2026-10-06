@@ -6,7 +6,7 @@ import { site, shopOpen } from '../data/site';
 
 // Keep in sync with TOPICS in functions/api/contact.ts
 const topics = [
-  { value: 'general', label: 'General', text: 'Questions, feedback, anything else.' },
+  { value: 'general', label: 'General', text: 'Questions and feedback.' },
   { value: 'artists', label: 'Artists', text: 'Features, collabs and artist questions.' },
   { value: 'beats', label: 'Beats, mixing & mastering', text: 'Leases, custom beats and mix requests — see Services.', href: '/services/' },
   { value: 'casting', label: 'Casting', text: 'Musicians — use the casting form.', href: '/casting/' },
@@ -14,6 +14,7 @@ const topics = [
   { value: 'events', label: 'Booking', text: 'Book an artist — use the booking form.', href: '/events/#book' },
   { value: 'press', label: 'Press', text: 'Interviews and media.' },
   ...(shopOpen ? [{ value: 'shop', label: 'Shop & orders', text: 'Order questions, returns.' }] : []),
+  { value: 'other', label: 'Other', text: 'Anything that doesn\'t fit above.' },
 ];
 ---
 

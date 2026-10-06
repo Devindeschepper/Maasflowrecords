@@ -12,6 +12,7 @@ const TOPICS: Record<string, string> = {
   events: 'Events & booking',
   press: 'Press',
   shop: 'Shop & orders',
+  other: 'Other',
 };
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
