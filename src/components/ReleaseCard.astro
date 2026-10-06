@@ -18,7 +18,7 @@ const upcoming = isUpcoming(r);
     <div class="meta">
       <p class="mono muted">{releaseMeta(r)}</p>
       <H class="title">{r.title}</H>
-      <p class="sub">{artistNames(r)} <span class="muted">— {upcoming && r.releaseDate && !r.dateTentative ? 'Out ' : ''}{releaseDateLabel(r)}</span></p>
+      <p class="sub">{artistNames(r)} <span class="muted">- {upcoming && r.releaseDate && !r.dateTentative ? 'Out ' : ''}{releaseDateLabel(r)}</span></p>
     </div>
   </a>
   {r.preview && <div class="play"><PreviewButton src={r.preview} title={r.title} /></div>}

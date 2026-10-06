@@ -28,7 +28,7 @@ export const nowPaymentsProvider: PaymentProvider = {
         price_amount: order.total / 100,
         price_currency: 'eur',
         order_id: order.orderId,
-        order_description: `Maas Flow Records — ${order.lines.map((l) => `${l.qty}× ${l.name}`).join(', ')}`.slice(0, 200),
+        order_description: `Maas Flow Records - ${order.lines.map((l) => `${l.qty}× ${l.name}`).join(', ')}`.slice(0, 200),
         // The customer's email rides along so the confirmation can be sent when the payment lands.
         ipn_callback_url: `${origin}/api/webhooks/crypto?e=${encodeURIComponent(c.email)}`,
         success_url: `${origin}/order/?status=paid&method=crypto&order=${encodeURIComponent(order.orderId)}`,
@@ -39,10 +39,10 @@ export const nowPaymentsProvider: PaymentProvider = {
     if (!res.ok || !data.invoice_url) throw new Error(`NOWPayments: ${res.status} ${data.message ?? ''}`);
 
     await sendMail(env, {
-      subject: `${shopTestMode ? '[TEST] ' : ''}[Awaiting crypto payment] Order ${order.orderId} — ${eur(order.total)}`,
+      subject: `${shopTestMode ? '[TEST] ' : ''}[Awaiting crypto payment] Order ${order.orderId} - ${eur(order.total)}`,
       replyTo: c.email,
       fields: [
-        ['Status', 'AWAITING CRYPTO PAYMENT — do not ship until you receive the "[PAID]" email for this order.'],
+        ['Status', 'AWAITING CRYPTO PAYMENT - do not ship until you receive the "[PAID]" email for this order.'],
         ['Order', order.orderId],
         ['Invoice', `NOWPayments invoice ${data.id ?? ''}`],
         ['Items', items],

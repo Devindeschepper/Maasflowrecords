@@ -8,17 +8,17 @@ import { site, shopOpen } from '../data/site';
 const topics = [
   { value: 'general', label: 'General', text: 'Questions and feedback.' },
   { value: 'artists', label: 'Artists', text: 'Features, collabs and artist questions.' },
-  { value: 'beats', label: 'Beats, mixing & mastering', text: 'Leases, custom beats and mix requests — see Services.', href: '/services/' },
-  { value: 'casting', label: 'Casting', text: 'Musicians — use the casting form.', href: '/casting/' },
+  { value: 'beats', label: 'Beats, mixing & mastering', text: 'Leases, custom beats and mix requests - see Services.', href: '/services/' },
+  { value: 'casting', label: 'Casting', text: 'Musicians - use the casting form.', href: '/casting/' },
   { value: 'business', label: 'Business', text: 'Licensing, sync, partnerships.' },
-  { value: 'events', label: 'Booking', text: 'Book an artist — use the booking form.', href: '/events/#book' },
+  { value: 'events', label: 'Booking', text: 'Book an artist - use the booking form.', href: '/events/#book' },
   { value: 'press', label: 'Press', text: 'Interviews and media.' },
   ...(shopOpen ? [{ value: 'shop', label: 'Shop & orders', text: 'Order questions, returns.' }] : []),
   { value: 'other', label: 'Other', text: 'Anything that doesn\'t fit above.' },
 ];
 ---
 
-<BaseLayout title="Contact" description={`Contact Maas Flow Records — general questions, artists, business and press. Email ${site.email}.`}>
+<BaseLayout title="Contact" description={`Contact Maas Flow Records - general questions, artists, business and press. Email ${site.email}.`}>
   <PageHero eyebrow="Get in touch" title="Contact">
     <p class="lead">
       <a class="mail" href={`mailto:${site.email}`}>{site.email}</a>
@@ -42,7 +42,7 @@ const topics = [
         <p class="muted small">We usually reply within a few working days.</p>
       </aside>
 
-      <form class="form card pad" action="/api/contact" method="post" data-ajax data-success="Thanks — your message was sent. We'll get back to you soon.">
+      <form class="form card pad" action="/api/contact" method="post" data-ajax data-success="Thanks - your message was sent. We'll get back to you soon.">
         <div class="form-row">
           <div class="field">
             <label for="f-name">Name <span class="req">*</span></label>

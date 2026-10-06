@@ -20,12 +20,12 @@ const latest = latestRelease();
 type Item = { href: string; title: string; sub?: string; icon?: 'spotify' | 'appleMusic' | 'youtubeMusic' | 'beatstars'; external?: boolean; featured?: boolean };
 
 const items: Item[] = [
-  ...(next ? [{ href: `/music/${next.slug}/`, title: `${next.title} — new ${next.type}`, sub: next.releaseDate ? (next.dateTentative ? releaseDateLabel(next) : `Out ${releaseDateLabel(next)}`) : 'Coming soon', featured: true }] : []),
+  ...(next ? [{ href: `/music/${next.slug}/`, title: `${next.title} - new ${next.type}`, sub: next.releaseDate ? (next.dateTentative ? releaseDateLabel(next) : `Out ${releaseDateLabel(next)}`) : 'Coming soon', featured: true }] : []),
   ...(latest
     ? [
         latest.links.spotify
-          ? { href: latest.links.spotify, title: `${latest.title} — out now`, sub: 'Listen on Spotify', icon: 'spotify' as const, external: true, featured: !next }
-          : { href: `/music/${latest.slug}/`, title: `${latest.title} — out now`, featured: !next },
+          ? { href: latest.links.spotify, title: `${latest.title} - out now`, sub: 'Listen on Spotify', icon: 'spotify' as const, external: true, featured: !next }
+          : { href: `/music/${latest.slug}/`, title: `${latest.title} - out now`, featured: !next },
       ]
     : []),
   ...(vin.streaming.spotify ? [{ href: vin.streaming.spotify, title: 'VIN on Spotify', sub: 'Follow for new releases', icon: 'spotify' as const, external: true }] : []),
@@ -42,7 +42,7 @@ const items: Item[] = [
 <BaseLayout title="Links" description="All Maas Flow Records links: new music from VIN, streaming, beats, mixing & mastering and casting." bare noindex>
   <div class="links-page">
     <header class="top">
-      <a href="/" aria-label="Maas Flow Records — home"><Logo size="lg" /></a>
+      <a href="/" aria-label="Maas Flow Records - home"><Logo size="lg" /></a>
       <p class="muted">Independent music label · Founded by VIN</p>
       <PlatformLinks links={labelSocials} variant="icons" context="Maas Flow Records on" />
     </header>

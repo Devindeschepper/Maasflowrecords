@@ -41,7 +41,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       replyTo: email,
       fields: [
         ['Request', type.label],
-        ['Number of songs', songs || '—'],
+        ['Number of songs', songs || '-'],
         ['Stems', stems || 'Not given'],
         ['Budget', budget || 'Standard price'],
         ['Needs to be done by', deadline || 'Flexible'],

@@ -32,7 +32,7 @@ import { site } from '../data/site';
     clearCart();
     if (q.get('method') === 'crypto') {
       document.getElementById('order-msg')!.textContent =
-        "Crypto payments need a few network confirmations. You'll get a confirmation email once the payment is complete — this can take from a few minutes up to an hour.";
+        "Crypto payments need a few network confirmations. You'll get a confirmation email once the payment is complete - this can take from a few minutes up to an hour.";
     }
   }
   if (order && /^[A-Z0-9-]{6,40}$/.test(order)) {

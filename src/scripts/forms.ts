@@ -43,7 +43,7 @@ export function enhanceForms() {
         if (!res.ok || !data.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
         form.reset();
         if (started) started.value = String(Date.now());
-        setStatus(form.dataset.success ?? 'Thanks — your message was sent.', 'ok');
+        setStatus(form.dataset.success ?? 'Thanks - your message was sent.', 'ok');
       } catch (err) {
         setStatus(
           `${(err as Error).message} You can also email info@maasflowrecords.com.`,

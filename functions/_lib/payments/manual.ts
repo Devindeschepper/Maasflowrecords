@@ -16,7 +16,7 @@ export const manualProvider: PaymentProvider = {
     const c = order.customer;
 
     await sendMail(env, {
-      subject: `[Order ${order.orderId}] ${c.name} — ${eur(order.total)}`,
+      subject: `[Order ${order.orderId}] ${c.name} - ${eur(order.total)}`,
       replyTo: c.email,
       fields: [
         ['Order', order.orderId],
@@ -48,7 +48,7 @@ export const manualProvider: PaymentProvider = {
     }).catch((err) => console.error('Customer confirmation failed', err));
 
     return {
-      message: `Order ${order.orderId} received. We'll email you a payment request within 1–2 working days — your order ships after payment.`,
+      message: `Order ${order.orderId} received. We'll email you a payment request within 1–2 working days - your order ships after payment.`,
     };
   },
 };

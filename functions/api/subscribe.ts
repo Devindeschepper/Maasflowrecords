@@ -55,7 +55,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         fields: [
           ['Email', email],
           ['Consent', `Agreed to receive emails on ${new Date().toISOString()}`],
-          ['Note', 'Could not save this address in Resend automatically — add it to the contact list by hand.'],
+          ['Note', 'Could not save this address in Resend automatically - add it to the contact list by hand.'],
         ],
       });
     } catch (err) {

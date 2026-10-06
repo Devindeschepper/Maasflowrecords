@@ -55,7 +55,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       await sendMail(env, {
         subject: `[Partly paid] Crypto order ${orderId}`,
         fields: [
-          ['Status', 'The customer sent LESS than the invoice amount. Do not ship yet — contact the customer.'],
+          ['Status', 'The customer sent LESS than the invoice amount. Do not ship yet - contact the customer.'],
           ['Order', orderId],
           ['Received', paid],
           ['Payment id', String(body.payment_id ?? '')],
