@@ -30,8 +30,8 @@ const events = upcomingEvents()
         <p class="eyebrow"><span class="dot"></span>Independent music label</p>
         <h1>Maas <br />Flow <br /><span class="outline">Records</span></h1>
         <p class="lead">
-          An independent music label founded by producer and rapper <strong>VIN</strong>.
-          Rap, R&amp;B and beats - built from the ground up.
+          Independent music label founded by producer and rapper <strong>VIN</strong>.
+          Rap, R&amp;B and beats.
         </p>
         <p><a class="link-arrow" href="#label">About the label</a></p>
         <div class="btn-row">
@@ -114,7 +114,7 @@ const events = upcomingEvents()
         <h2>Upcoming</h2>
         <a class="link-arrow" href="/events/">All events</a>
       </div>
-      {events.length ? events.map((e) => <EventCard event={e} compact />) : <p class="empty">No events announced yet. Follow us to be the first to know.</p>}
+      {events.length ? events.map((e) => <EventCard event={e} compact />) : <p class="empty">No events yet. Check back soon.</p>}
     </div>
   </section>
 
@@ -122,7 +122,6 @@ const events = upcomingEvents()
   <section class="section spotlight">
     <div class="container spotlight-grid">
       <div>
-        <p class="eyebrow"><span class="dot"></span>Artist</p>
         <h2>{vin.name}</h2>
         <blockquote>“I rap what I live.”</blockquote>
         <p class="lead muted">{vin.description}</p>
@@ -152,24 +151,20 @@ const events = upcomingEvents()
   <section class="section about" id="label">
     <div class="container about-grid">
       <div>
-        <p class="eyebrow"><span class="dot"></span>About the label</p>
         <h2>Maas Flow Records</h2>
       </div>
       <div class="prose">
         <p class="lead">Maas Flow Records is an independent music label, created by artist and producer VIN.</p>
         <p class="muted">
-          The label was built to give music a home that stays independent: from the first beat in the studio
-          to the final release, every step is handled with care and ownership.
+          Everything happens in-house: the beat, the recording, the mix, the master and the release.
+          No big label in between.
         </p>
         <p class="muted">
-          Maas Flow Records focuses on four things: <strong>music</strong>, <strong>creativity</strong>,
-          <strong>artist development</strong> and <strong>independent releases</strong>. That means producing,
-          recording, mixing and releasing music in-house, learning every part of the process, and growing artists at
-          their own pace - without losing who they are.
+          Right now that's VIN's music. Next up: other artists who want to grow at their own pace
+          and stay who they are.
         </p>
         <p class="muted">
-          Today the roster is VIN. The label is open to working with singers, rappers, producers, musicians and
-          engineers who share the same mindset: honest music, constant learning, and building something of our own.
+          Singer, rapper, producer or engineer? If you take your music seriously, send it to us.
         </p>
         <div class="btn-row">
           <a class="btn btn-primary" href="/artists/">The roster</a>
