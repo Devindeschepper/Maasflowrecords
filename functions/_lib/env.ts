@@ -12,6 +12,6 @@ export interface Env {
   NOWPAYMENTS_API_KEY?: string;
   /** NOWPayments IPN secret (Settings → Payments → Instant payment notifications). */
   NOWPAYMENTS_IPN_SECRET?: string;
-  /** Resend Audience id for newsletter signups (optional; without it signups are emailed to the label). */
+  /** Optional legacy Resend audience id; without it signups go to the account-wide contact list. */
   RESEND_AUDIENCE_ID?: string;
 }
