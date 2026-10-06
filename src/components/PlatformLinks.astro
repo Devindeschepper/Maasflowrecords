@@ -33,7 +33,7 @@ const entries = platformOrder
               {variant === 'list' && <span class="go" aria-hidden="true">↗</span>}
             </a>
           ) : (
-            <span class="soon" title={`${e.label} — link coming soon`}>
+            <span class="soon" title={`${e.label} - link coming soon`}>
               <PlatformIcon id={e.id} size={variant === 'list' ? 26 : 18} />
               {variant !== 'icons' ? <span class="label">{e.label}</span> : <span class="sr-only">{e.label} (coming soon)</span>}
               {variant !== 'icons' && <span class="soon-tag">soon</span>}

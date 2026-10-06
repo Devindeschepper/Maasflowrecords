@@ -9,7 +9,7 @@ export const eur = (cents: number) => `€${(cents / 100).toFixed(2)}`;
 
 export const itemsText = (lines: OrderLine[]) =>
   lines
-    .map((l) => `${l.qty} × ${l.name}${l.size ? ` (${l.size})` : ''} — ${eur(l.unitPrice * l.qty)}${l.preorder ? ' [PRE-ORDER]' : ''}`)
+    .map((l) => `${l.qty} × ${l.name}${l.size ? ` (${l.size})` : ''} - ${eur(l.unitPrice * l.qty)}${l.preorder ? ' [PRE-ORDER]' : ''}`)
     .join('\n');
 
 /** "Incl. 17% VAT: €2.47" */
@@ -33,10 +33,10 @@ export interface PaidOrder {
 /** Emails a confirmed payment to the label and a confirmation to the customer. */
 export async function mailPaidOrder(env: Env, o: PaidOrder): Promise<void> {
   await sendMail(env, {
-    subject: `${test}[PAID] Order ${o.orderId} — ${o.paid}`,
+    subject: `${test}[PAID] Order ${o.orderId} - ${o.paid}`,
     replyTo: o.customer.email,
     fields: [
-      ['Status', 'PAID — ready to ship'],
+      ['Status', 'PAID - ready to ship'],
       ['Order', o.orderId],
       ['Paid via', `${o.via} · ref ${o.reference}`],
       ['Amount', o.paid],
@@ -53,7 +53,7 @@ export async function mailPaidOrder(env: Env, o: PaidOrder): Promise<void> {
   if (o.customer.email) {
     await sendMail(env, {
       to: o.customer.email,
-      subject: `${test}Payment received — Maas Flow Records order ${o.orderId}`,
+      subject: `${test}Payment received - Maas Flow Records order ${o.orderId}`,
       fields: [
         ['Thank you', `${o.customer.name ? `Hi ${o.customer.name}, t` : 'T'}hanks for your order! Your payment was received. Pre-orders ship on or around the release date; you'll get an email when it's on the way.`],
         ['Order', o.orderId],

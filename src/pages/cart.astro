@@ -34,9 +34,9 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
 
       <aside class="summary card" id="checkout-box" hidden>
         <h2 class="h3">Checkout</h2>
-        <p class="notice" id="pay-cancelled" hidden>Payment cancelled — nothing was charged. You can try again.</p>
+        <p class="notice" id="pay-cancelled" hidden>Payment cancelled - nothing was charged. You can try again.</p>
         <form class="form" id="checkout-form" action="/api/checkout" method="post">
-          {orderableZones.length === 0 && <p class="notice">Shipping prices are coming soon — orders open shortly.</p>}
+          {orderableZones.length === 0 && <p class="notice">Shipping prices are coming soon - orders open shortly.</p>}
           <div class="field">
             <label for="o-zone">Ship to <span class="req">*</span></label>
             <select id="o-zone" name="zone" required>
@@ -45,10 +45,10 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
           </div>
 
           <dl class="totals">
-            <div><dt>Subtotal</dt><dd id="t-sub">—</dd></div>
-            <div><dt>Shipping</dt><dd id="t-ship">—</dd></div>
-            <div class="grand"><dt>Total</dt><dd id="t-total">—</dd></div>
-            <div class="vat"><dt id="t-vat-note">—</dt><dd id="t-vat"></dd></div>
+            <div><dt>Subtotal</dt><dd id="t-sub">-</dd></div>
+            <div><dt>Shipping</dt><dd id="t-ship">-</dd></div>
+            <div class="grand"><dt>Total</dt><dd id="t-total">-</dd></div>
+            <div class="vat"><dt id="t-vat-note">-</dt><dd id="t-vat"></dd></div>
           </dl>
 
           <fieldset class="fs">

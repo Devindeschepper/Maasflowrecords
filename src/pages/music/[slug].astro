@@ -35,7 +35,7 @@ const jsonLd = [
 ];
 ---
 
-<BaseLayout title={`${r.title} — ${artistNames(r)}`} description={`${r.type} by ${artistNames(r)} on ${site.name}. ${r.description}`} image={r.cover} type={r.type === 'Single' ? 'music.song' : 'music.album'} jsonLd={jsonLd}>
+<BaseLayout title={`${r.title} - ${artistNames(r)}`} description={`${r.type} by ${artistNames(r)} on ${site.name}. ${r.description}`} image={r.cover} type={r.type === 'Single' ? 'music.song' : 'music.album'} jsonLd={jsonLd}>
   <section class="release-hero">
     <div class="container layout">
       <div class="cover">

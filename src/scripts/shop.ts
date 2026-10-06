@@ -11,7 +11,7 @@ export function enhanceAddToCart() {
       const id = String(data.get('id'));
       const size = data.get('size') ? String(data.get('size')) : undefined;
       addToCart(id, size, 1, Number(form.dataset.max) || 10);
-      if (msg) msg.innerHTML = 'Added to cart — <a href="/cart/">view cart</a>';
+      if (msg) msg.innerHTML = 'Added to cart - <a href="/cart/">view cart</a>';
     });
   });
 }
