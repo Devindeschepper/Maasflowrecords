@@ -1,5 +1,6 @@
 ---
 // Shown instead of the shop while `shopOpen` is false (src/data/site.ts).
+import Email from './Email.astro';
 import PlatformLinks from './PlatformLinks.astro';
 import ProductCard from './ProductCard.astro';
 import { labelSocials, site } from '../data/site';
@@ -15,7 +16,7 @@ import { products } from '../data/products';
         The 2Real4U CD is coming. Follow us on Instagram or TikTok to see when the shop opens.
       </p>
       <PlatformLinks links={labelSocials} variant="chips" hideEmpty />
-      <p class="muted small">Questions or wholesale? <a href={`mailto:${site.email}`}>{site.email}</a></p>
+      <p class="muted small">Questions or wholesale? <Email /></p>
     </div>
     <div class="coming" aria-label="What's coming">
       {products.map((p) => <ProductCard product={p} comingSoon />)}

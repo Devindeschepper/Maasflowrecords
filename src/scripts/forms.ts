@@ -46,7 +46,7 @@ export function enhanceForms() {
         setStatus(form.dataset.success ?? 'Thanks - your message was sent.', 'ok');
       } catch (err) {
         setStatus(
-          `${(err as Error).message} You can also email info@maasflowrecords.com.`,
+          `${(err as Error).message} You can also email ${['info', 'maasflowrecords.com'].join('@')}.`,
           'error',
         );
       } finally {

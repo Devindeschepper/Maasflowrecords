@@ -1,4 +1,5 @@
 ---
+import Email from '../components/Email.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from '../components/PageHero.astro';
 import EventCard from '../components/EventCard.astro';
@@ -62,7 +63,7 @@ const jsonLd = upcoming.filter((e) => e.kind !== 'Release' && e.start).map((e) =
       <div class="intro">
         <h2>Book an artist</h2>
         <p class="lead muted">Want VIN at your show, festival, club night or event? Send the details and we'll get back to you.</p>
-        <p class="muted small">Prefer email? <a href="mailto:info@maasflowrecords.com">info@maasflowrecords.com</a></p>
+        <p class="muted small">Prefer email? <Email /></p>
       </div>
       <BookingForm />
     </div>

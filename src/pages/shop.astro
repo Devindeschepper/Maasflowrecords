@@ -1,4 +1,5 @@
 ---
+import Email from '../components/Email.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from '../components/PageHero.astro';
 import ProductCard from '../components/ProductCard.astro';
@@ -73,7 +74,7 @@ const jsonLd = !shopOpen ? [] : products.map((p) => ({
           <li>Pre-orders ship on or around the release date. Mixed orders ship together.</li>
           <li>You'll receive an order confirmation by email.</li>
           <li>Returns accepted within 14 days of delivery (EU right of withdrawal). Items must be unused.</li>
-          <li>Questions? <a href={`mailto:${site.email}`}>{site.email}</a></li>
+          <li>Questions? <Email /></li>
         </ul>
       </div>
       <div>
