@@ -15,6 +15,20 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
 
     <a href="/" class="home-link"><Logo /></a>
 
+    <nav id="site-nav" class="nav" aria-label="Main">
+      <ul>
+        {
+          nav.map((item) => (
+            <li>
+              <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
     <div class="actions">
       {/* Always shown; while the shop is closed the cart page says "Coming soon". */}
       <a href="/cart/" class="cart-link" aria-label="Shopping cart">
@@ -25,20 +39,6 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
       </a>
     </div>
   </div>
-
-  <nav id="site-nav" class="nav" aria-label="Main">
-    <ul>
-      {
-        nav.map((item) => (
-          <li>
-            <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>
-              {item.label}
-            </a>
-          </li>
-        ))
-      }
-    </ul>
-  </nav>
 </header>
 
 <script>
@@ -80,7 +80,7 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     background: rgba(10, 10, 10, 0.88);
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   }
-  /* Menu left, logo in the middle, cart right. */
+  /* Small screens: menu left, logo in the middle, cart right. */
   .bar { height: var(--header-h); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; }
   .menu-btn { grid-column: 1; justify-self: start; margin-left: -10px; }
   .home-link { grid-column: 2; text-decoration: none; }
@@ -115,19 +115,13 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
   }
   .nav a[aria-current='page'] { color: var(--accent); }
 
-  /* desktop: logo row on top, page links in a row underneath */
+  /* desktop: logo left, page links, cart right */
   @media (min-width: 1080px) {
-    .bar { height: 76px; }
+    .bar { display: flex; justify-content: space-between; }
     .menu-btn { display: none; }
-    .home-link :global(.mark) { width: 42px; height: 42px; }
-    .home-link :global(.w1) { font-size: 1.6rem; }
-    .home-link :global(.w2) { font-size: 0.66rem; }
-    .nav {
-      position: static; visibility: visible; opacity: 1; padding: 0; background: none; overflow: visible;
-      height: calc(var(--header-h) - 76px); display: flex; align-items: center; justify-content: center;
-      border-top: 1px solid var(--line);
-    }
-    .nav ul { display: flex; gap: 2rem; }
+    .actions { margin-right: 0; }
+    .nav { position: static; visibility: visible; opacity: 1; padding: 0; background: none; overflow: visible; }
+    .nav ul { display: flex; gap: 1.4rem; }
     .nav li { border: 0; }
     .nav a {
       padding: 0.4rem 0; font: 500 0.74rem/1 var(--font-body); letter-spacing: 0.14em;
