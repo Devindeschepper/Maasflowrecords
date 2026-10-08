@@ -28,7 +28,7 @@ const events = upcomingEvents()
     <div class="container hero-grid">
       <div class="hero-copy">
         <p class="eyebrow"><span class="dot"></span>Independent music label</p>
-        <h1>Maas <br />Flow <br /><span class="outline">Records</span></h1>
+        <h1><span class="w">Maas</span> <br /><span class="w">Flow</span> <br /><span class="w outline">Records</span></h1>
         <p class="lead">
           Independent music label founded by producer and rapper <strong>VIN</strong>.
         </p>
@@ -180,6 +180,13 @@ const events = upcomingEvents()
   .hero-grid { display: grid; gap: 2.5rem; padding-top: clamp(2.5rem, 8vw, 5rem); padding-bottom: 3.5rem; }
   .hero h1 { font-size: clamp(4rem, 17vw, 10rem); line-height: 0.86; margin-bottom: 1.5rem; }
   .outline { color: transparent; -webkit-text-stroke: 1.5px var(--text); }
+  /* Mouse over a word: filled words turn to outline, the outlined word fills in. */
+  .hero h1 .w { -webkit-text-stroke: 1.5px var(--text); transition: color 0.25s ease; }
+  @media (hover: hover) {
+    .hero h1 .w:hover { color: transparent; }
+    .hero h1 .w.outline:hover { color: var(--accent); -webkit-text-stroke-color: var(--accent); }
+  }
+  @media (prefers-reduced-motion: reduce) { .hero h1 .w { transition: none; } }
   .hero .lead { margin-bottom: 1.75rem; }
   .hero-artist { margin: 0; position: relative; border: 1px solid var(--line); background: var(--surface); }
   .hero-artist img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
