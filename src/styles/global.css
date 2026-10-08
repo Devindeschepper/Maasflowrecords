@@ -123,13 +123,18 @@ p { margin: 0 0 1em; }
   font: 600 0.8rem/1 var(--font-body); letter-spacing: 0.12em; text-transform: uppercase;
   text-decoration: none; border: 1px solid var(--text); border-radius: var(--radius);
   background: transparent; color: var(--text); cursor: pointer;
-  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+  /* Mouse in: a fill sweeps in from the left. Mouse out: it slides away to the right. */
+  --fill: var(--text);
+  background-image: linear-gradient(var(--fill), var(--fill));
+  background-repeat: no-repeat; background-size: 0% 100%; background-position: right center;
+  transition: background-size 0.35s cubic-bezier(0.65, 0, 0.35, 1), color 0.3s 0.05s, border-color 0.25s;
 }
-.btn:hover { background: var(--text); color: var(--bg); }
-.btn-primary { background: var(--text); color: var(--bg); }
-.btn-primary:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn:hover, .btn:focus-visible { background-size: 100% 100%; background-position: left center; color: var(--bg); }
+.btn-primary { background-color: var(--text); color: var(--bg); --fill: var(--accent); }
+.btn-primary:hover, .btn-primary:focus-visible { border-color: var(--accent); color: #fff; }
 .btn-ghost { border-color: var(--line); }
-.btn-ghost:hover { border-color: var(--text); background: transparent; color: #fff; }
+.btn-ghost:hover, .btn-ghost:focus-visible { border-color: var(--text); }
+@media (prefers-reduced-motion: reduce) { .btn { transition: none; } }
 .btn[disabled], .btn[aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
 .btn-row { display: flex; flex-wrap: wrap; gap: 0.75rem; }
 
