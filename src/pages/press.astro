@@ -1,0 +1,147 @@
+---
+// Press kit (EPK): one page for press, radio, playlist curators and promoters.
+// Bios, facts, photos and releases come from the same data as the rest of the site.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import ReleaseCard from '../components/ReleaseCard.astro';
+import PlatformLinks from '../components/PlatformLinks.astro';
+import Email from '../components/Email.astro';
+import { artists } from '../data/artists';
+import { labelReleases } from '../data/releases';
+import { labelSocials } from '../data/site';
+
+const vin = artists[0];
+const releases = labelReleases();
+
+const photos = [
+  { src: vin.image, alt: vin.imageAlt, label: 'Black and white' },
+  ...(vin.bioPhoto ? [{ src: vin.bioPhoto, alt: vin.bioPhotoAlt ?? vin.imageAlt, label: 'Blue, staircase' }] : []),
+  { src: '/images/artists/vin-street-blue.jpg', alt: 'VIN on the street, blue tones', label: 'Blue, street' },
+];
+
+const facts = [
+  ['Label', 'Maas Flow Records (independent)'],
+  ['Founder', 'VIN'],
+  ['Main artist', `${vin.name} - ${vin.roles.join(', ').toLowerCase()}`],
+  ['From', vin.origin],
+  ['Genre', 'Hip-hop / rap'],
+  ['Website', 'maasflowrecords.com'],
+];
+---
+
+<BaseLayout title="Press kit" description="Press kit for Maas Flow Records and VIN: bios, facts, press photos, releases and contact for press, radio and promoters.">
+  <PageHero eyebrow="Press kit" title="Press" lead="Bios, photos, music and contact for press, radio, curators and promoters." />
+
+  <section class="section">
+    <div class="container two">
+      <div>
+        <h2>Quick facts</h2>
+      </div>
+      <dl class="facts">
+        {facts.map(([k, v]) => (
+          <div><dt class="mono muted">{k}</dt><dd>{v}</dd></div>
+        ))}
+      </dl>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container two">
+      <div>
+        <h2>Bios</h2>
+        <p class="muted small">Free to copy and use.</p>
+      </div>
+      <div class="bios">
+        <article class="bio-box">
+          <p class="mono muted">VIN - short bio</p>
+          <p>{vin.description}</p>
+          <p><a class="link-arrow" href="/bio/#vin">Full bio</a></p>
+        </article>
+        <article class="bio-box">
+          <p class="mono muted">Maas Flow Records - short bio</p>
+          <p>
+            Maas Flow Records is an independent music label founded by producer and rapper VIN. Everything happens in-house:
+            the beat, the recording, the mix, the master and the release. The label puts out VIN's music and is open to
+            artists who want to grow at their own pace and stay who they are.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <h2>Press photos</h2>
+      <p class="muted small">Free to use for articles, posts and event promotion about VIN. Click a photo to download it.</p>
+      <div class="photos">
+        {photos.map((p) => (
+          <a href={p.src} download class="photo">
+            <img src={p.src} alt={p.alt} width="480" height="600" loading="lazy" />
+            <span class="mono muted">{p.label} · Download</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <h2>Releases</h2>
+      <div class="grid grid-4">{releases.map((r) => <ReleaseCard release={r} />)}</div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container two">
+      <div>
+        <h2>Listen &amp; follow</h2>
+      </div>
+      <div class="links">
+        <p class="mono muted">VIN - streaming</p>
+        <PlatformLinks links={vin.streaming} variant="chips" hideEmpty />
+        <p class="mono muted">VIN - socials</p>
+        <PlatformLinks links={vin.socials} variant="chips" hideEmpty />
+        <p class="mono muted">Maas Flow Records - socials</p>
+        <PlatformLinks links={labelSocials} variant="chips" hideEmpty />
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container two">
+      <div>
+        <h2>Contact</h2>
+      </div>
+      <div>
+        <p class="lead">Interviews, radio, playlists, features and bookings: <Email label="show email" />.</p>
+        <div class="btn-row">
+          <a class="btn btn-primary" href="/contact/">Contact form</a>
+          <a class="btn btn-ghost" href="/events/#book">Book VIN</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .two { display: grid; gap: 1.5rem; }
+  @media (min-width: 900px) { .two { grid-template-columns: 1fr 2fr; gap: 3rem; } }
+  .small { font-size: 0.9rem; }
+  .facts { margin: 0; display: grid; border-top: 1px solid var(--line); }
+  .facts div { display: grid; grid-template-columns: 9rem 1fr; gap: 1rem; padding: 0.8rem 0; border-bottom: 1px solid var(--line); }
+  .facts dt { font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; padding-top: 0.15rem; }
+  .facts dd { margin: 0; }
+  .bios { display: grid; gap: 1rem; }
+  .bio-box { border: 1px solid var(--line); background: var(--surface); padding: 1.25rem 1.4rem; }
+  .bio-box p { margin: 0 0 0.75rem; }
+  .bio-box p:last-child { margin-bottom: 0; }
+  .bio-box .mono { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; }
+  .photos { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); margin-top: 1.25rem; }
+  .photo { display: grid; gap: 0.5rem; text-decoration: none; color: inherit; }
+  .photo img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border: 1px solid var(--line); }
+  .photo:hover img { border-color: var(--text); }
+  .photo span { font-size: 0.75rem; }
+  .links { display: grid; gap: 0.75rem; }
+  .links .mono { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; margin: 0.5rem 0 0; }
+  .lead :global(.email-reveal) { color: var(--accent); }
+</style>
