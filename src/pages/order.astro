@@ -1,6 +1,7 @@
 ---
 // Where Stripe / NOWPayments send the customer back after paying.
 // The actual confirmation comes from the payment webhooks (email to label + customer).
+import Email from '../components/Email.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { site } from '../data/site';
 ---
@@ -14,7 +15,7 @@ import { site } from '../data/site';
         Your payment is being processed. You'll receive a confirmation email as soon as it's confirmed.
       </p>
       <p class="muted" id="order-ref" hidden>Order number: <strong class="mono" id="order-id"></strong></p>
-      <p class="muted">Questions? <a href={`mailto:${site.email}`}>{site.email}</a></p>
+      <p class="muted">Questions? <Email /></p>
       <div class="btn-row">
         <a class="btn btn-primary" href="/music/">Listen to the music</a>
         <a class="btn btn-ghost" href="/shop/">Back to shop</a>

@@ -1,0 +1,38 @@
+---
+// Shows the label email only after a click, so spam bots that scan the page
+// can't pick it up. The address is stored scrambled and put back together in
+// the browser.
+import { site } from '../data/site';
+
+interface Props {
+  class?: string;
+  label?: string;
+}
+const { class: className, label = 'Show email' } = Astro.props;
+
+const scrambled = btoa(site.email.split('').reverse().join(''));
+---
+
+<button type="button" class:list={['email-reveal', className]} data-e={scrambled}>{label}</button>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('button.email-reveal[data-e]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const email = atob(btn.dataset.e ?? '').split('').reverse().join('');
+      const link = document.createElement('a');
+      link.href = `mailto:${email}`;
+      link.textContent = email;
+      link.className = btn.className.replace('email-reveal', 'email-shown');
+      btn.replaceWith(link);
+      link.focus();
+    });
+  });
+</script>
+
+<style>
+  .email-reveal {
+    background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer;
+    text-decoration: underline; text-underline-offset: 0.2em;
+  }
+  .email-reveal:hover, .email-reveal:focus-visible { color: var(--accent); }
+</style>

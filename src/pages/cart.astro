@@ -231,7 +231,7 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
       $('order-done-msg').textContent = data.message ?? 'Your order was received.';
     } catch (err) {
       status.dataset.state = 'error';
-      status.textContent = `${(err as Error).message} Questions: info@maasflowrecords.com`;
+      status.textContent = `${(err as Error).message} Questions: ${['info', 'maasflowrecords.com'].join('@')}`;
     } finally {
       btn.disabled = false;
       (window as unknown as { turnstile?: { reset: () => void } }).turnstile?.reset();

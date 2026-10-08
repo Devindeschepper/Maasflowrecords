@@ -12,7 +12,6 @@ const year = new Date().getFullYear();
       <div class="brand">
         <Logo size="lg" />
         <p class="muted">Independent music label.</p>
-        <a class="mail" href={`mailto:${site.email}`}>{site.email}</a>
         <p><a class="btn btn-ghost contact-btn" href="/contact/">Contact &amp; bookings</a></p>
       </div>
 
@@ -44,8 +43,6 @@ const year = new Date().getFullYear();
   .top { display: grid; gap: 2.5rem; }
   @media (min-width: 900px) { .top { grid-template-columns: 1.3fr 1fr 1fr; } }
   .brand p { margin: 1rem 0 0.5rem; }
-  .mail { color: var(--muted); font-size: 0.9rem; text-decoration: none; }
-  .mail:hover, .mail:focus-visible { color: var(--text); text-decoration: underline; }
   .contact-btn { margin-top: 1rem; }
   .links { list-style: none; margin: 0; padding: 0; columns: 2; column-gap: 2rem; }
   .links a { display: inline-block; padding: 0.35rem 0; text-decoration: none; color: var(--muted); font-size: 0.9rem; }
