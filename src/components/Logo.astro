@@ -1,28 +1,24 @@
 ---
-// Label logo: square with "MF" and a red flow line, next to the wordmark.
+// Label logo: the MF mark (red outlined F set into the M) next to the name in Old English.
 interface Props { size?: 'sm' | 'lg' }
 const { size = 'sm' } = Astro.props;
 ---
 
-<span class:list={['logo', `logo--${size}`]} aria-label="Maas Flow Records">
-  <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
-    <rect x="1" y="1" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" />
-    <path d="M7.83 21.0V8.10H11.75L12.84 15.96L13.92 8.10H17.88V21.0H15.52V11.71L14.04 21.0H11.73L10.16 11.71V21.0Z M19.32 21.0V8.10H24.48V10.62H21.91V12.67H24.34V15.15H21.91V21.0Z" fill="currentColor" />
-    <path d="M7 25.5c3-2 6 2 9 0s6-2 9 0" fill="none" stroke="var(--accent)" stroke-width="1.8" />
-  </svg>
+<span class:list={['logo', `logo--${size}`]} role="img" aria-label="Maas Flow Records">
+  <span class="mark" aria-hidden="true"><span class="m">M</span><span class="f">F</span></span>
+  <span class="bar" aria-hidden="true"></span>
   <span class="words" aria-hidden="true">
-    <span class="w1">Maas Flow</span>
-    <span class="w2">Records</span>
+    <span>Maas Flow</span>
+    <span>Records</span>
   </span>
 </span>
 
 <style>
-  .logo { display: inline-flex; align-items: center; gap: 0.6rem; line-height: 1; }
-  .mark { width: 32px; height: 32px; flex: none; }
-  .words { display: flex; flex-direction: column; gap: 2px; }
-  .w1 { font-family: var(--font-display); font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.02em; }
-  .w2 { font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.38em; text-transform: uppercase; color: var(--muted); }
-  .logo--lg .mark { width: 56px; height: 56px; }
-  .logo--lg .w1 { font-size: 2rem; }
-  .logo--lg .w2 { font-size: 0.72rem; }
+  .logo { --mf: 40px; --name: 17px; display: inline-flex; align-items: center; gap: calc(var(--mf) * 0.2); line-height: 1; color: var(--text); }
+  .logo--lg { --mf: 64px; --name: 27px; }
+  .mark { display: inline-flex; align-items: flex-end; transform: skewX(-8deg); font-family: var(--font-display); font-size: var(--mf); line-height: 0.8; }
+  .m { color: var(--text); }
+  .f { margin-left: -0.223em; color: transparent; -webkit-text-stroke: calc(var(--mf) * 0.027) var(--accent); }
+  .bar { width: 2px; align-self: stretch; margin: 2px 0; background: var(--accent); }
+  .words { display: flex; flex-direction: column; font-family: 'UnifrakturCook', serif; font-weight: 700; font-size: var(--name); line-height: 1.02; }
 </style>
