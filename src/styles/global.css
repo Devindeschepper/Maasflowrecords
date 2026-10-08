@@ -28,6 +28,10 @@
 @media (min-width: 768px) {
   :root { --gutter: 32px; --header-h: 72px; }
 }
+/* Desktop header: logo row + page links row (see Header.astro). */
+@media (min-width: 1080px) {
+  :root { --header-h: 124px; }
+}
 
 *, *::before, *::after { box-sizing: border-box; }
 
