@@ -5,7 +5,8 @@
   "acceptCrypto": true,
   "labelSocials": {
     "instagram": "https://www.instagram.com/maasflowrecords/",
-    "tiktok": "https://www.tiktok.com/@maasflowrecords"
+    "tiktok": "https://www.tiktok.com/@maasflowrecords",
+    "youtube": "https://www.youtube.com/@MaasFlowRecords"
   },
   "analyticsToken": "",
   "turnstileSiteKey": "0x4AAAAAAFKStztYP7B1dDUV"
