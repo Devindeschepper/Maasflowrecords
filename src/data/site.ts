@@ -9,7 +9,7 @@ export const site = {
   description:
     'Maas Flow Records is an independent music label founded by producer and rapper VIN.',
   /** Default social preview image (1200x630 JPG — WhatsApp/Instagram/Facebook don't show SVG). */
-  ogImage: '/images/og-default.jpg',
+  ogImage: '/images/og-logo.jpg',
   /** Cloudflare Web Analytics token (admin panel → Settings). Empty = no analytics. */
   analyticsToken: /^[a-f0-9]{32}$/i.test(String(settings.analyticsToken ?? '').trim()) ? String(settings.analyticsToken).trim() : '',
 };
