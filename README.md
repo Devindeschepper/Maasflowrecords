@@ -78,6 +78,8 @@ Only `/api/*` requests run Worker code (`worker/index.ts` → handlers in `funct
    | `RESEND_API_KEY` | Settings → **Variables and Secrets** (secret) | Resend API key |
    | `CONTACT_FROM_EMAIL` | Settings → **Variables and Secrets** (**secret**) | `Maas Flow Records <noreply@maasflowrecords.com>` (before the domain is verified in Resend: `Maas Flow Records <onboarding@resend.dev>`) |
    | `RESEND_AUDIENCE_ID` | Settings → **Variables and Secrets** (**secret**) | Optional, legacy: id of a Resend audience. Without it, signups go to the account-wide Resend contact list (API key needs full access); if saving fails, signups are emailed to you |
+   | `WHATSAPP_PHONE` | Settings → **Variables and Secrets** (**secret**) | Optional: your WhatsApp number in international format (`+352…`). Every new request/order that is emailed to you also pings this number |
+   | `CALLMEBOT_API_KEY` | Settings → **Variables and Secrets** (**secret**) | Optional: the key CallMeBot sends you after you message their bot "I allow callmebot to send me messages" (see callmebot.com → WhatsApp) |
    Add dashboard values as **Secret**: every deploy from GitHub replaces plain dashboard variables with the
    `[vars]` in `wrangler.toml`, secrets are kept. After changing a **build** variable, start a new build
    (Deployments → Retry build, or push a commit) — `PUBLIC_*` values are baked into the pages at build time.

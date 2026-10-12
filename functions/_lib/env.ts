@@ -14,4 +14,8 @@ export interface Env {
   NOWPAYMENTS_IPN_SECRET?: string;
   /** Optional legacy Resend audience id; without it signups go to the account-wide contact list. */
   RESEND_AUDIENCE_ID?: string;
+  /** Label's own WhatsApp number in international format (+352…) — receives a ping for every new request. */
+  WHATSAPP_PHONE?: string;
+  /** CallMeBot API key for that number (sent by CallMeBot on WhatsApp). */
+  CALLMEBOT_API_KEY?: string;
 }
