@@ -14,6 +14,7 @@ export type PlatformId =
   | 'youtubeBeats'
   | 'instagram'
   | 'tiktok'
+  | 'whatsapp'
   | 'facebook'
   | 'x'
   | 'twitch'

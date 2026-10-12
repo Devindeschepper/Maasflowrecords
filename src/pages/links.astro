@@ -17,7 +17,7 @@ const vin = artists[0];
 const next = upcomingReleases()[0];
 const latest = latestRelease();
 
-type Item = { href: string; title: string; sub?: string; icon?: 'spotify' | 'appleMusic' | 'youtubeMusic' | 'beatstars'; external?: boolean; featured?: boolean };
+type Item = { href: string; title: string; sub?: string; icon?: 'spotify' | 'appleMusic' | 'youtubeMusic' | 'beatstars' | 'whatsapp'; external?: boolean; featured?: boolean };
 
 const items: Item[] = [
   ...(next ? [{ href: `/music/${next.slug}/`, title: `${next.title} - new ${next.type}`, sub: next.releaseDate ? (next.dateTentative ? releaseDateLabel(next) : `Out ${releaseDateLabel(next)}`) : 'Coming soon', featured: true }] : []),
@@ -28,6 +28,7 @@ const items: Item[] = [
           : { href: `/music/${latest.slug}/`, title: `${latest.title} - out now`, featured: !next },
       ]
     : []),
+  ...(labelSocials.whatsapp ? [{ href: labelSocials.whatsapp, title: 'Join the WhatsApp channel', sub: 'New music and news first', icon: 'whatsapp' as const, external: true }] : []),
   ...(vin.streaming.spotify ? [{ href: vin.streaming.spotify, title: 'VIN on Spotify', sub: 'Follow for new releases', icon: 'spotify' as const, external: true }] : []),
   ...(vin.streaming.appleMusic ? [{ href: vin.streaming.appleMusic, title: 'VIN on Apple Music', icon: 'appleMusic' as const, external: true }] : []),
   ...(vin.streaming.youtubeMusic ? [{ href: vin.streaming.youtubeMusic, title: 'VIN on YouTube Music', icon: 'youtubeMusic' as const, external: true }] : []),

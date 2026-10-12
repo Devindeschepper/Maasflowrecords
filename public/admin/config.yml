@@ -349,6 +349,7 @@ collections:
               - { name: beatstars, label: 'BeatStars', widget: string, required: false }
               - { name: instagram, label: 'Instagram', widget: string, required: false }
               - { name: tiktok, label: 'TikTok', widget: string, required: false }
+              - { name: whatsapp, label: 'WhatsApp channel', widget: string, required: false }
               - { name: facebook, label: 'Facebook', widget: string, required: false }
               - { name: x, label: 'X / Twitter', widget: string, required: false }
               - { name: twitch, label: 'Twitch', widget: string, required: false }

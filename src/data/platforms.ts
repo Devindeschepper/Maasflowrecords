@@ -15,6 +15,7 @@ export const platforms: Record<PlatformId, { label: string; kind: 'stream' | 'so
   youtubeBeats: { label: 'Beats (YouTube)', kind: 'store' },
   instagram: { label: 'Instagram', kind: 'social' },
   tiktok: { label: 'TikTok', kind: 'social' },
+  whatsapp: { label: 'WhatsApp', kind: 'social' },
   facebook: { label: 'Facebook', kind: 'social' },
   x: { label: 'X / Twitter', kind: 'social' },
   twitch: { label: 'Twitch', kind: 'social' },
