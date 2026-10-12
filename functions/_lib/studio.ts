@@ -48,12 +48,11 @@ export function fmtDuration(ms: number): string {
   return h ? `${h}h ${String(min % 60).padStart(2, '0')}m` : `${min}m`;
 }
 
-async function closeSession(env: Env, d: D1Database, s: Session, endedAt: number, note = ''): Promise<void> {
-  await d.prepare('UPDATE sessions SET ended_at = ?1 WHERE id = ?2 AND ended_at IS NULL').bind(endedAt, s.id).run();
-  if (endedAt - s.started_at < 60000 && !s.knocks) return; // FL opened and closed right away: no message
-  const knocks = s.knocks === 0 ? 'no knocks' : s.knocks === 1 ? '1 person knocked' : `${s.knocks} people knocked`;
-  await notifyWhatsApp(env, `🔴 Session done${note} · ${fmtDuration(endedAt - s.started_at)} · ${knocks}`);
-}
+const closeSession = (d: D1Database, s: Session, endedAt: number) =>
+  d.prepare('UPDATE sessions SET ended_at = ?1 WHERE id = ?2 AND ended_at IS NULL').bind(endedAt, s.id).run();
+
+/** Reopening FL Studio within this time continues the previous session instead of starting a new one. */
+export const REJOIN_MS = 30 * 60 * 1000;
 
 /** Heartbeat from the studio PC while FL Studio is open. */
 export async function sessionOn(env: Env, now: number): Promise<void> {
@@ -62,10 +61,16 @@ export async function sessionOn(env: Env, now: number): Promise<void> {
   let s = await openSession(d);
   if (s && now - s.last_beat > STALE_MS) {
     // The PC went quiet without saying "off" (crash, sleep, no internet): close it at its last heartbeat.
-    await closeSession(env, d, s, s.last_beat, ' (PC went offline)');
+    await closeSession(d, s, s.last_beat);
     s = null;
   }
-  if (s) await d.prepare('UPDATE sessions SET last_beat = ?1 WHERE id = ?2').bind(now, s.id).run();
+  if (s) {
+    await d.prepare('UPDATE sessions SET last_beat = ?1 WHERE id = ?2').bind(now, s.id).run();
+    return;
+  }
+  // FL Studio reopened shortly after closing: continue that session.
+  const recent = await d.prepare('SELECT id FROM sessions WHERE ended_at IS NOT NULL AND ended_at > ?1 ORDER BY ended_at DESC LIMIT 1').bind(now - REJOIN_MS).first<{ id: number }>();
+  if (recent) await d.prepare('UPDATE sessions SET ended_at = NULL, last_beat = ?1 WHERE id = ?2').bind(now, recent.id).run();
   else await d.prepare('INSERT INTO sessions (started_at, last_beat) VALUES (?1, ?1)').bind(now).run();
 }
 
@@ -74,7 +79,7 @@ export async function sessionOff(env: Env, now: number): Promise<void> {
   const d = await db(env);
   if (!d) return;
   const s = await openSession(d);
-  if (s) await closeSession(env, d, s, now - s.last_beat > STALE_MS ? s.last_beat : now);
+  if (s) await closeSession(d, s, now - s.last_beat > STALE_MS ? s.last_beat : now);
 }
 
 /** Totals for a time window: hours (ms), sessions and knocks; open sessions count up to now. */

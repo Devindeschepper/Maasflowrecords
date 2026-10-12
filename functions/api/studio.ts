@@ -12,7 +12,7 @@ import { db, openSession, sessionOff, sessionOn, summarize, weekStart, WEEK_MS, 
  *   light goes off on its own if the PC crashes or loses internet.
  * GET /api/studio → {"live": boolean, "last": ISO date | null}  (public, read by the header)
  * POST /api/studio/knock  (public) → visitors "knock on the door" while the light is on; one knock
- *   per visitor per session. Counted in D1 and reported on WhatsApp when the session ends.
+ *   per visitor per session. Counted in D1, shown in the stats and the Sunday WhatsApp summary.
  * GET /api/studio/stats  (Authorization: Bearer <STATS_PASSWORD or STUDIO_TOKEN>) → hours and knocks for
  *   /studio-stats/. Max 10 wrong passwords per visitor per hour.
  *

@@ -12,7 +12,7 @@ CPU priority and then exits, so nothing stays in memory.
 
 - **The sign:** dark normally, glowing red while FL Studio is open. Visitors can click the lit sign to *knock*
   (one knock per visitor per session).
-- **After every session** Maasbot sends you on WhatsApp: `🔴 Session done · 3h 12m · 27 people knocked`.
+- **Sessions:** opening FL Studio again within 30 minutes of closing it continues the same session.
 - **Every Sunday evening**: hours, sessions and knocks of the week, compared with last week.
 - **Stats page:** maasflowrecords.com/studio-stats/ (not linked anywhere). Log in with your own `STATS_PASSWORD`
   (a Cloudflare secret you choose, 8+ characters) or the `STUDIO_TOKEN`. After 10 wrong tries it locks for an hour;
