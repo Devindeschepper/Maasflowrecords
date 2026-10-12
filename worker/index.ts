@@ -11,7 +11,8 @@ import { onRequestPost as booking } from '../functions/api/booking';
 import { onRequestPost as services } from '../functions/api/services';
 import { onRequestPost as stripeWebhook } from '../functions/api/webhooks/stripe';
 import { onRequestPost as cryptoWebhook } from '../functions/api/webhooks/crypto';
-import { onRequestGet as studioStatus, onRequestPost as studioSet } from '../functions/api/studio';
+import { onRequestGet as studioStatus, onRequestPost as studioSet, onKnock, onStats } from '../functions/api/studio';
+import { weeklySummary } from '../functions/_lib/studio';
 
 interface WorkerEnv extends Env {
   ASSETS: Fetcher;
@@ -42,6 +43,14 @@ export default {
       if (request.method === 'POST') return (studioSet as unknown as Handler)({ request, env });
       return jsonResponse(405, { ok: false, error: 'Method not allowed.' });
     }
+    if (route === '/api/studio/knock') {
+      if (request.method !== 'POST') return jsonResponse(405, { ok: false, error: 'Method not allowed.' });
+      return (onKnock as unknown as Handler)({ request, env });
+    }
+    if (route === '/api/studio/stats') {
+      if (request.method !== 'GET') return jsonResponse(405, { ok: false, error: 'Method not allowed.' });
+      return (onStats as unknown as Handler)({ request, env });
+    }
 
     const handler = routes[route];
 
@@ -52,5 +61,10 @@ export default {
     if (pathname.startsWith('/api/')) return jsonResponse(404, { ok: false, error: 'Not found.' });
 
     return env.ASSETS.fetch(request);
+  },
+
+  // Cron (wrangler.toml [triggers]): Sunday-evening studio summary on WhatsApp.
+  async scheduled(_controller: ScheduledController, env: WorkerEnv, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(weeklySummary(env, Date.now()));
   },
 } satisfies ExportedHandler<WorkerEnv>;

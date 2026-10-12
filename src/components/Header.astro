@@ -31,9 +31,10 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
 
     <div class="actions">
       {/* Lit by /api/studio while FL Studio is open on the studio PC (see tools/studio-light). */}
-      <span class="studio-sign" data-studio-light title="Lights up when VIN is in the studio" role="status" aria-label="Studio sign: off">
+      <button type="button" class="studio-sign" data-studio-light disabled title="Lights up when VIN is in the studio" aria-label="Studio sign: off">
         <span class="long">In the studio</span><span class="short" aria-hidden="true">Studio</span>
-      </span>
+      </button>
+      <p class="knock-toast" data-knock-toast role="status" aria-live="polite" hidden></p>
       {/* Always shown; while the shop is closed the cart page says "Coming soon". */}
       <a href="/cart/" class="cart-link" aria-label="Shopping cart">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -71,21 +72,56 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
   render();
   onCartChange(render);
 
-  // Studio light: checked on load and every 2 minutes while the tab is visible.
-  const light = document.querySelector<HTMLElement>('[data-studio-light]');
+  // Studio sign: checked on load and every 2 minutes while the tab is visible.
+  // While it's lit, clicking it "knocks on the door" (one knock per visitor per session).
+  const light = document.querySelector<HTMLButtonElement>('[data-studio-light]');
+  const toast = document.querySelector<HTMLElement>('[data-knock-toast]');
+  let toastTimer = 0;
+  const say = (text: string) => {
+    if (!toast) return;
+    toast.textContent = text;
+    toast.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => (toast.hidden = true), 4000);
+  };
+  const setLive = (live: boolean) => {
+    if (!light) return;
+    light.classList.toggle('is-live', live);
+    light.disabled = !live;
+    light.title = live ? 'VIN is in the studio right now. Click to knock' : 'Lights up when VIN is in the studio';
+    light.setAttribute('aria-label', live ? 'VIN is in the studio right now. Knock on the door' : 'Studio sign: off');
+  };
   const checkStudio = async () => {
     if (!light || document.hidden) return;
     try {
       const res = await fetch('/api/studio', { headers: { Accept: 'application/json' } });
-      if (!res.ok) return;
-      const live = Boolean((await res.json()).live);
-      light.classList.toggle('is-live', live);
-      light.title = live ? 'VIN is in the studio right now' : 'Lights up when VIN is in the studio';
-      light.setAttribute('aria-label', live ? 'VIN is in the studio right now' : 'Studio sign: off');
+      if (res.ok) setLive(Boolean((await res.json()).live));
     } catch {
       /* offline: leave as is */
     }
   };
+  light?.addEventListener('click', async () => {
+    light.classList.remove('knocked');
+    void light.offsetWidth; // restart the shake animation
+    light.classList.add('knocked');
+    try {
+      const res = await fetch('/api/studio/knock', { method: 'POST', headers: { Accept: 'application/json' } });
+      const data = await res.json();
+      if (res.status === 409) {
+        setLive(false);
+        say('VIN has just left the studio. Check back soon.');
+      } else if (data.ok) {
+        const others = Math.max(0, (data.knocks ?? 1) - 1);
+        say(
+          data.counted
+            ? `Knock received. VIN is in the studio working on new music.${others ? ` ${others} other${others === 1 ? '' : 's'} knocked this session.` : ''}`
+            : 'Your knock was already received. Thank you for the support.',
+        );
+      }
+    } catch {
+      say('Something went wrong. Please try again in a moment.');
+    }
+  });
   checkStudio();
   setInterval(checkStudio, 120_000);
   document.addEventListener('visibilitychange', checkStudio);
@@ -94,7 +130,7 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
 <style>
   /* Studio sign: dark when VIN is out, glowing red like an ON AIR light when FL Studio is open. */
   .studio-sign {
-    display: inline-flex; align-items: center; margin-right: 0.9rem; padding: 0.3rem 0.6rem 0.25rem;
+    appearance: none; display: inline-flex; align-items: center; margin-right: 0.9rem; padding: 0.3rem 0.6rem 0.25rem;
     font-family: var(--font-display); font-size: 0.78rem; line-height: 1; letter-spacing: 0.14em; text-transform: uppercase;
     white-space: nowrap; color: #4a4642; background: #141312; border: 1px solid #2a2725; border-radius: 3px;
     transition: color 0.4s ease, background 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
@@ -105,6 +141,22 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     box-shadow: 0 0 10px rgba(228, 67, 45, 0.75), 0 0 26px rgba(228, 67, 45, 0.35), inset 0 0 6px rgba(255, 255, 255, 0.25);
     animation: sign-on 0.9s steps(1, end) 1, sign-glow 3.2s ease-in-out 0.9s infinite;
   }
+  .studio-sign:disabled { cursor: default; }
+  .studio-sign.is-live { cursor: pointer; }
+  .studio-sign.is-live:hover, .studio-sign.is-live:focus-visible { filter: brightness(1.12); }
+  .studio-sign.knocked { animation: sign-knock 0.35s ease, sign-glow 3.2s ease-in-out 0.35s infinite; }
+  @keyframes sign-knock {
+    0%, 100% { transform: translateX(0); } 20% { transform: translateX(-3px) rotate(-2deg); }
+    40% { transform: translateX(3px) rotate(2deg); } 60% { transform: translateX(-2px); } 80% { transform: translateX(2px); }
+  }
+  .knock-toast {
+    position: absolute; top: calc(100% + 0.6rem); right: 1rem; margin: 0; z-index: 60;
+    padding: 0.6rem 0.9rem; max-width: min(320px, calc(100vw - 2rem));
+    font-size: 0.85rem; line-height: 1.35; color: var(--text); background: #1a1817;
+    border: 1px solid #3a3532; border-left: 3px solid var(--accent); border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  }
+  .knock-toast[hidden] { display: none; }
   .studio-sign .short { display: none; }
   @media (max-width: 600px) {
     .studio-sign { margin-right: 0.5rem; padding: 0.25rem 0.45rem 0.2rem; font-size: 0.7rem; }

@@ -8,11 +8,23 @@ the script checks if FL Studio is running and, only when something changes (plus
 sends `on` / `off` to `https://maasflowrecords.com/api/studio`. Each run takes about a second at the lowest
 CPU priority and then exits, so nothing stays in memory.
 
+## What it does
+
+- **The sign:** dark normally, glowing red while FL Studio is open. Visitors can click the lit sign to *knock*
+  (one knock per visitor per session).
+- **After every session** Maasbot sends you on WhatsApp: `🔴 Session done · 3h 12m · 27 people knocked`.
+- **Every Sunday evening**: hours, sessions and knocks of the week, compared with last week.
+- **Stats page:** maasflowrecords.com/studio-stats/ (not linked anywhere). Log in with your own `STATS_PASSWORD`
+  (a Cloudflare secret you choose, 8+ characters) or the `STUDIO_TOKEN`. After 10 wrong tries it locks for an hour;
+  it shows this week / month / all time, the last 12 weeks as a chart and your recent sessions.
+
 ## One-time setup in Cloudflare
 
-1. **Storage & Databases → KV → Create** a namespace called `STUDIO`. Its ID goes into `wrangler.toml` (`[[kv_namespaces]]`, binding `STUDIO`).
+1. **Storage & databases → Workers KV → Create** a namespace called `STUDIO`, and **D1 SQLite Database → Create**
+   one called `maasflow`. Their IDs are in `wrangler.toml` (already done).
 2. **Workers & Pages → maasflowrecords2 → Settings → Variables and Secrets → Add** a **Secret**
    `STUDIO_TOKEN` = a long random password (32+ characters, from a password generator). Never share it.
+3. Same place, another **Secret**: `STATS_PASSWORD` = your own password for the stats page (8+ characters).
 
 ## One-time setup on the studio PC (Windows, about 10 minutes)
 

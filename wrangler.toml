@@ -24,6 +24,16 @@ run_worker_first = ["/api/*"]
 binding = "STUDIO"
 id = "22af6d99ff4a4d9d9cfb766ee2cf48d1"
 
+# Studio sessions + knocks (hours and knock stats, /studio-stats/). Tables are created on first use.
+[[d1_databases]]
+binding = "DB"
+database_name = "maasflow"
+database_id = "f8871ad2-7c01-426e-a5c1-44870e073a5d"
+
+# Sunday 18:00 UTC (19:00/20:00 Luxembourg): weekly studio summary on WhatsApp.
+[triggers]
+crons = ["0 18 * * SUN"]
+
 # Non-secret variables. Secrets (TURNSTILE_SECRET_KEY, RESEND_API_KEY, STRIPE_*, NOWPAYMENTS_*) are set in the
 # Cloudflare dashboard (Settings → Variables and Secrets) or in .dev.vars for local dev.
 [vars]
