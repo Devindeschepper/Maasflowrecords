@@ -30,6 +30,10 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     </nav>
 
     <div class="actions">
+      {/* Lit by /api/studio while FL Studio is open on the studio PC (see tools/studio-light). */}
+      <span class="studio-light" data-studio-light hidden title="VIN is in the studio right now">
+        <span class="dot" aria-hidden="true"></span><span class="long">In the studio</span><span class="short" aria-hidden="true">Studio</span>
+      </span>
       {/* Always shown; while the shop is closed the cart page says "Coming soon". */}
       <a href="/cart/" class="cart-link" aria-label="Shopping cart">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -66,9 +70,46 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
   };
   render();
   onCartChange(render);
+
+  // Studio light: checked on load and every 2 minutes while the tab is visible.
+  const light = document.querySelector<HTMLElement>('[data-studio-light]');
+  const checkStudio = async () => {
+    if (!light || document.hidden) return;
+    try {
+      const res = await fetch('/api/studio', { headers: { Accept: 'application/json' } });
+      if (res.ok) light.hidden = !(await res.json()).live;
+    } catch {
+      /* offline: leave as is */
+    }
+  };
+  checkStudio();
+  setInterval(checkStudio, 120_000);
+  document.addEventListener('visibilitychange', checkStudio);
 </script>
 
 <style>
+  .studio-light {
+    display: inline-flex; align-items: center; gap: 0.45rem; margin-right: 0.75rem;
+    font-family: var(--font-mono, monospace); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text); white-space: nowrap;
+  }
+  .studio-light[hidden] { display: none; }
+  .studio-light .dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+    box-shadow: 0 0 0 0 rgba(228, 67, 45, 0.6); animation: studio-pulse 1.8s ease-out infinite;
+  }
+  .studio-light .short { display: none; }
+  @media (max-width: 600px) {
+    .studio-light { margin-right: 0.5rem; }
+    .studio-light .long { display: none; }
+    .studio-light .short { display: inline; }
+  }
+  @keyframes studio-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(228, 67, 45, 0.6); }
+    70% { box-shadow: 0 0 0 8px rgba(228, 67, 45, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(228, 67, 45, 0); }
+  }
+  @media (prefers-reduced-motion: reduce) { .studio-light .dot { animation: none; } }
   .site-header {
     position: sticky; top: 0; z-index: 50;
     border-bottom: 1px solid var(--line);
