@@ -1,5 +1,6 @@
 import type { Env } from './env';
 import { escapeHtml, oneLine } from './http';
+import { notifyWhatsApp, whatsAppSummary } from './whatsapp';
 
 export interface Attachment {
   filename: string;
@@ -53,6 +54,8 @@ export async function sendMail(env: Env, mail: Mail): Promise<void> {
     console.error('Resend error', res.status, await res.text().catch(() => ''));
     throw new Error('Email delivery failed.');
   }
+  // Emails to the label (no explicit `to`) also ping the label's WhatsApp; emails to customers don't.
+  if (!mail.to) await notifyWhatsApp(env, whatsAppSummary(mail.subject, mail.fields));
 }
 
 export async function fileToAttachment(file: File): Promise<Attachment> {
