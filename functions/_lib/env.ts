@@ -22,4 +22,6 @@ export interface Env {
   STUDIO?: KVNamespace;
   /** Shared secret the studio PC sends to switch the light (16+ characters). */
   STUDIO_TOKEN?: string;
+  /** D1 database with studio sessions and knocks (binding in wrangler.toml). */
+  DB?: D1Database;
 }

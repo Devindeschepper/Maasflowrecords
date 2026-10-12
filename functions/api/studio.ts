@@ -1,6 +1,7 @@
 import type { Env } from '../_lib/env';
-import { jsonResponse } from '../_lib/http';
+import { jsonResponse, sameOrigin } from '../_lib/http';
 import { safeEqual } from '../_lib/sign';
+import { db, openSession, sessionOff, sessionOn, summarize, weekStart, WEEK_MS, type Session } from '../_lib/studio';
 
 /**
  * "VIN is in the studio" light.
@@ -10,6 +11,9 @@ import { safeEqual } from '../_lib/sign';
  *   "on" is repeated every few minutes as a heartbeat; the key expires by itself, so the
  *   light goes off on its own if the PC crashes or loses internet.
  * GET /api/studio → {"live": boolean, "last": ISO date | null}  (public, read by the header)
+ * POST /api/studio/knock  (public) → visitors "knock on the door" while the light is on; one knock
+ *   per visitor per session. Counted in D1 and reported on WhatsApp when the session ends.
+ * GET /api/studio/stats  (Authorization: Bearer <STUDIO_TOKEN>) → hours and knocks for /studio-stats/.
  *
  * Off (live:false) when the STUDIO KV namespace or STUDIO_TOKEN is not set up.
  */
@@ -23,11 +27,19 @@ export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
   });
 };
 
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+/** null when the request carries the studio token, otherwise the error response to return. */
+function checkToken(request: Request, env: Env): Response | null {
   const token = env.STUDIO_TOKEN?.trim();
   const auth = request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '').trim() ?? '';
   if (!env.STUDIO || !token || token.length < 16) return jsonResponse(503, { ok: false, error: 'Studio light is not set up.' });
   if (!safeEqual(auth, token)) return jsonResponse(401, { ok: false, error: 'Unauthorized.' });
+  return null;
+}
+
+export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+  const denied = checkToken(request, env);
+  if (denied) return denied;
+  const kv = env.STUDIO!;
 
   let state = '';
   try {
@@ -36,13 +48,71 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return jsonResponse(400, { ok: false, error: 'Invalid JSON.' });
   }
 
-  const now = new Date().toISOString();
+  const t = Date.now();
+  const now = new Date(t).toISOString();
+  // Session stats are a bonus: a database problem must never stop the light itself.
+  const track = (fn: typeof sessionOn) => fn(env, t).catch((err) => console.error('Studio session tracking failed', err));
   if (state === 'on') {
-    await env.STUDIO.put('live', now, { expirationTtl: LIVE_TTL });
+    await Promise.all([kv.put('live', now, { expirationTtl: LIVE_TTL }), track(sessionOn)]);
   } else if (state === 'off') {
-    await Promise.all([env.STUDIO.delete('live'), env.STUDIO.put('last', now)]);
+    await Promise.all([kv.delete('live'), kv.put('last', now), track(sessionOff)]);
   } else {
     return jsonResponse(400, { ok: false, error: 'state must be "on" or "off".' });
   }
   return jsonResponse(200, { ok: true, live: state === 'on' });
+};
+
+/** A visitor knocks on the studio door (only while the light is on). */
+export const onKnock: PagesFunction<Env> = async ({ request, env }) => {
+  if (!sameOrigin(request)) return jsonResponse(403, { ok: false, error: 'Forbidden.' });
+  const d = await db(env);
+  if (!env.STUDIO || !d) return jsonResponse(503, { ok: false, error: 'Not available.' });
+  if (!(await env.STUDIO.get('live'))) return jsonResponse(409, { ok: false, live: false, error: "VIN isn't in the studio right now." });
+  const s = await openSession(d);
+  if (!s) return jsonResponse(409, { ok: false, live: false, error: "VIN isn't in the studio right now." });
+
+  // One knock per visitor per session. Only a salted hash of the IP is stored, never the IP itself.
+  const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${env.STUDIO_TOKEN ?? ''}|${s.id}|${ip}`));
+  const visitor = [...new Uint8Array(digest)].slice(0, 16).map((b) => b.toString(16).padStart(2, '0')).join('');
+  const res = await d.prepare('INSERT OR IGNORE INTO knocks (session_id, visitor, at) VALUES (?1, ?2, ?3)').bind(s.id, visitor, Date.now()).run();
+  const counted = (res.meta.changes ?? 0) > 0;
+  const row = counted
+    ? await d.prepare('UPDATE sessions SET knocks = knocks + 1 WHERE id = ?1 RETURNING knocks').bind(s.id).first<{ knocks: number }>()
+    : { knocks: s.knocks };
+  return jsonResponse(200, { ok: true, counted, knocks: row?.knocks ?? s.knocks });
+};
+
+/** Private stats for /studio-stats/. */
+export const onStats: PagesFunction<Env> = async ({ request, env }) => {
+  const denied = checkToken(request, env);
+  if (denied) return denied;
+  const d = await db(env);
+  if (!d) return jsonResponse(503, { ok: false, error: 'The stats database (D1) is not connected yet.' });
+
+  const now = Date.now();
+  const thisWeek = weekStart(now);
+  const { results } = await d.prepare('SELECT * FROM sessions ORDER BY started_at DESC').all<Session>();
+  const local = new Date(new Date(now).toLocaleString('en-US', { timeZone: 'Europe/Luxembourg' }));
+  const monthStart = now - ((local.getDate() - 1) * 86400000 + (local.getHours() * 3600 + local.getMinutes() * 60 + local.getSeconds()) * 1000);
+
+  const weeks = Array.from({ length: 12 }, (_, i) => {
+    const from = thisWeek - i * WEEK_MS;
+    return { from: new Date(from).toISOString(), ...summarize(results, from, Math.min(from + WEEK_MS, now)) };
+  }).reverse();
+
+  return jsonResponse(200, {
+    ok: true,
+    live: Boolean(await env.STUDIO!.get('live')),
+    week: summarize(results, thisWeek, now),
+    month: summarize(results, monthStart, now),
+    all: summarize(results, 0, now),
+    weeks,
+    recent: results.slice(0, 15).map((s) => ({
+      start: new Date(s.started_at).toISOString(),
+      ms: (s.ended_at ?? Math.min(now, s.last_beat + 60000)) - s.started_at,
+      knocks: s.knocks,
+      open: s.ended_at === null,
+    })),
+  });
 };

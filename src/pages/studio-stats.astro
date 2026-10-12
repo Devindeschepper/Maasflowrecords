@@ -1,0 +1,162 @@
+---
+// Private studio stats for VIN: hours in FL Studio and knocks from visitors.
+// The numbers come from /api/studio/stats, which needs the STUDIO_TOKEN; this page only asks for it
+// and remembers it in this browser. Not linked anywhere and not indexed.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+---
+
+<BaseLayout title="Studio stats" description="Private studio stats." noindex>
+  <PageHero eyebrow="Private" title="Studio stats" lead="Hours in FL Studio and knocks on the door." />
+
+  <section class="section">
+    <div class="container">
+      <form class="unlock card pad" data-unlock hidden>
+        <label for="studio-token">Studio password <span class="muted">(your STUDIO_TOKEN)</span></label>
+        <div class="row">
+          <input id="studio-token" type="password" autocomplete="current-password" required />
+          <button class="btn btn-primary" type="submit">Show stats</button>
+        </div>
+        <p class="error" data-error hidden></p>
+      </form>
+
+      <div class="stats" data-stats hidden>
+        <p class="status mono" data-status></p>
+
+        <div class="tiles">
+          <div class="tile"><span class="mono muted">This week</span><strong data-k="week.hours"></strong><span data-k="week.meta"></span></div>
+          <div class="tile"><span class="mono muted">This month</span><strong data-k="month.hours"></strong><span data-k="month.meta"></span></div>
+          <div class="tile"><span class="mono muted">All time</span><strong data-k="all.hours"></strong><span data-k="all.meta"></span></div>
+        </div>
+
+        <h2 class="h3">Last 12 weeks</h2>
+        <div class="weeks" data-weeks></div>
+        <p class="legend mono muted"><span class="sw sw-h"></span> hours <span class="sw sw-k"></span> knocks</p>
+
+        <h2 class="h3">Recent sessions</h2>
+        <table class="sessions">
+          <thead><tr><th>Started</th><th>Length</th><th>Knocks</th></tr></thead>
+          <tbody data-sessions></tbody>
+        </table>
+
+        <button class="btn btn-ghost lock" type="button" data-lock>Forget password on this device</button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  type Sum = { ms: number; hours: number; sessions: number; knocks: number };
+  type Stats = {
+    ok: boolean; error?: string; live: boolean; week: Sum; month: Sum; all: Sum;
+    weeks: (Sum & { from: string })[];
+    recent: { start: string; ms: number; knocks: number; open: boolean }[];
+  };
+
+  const KEY = 'mfr-studio-token';
+  const form = document.querySelector<HTMLFormElement>('[data-unlock]')!;
+  const input = document.querySelector<HTMLInputElement>('#studio-token')!;
+  const error = document.querySelector<HTMLElement>('[data-error]')!;
+  const box = document.querySelector<HTMLElement>('[data-stats]')!;
+
+  const store = {
+    get: () => { try { return localStorage.getItem(KEY) ?? ''; } catch { return ''; } },
+    set: (v: string) => { try { localStorage.setItem(KEY, v); } catch { /* private mode */ } },
+    clear: () => { try { localStorage.removeItem(KEY); } catch { /* private mode */ } },
+  };
+
+  const dur = (ms: number) => {
+    const min = Math.round(ms / 60000);
+    const h = Math.floor(min / 60);
+    return h ? `${h}h ${String(min % 60).padStart(2, '0')}m` : `${min}m`;
+  };
+  const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
+  const fmtDay = (iso: string) =>
+    new Date(iso).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+  function render(s: Stats) {
+    const set = (k: string, v: string) => { const el = box.querySelector(`[data-k="${k}"]`); if (el) el.textContent = v; };
+    for (const [name, sum] of [['week', s.week], ['month', s.month], ['all', s.all]] as const) {
+      set(`${name}.hours`, dur(sum.ms));
+      set(`${name}.meta`, `${plural(sum.sessions, 'session')} · ${plural(sum.knocks, 'knock')}`);
+    }
+    box.querySelector('[data-status]')!.textContent = s.live ? '● In the studio right now' : '○ Not in the studio';
+    box.querySelector('[data-status]')!.classList.toggle('live', s.live);
+
+    const maxH = Math.max(1, ...s.weeks.map((w) => w.hours));
+    const maxK = Math.max(1, ...s.weeks.map((w) => w.knocks));
+    box.querySelector('[data-weeks]')!.innerHTML = s.weeks
+      .map((w) => {
+        const d = new Date(w.from).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+        return `<div class="week" title="Week of ${d}: ${dur(w.ms)}, ${plural(w.knocks, 'knock')}">
+          <div class="bars"><span class="bar h" style="height:${(w.hours / maxH) * 100}%"></span><span class="bar k" style="height:${(w.knocks / maxK) * 100}%"></span></div>
+          <span class="val">${w.hours ? `${w.hours}h` : ''}</span><span class="lbl mono muted">${d}</span></div>`;
+      })
+      .join('');
+
+    box.querySelector('[data-sessions]')!.innerHTML = s.recent.length
+      ? s.recent
+          .map((r) => `<tr><td>${fmtDay(r.start)}${r.open ? ' <span class="now">● now</span>' : ''}</td><td>${dur(r.ms)}</td><td>${r.knocks}</td></tr>`)
+          .join('')
+      : '<tr><td colspan="3" class="muted">No sessions yet. Open FL Studio on the studio PC.</td></tr>';
+  }
+
+  async function load(token: string) {
+    error.hidden = true;
+    try {
+      const res = await fetch('/api/studio/stats', { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } });
+      const data = (await res.json()) as Stats;
+      if (res.status === 401) throw new Error('Wrong password.');
+      if (!data.ok) throw new Error(data.error ?? 'Could not load the stats.');
+      store.set(token);
+      render(data);
+      form.hidden = true;
+      box.hidden = false;
+    } catch (err) {
+      store.clear();
+      box.hidden = true;
+      form.hidden = false;
+      error.textContent = err instanceof Error ? err.message : 'Could not load the stats.';
+      error.hidden = false;
+    }
+  }
+
+  form.addEventListener('submit', (e) => { e.preventDefault(); load(input.value.trim()); });
+  document.querySelector('[data-lock]')!.addEventListener('click', () => { store.clear(); location.reload(); });
+
+  const saved = store.get();
+  if (saved) load(saved);
+  else form.hidden = false;
+</script>
+
+<style>
+  .unlock { max-width: 520px; display: grid; gap: 0.75rem; }
+  .unlock[hidden], .stats[hidden], .error[hidden] { display: none; }
+  .row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .row input { flex: 1 1 220px; }
+  .error { color: var(--accent); margin: 0; }
+  .status { margin: 0 0 1.25rem; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted, #9b978f); }
+  .status.live { color: var(--accent); }
+  .tiles { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 2.5rem; }
+  .tile { display: grid; gap: 0.35rem; padding: 1.25rem; border: 1px solid var(--line); background: var(--surface); }
+  .tile .mono { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; }
+  .tile strong { font-family: var(--font-display); font-size: 2.6rem; font-weight: 400; line-height: 1; }
+  .tile span:last-child { font-size: 0.85rem; color: var(--muted, #9b978f); }
+  .weeks { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 0.4rem; align-items: end; height: 190px; margin: 1rem 0 0.5rem; }
+  .weeks :global(.week) { display: grid; grid-template-rows: 1fr auto auto; height: 100%; gap: 0.25rem; text-align: center; min-width: 0; }
+  .weeks :global(.bars) { display: flex; align-items: flex-end; justify-content: center; gap: 2px; height: 100%; }
+  .weeks :global(.bar) { width: 40%; min-height: 1px; border-radius: 2px 2px 0 0; }
+  .weeks :global(.bar.h) { background: var(--accent); }
+  .weeks :global(.bar.k) { background: var(--text); opacity: 0.55; }
+  .weeks :global(.val) { font-size: 0.7rem; height: 1em; }
+  .weeks :global(.lbl) { font-size: 0.6rem; white-space: nowrap; overflow: hidden; }
+  .legend { font-size: 0.72rem; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 2.5rem; }
+  .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+  .sw-h { background: var(--accent); }
+  .sw-k { background: var(--text); opacity: 0.55; margin-left: 0.6rem; }
+  .sessions { width: 100%; border-collapse: collapse; margin: 1rem 0 2rem; font-size: 0.95rem; }
+  .sessions th { text-align: left; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted, #9b978f); font-weight: 400; }
+  .sessions th, .sessions :global(td) { padding: 0.6rem 0.5rem 0.6rem 0; border-bottom: 1px solid var(--line); }
+  .sessions :global(.now) { color: var(--accent); font-size: 0.8rem; }
+  @media (max-width: 600px) { .weeks :global(.lbl) { font-size: 0.5rem; } .tile strong { font-size: 2.1rem; } }
+</style>
