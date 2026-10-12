@@ -7,16 +7,18 @@ import PageHero from '../components/PageHero.astro';
 ---
 
 <BaseLayout title="Studio stats" description="Private studio stats." noindex>
-  <PageHero eyebrow="Private" title="Studio stats" lead="Hours in FL Studio and knocks on the door." />
+  <div data-hero hidden><PageHero eyebrow="Private" title="Studio stats" lead="Hours in FL Studio and knocks on the door." /></div>
 
   <section class="section">
     <div class="container">
-      <form class="unlock card pad" data-unlock hidden>
-        <label for="studio-token">Password</label>
-        <div class="row">
-          <input id="studio-token" type="password" autocomplete="current-password" required />
-          <button class="btn btn-primary" type="submit">Show stats</button>
-        </div>
+      <form class="unlock" data-unlock hidden>
+        <span class="door-sign" aria-hidden="true">Studio</span>
+        <p class="kicker mono">Private</p>
+        <h1>Studio stats</h1>
+        <p class="muted">Hours in FL Studio and knocks on the door.</p>
+        <label class="sr-only" for="studio-token">Password</label>
+        <input id="studio-token" type="password" autocomplete="current-password" placeholder="Password" required />
+        <button class="btn btn-primary" type="submit">Open stats</button>
         <p class="error" data-error hidden></p>
       </form>
 
@@ -58,6 +60,7 @@ import PageHero from '../components/PageHero.astro';
   const input = document.querySelector<HTMLInputElement>('#studio-token')!;
   const error = document.querySelector<HTMLElement>('[data-error]')!;
   const box = document.querySelector<HTMLElement>('[data-stats]')!;
+  const hero = document.querySelector<HTMLElement>('[data-hero]')!;
 
   const store = {
     get: () => { try { return localStorage.getItem(KEY) ?? ''; } catch { return ''; } },
@@ -111,9 +114,11 @@ import PageHero from '../components/PageHero.astro';
       render(data);
       form.hidden = true;
       box.hidden = false;
+      hero.hidden = false;
     } catch (err) {
       store.clear();
       box.hidden = true;
+      hero.hidden = true;
       form.hidden = false;
       error.textContent = err instanceof Error ? err.message : 'Could not load the stats.';
       error.hidden = false;
@@ -129,11 +134,26 @@ import PageHero from '../components/PageHero.astro';
 </script>
 
 <style>
-  .unlock { max-width: 520px; display: grid; gap: 0.75rem; }
+  [data-hero][hidden] { display: none; }
+  /* Login: a centered card under an unlit studio-door sign. */
+  .unlock {
+    max-width: 400px; margin: clamp(1rem, 6vh, 4rem) auto; display: grid; gap: 0.75rem; justify-items: center; text-align: center;
+    padding: 2.25rem 1.75rem 2rem; border: 1px solid var(--line); border-top: 3px solid var(--accent);
+    background: linear-gradient(180deg, rgba(228, 67, 45, 0.08), transparent 45%), var(--surface);
+  }
   .unlock[hidden], .stats[hidden], .error[hidden] { display: none; }
-  .row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-  .row input { flex: 1 1 220px; }
-  .error { color: var(--accent); margin: 0; }
+  .door-sign {
+    font-family: var(--font-display); font-size: 0.8rem; letter-spacing: 0.16em; text-transform: uppercase;
+    padding: 0.35rem 0.75rem 0.3rem; border-radius: 3px; color: #fff4ef; background: var(--accent); border: 1px solid #ff7a63;
+    text-shadow: 0 0 6px rgba(255, 220, 210, 0.8); box-shadow: 0 0 12px rgba(228, 67, 45, 0.7), 0 0 30px rgba(228, 67, 45, 0.3);
+    margin-bottom: 0.5rem;
+  }
+  .unlock .kicker { margin: 0; color: var(--accent); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; }
+  .unlock h1 { margin: 0; font-size: clamp(2.4rem, 9vw, 3.2rem); line-height: 1; }
+  .unlock .muted { margin: 0 0 0.75rem; }
+  .unlock input { width: 100%; text-align: center; }
+  .unlock .btn { width: 100%; }
+  .error { color: var(--accent); margin: 0; font-size: 0.9rem; }
   .status { margin: 0 0 1.25rem; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted, #9b978f); }
   .status.live { color: var(--accent); }
   .tiles { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 2.5rem; }
