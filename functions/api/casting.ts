@@ -1,7 +1,7 @@
 import type { Env } from '../_lib/env';
 import { reply, sameOrigin, str, isEmail } from '../_lib/http';
 import { checkSpam } from '../_lib/spam';
-import { sendMail, fileToAttachment, type Attachment } from '../_lib/mail';
+import { sendConfirmation, sendMail, fileToAttachment, type Attachment } from '../_lib/mail';
 
 // Keep in sync with src/pages/casting.astro
 const ROLES = [
@@ -76,5 +76,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return reply(request, 502, { ok: false, error: 'Your submission could not be sent right now.' });
   }
 
+  await sendConfirmation(env, { to: email, name, what: 'submission', next: "We listen to every submission and we'll be in touch if there's a fit." });
   return reply(request, 200, { ok: true });
 };

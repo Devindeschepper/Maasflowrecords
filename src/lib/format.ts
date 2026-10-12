@@ -19,8 +19,8 @@ export const fmtEventDate = (iso: string) => {
   };
 };
 
-/** Release date for display, or "TBA" when not announced yet. */
-export const releaseDateLabel = (r: Release) => (r.releaseDate ? `${r.dateTentative ? 'Expected ' : ''}${fmtDate(r.releaseDate)}` : 'TBA');
+/** Release date for display, or "Coming soon" when not announced yet. */
+export const releaseDateLabel = (r: Release) => (r.releaseDate ? `${r.dateTentative ? 'Expected ' : ''}${fmtDate(r.releaseDate)}` : 'Coming soon');
 
 export const artistNames = (r: Release) =>
   r.artists.map((slug) => artists.find((a) => a.slug === slug)?.name ?? slug).join(' & ');

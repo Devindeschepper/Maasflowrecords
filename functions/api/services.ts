@@ -1,7 +1,7 @@
 import type { Env } from '../_lib/env';
 import { reply, sameOrigin, str, isEmail } from '../_lib/http';
 import { checkSpam } from '../_lib/spam';
-import { sendMail } from '../_lib/mail';
+import { sendConfirmation, sendMail } from '../_lib/mail';
 import { requestTypes, mixing } from '../../src/data/services';
 
 /** Mixing / mastering / custom beat request — emailed to the label. No payment on the site. */
@@ -56,5 +56,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return reply(request, 502, { ok: false, error: 'Your request could not be sent right now.' });
   }
 
+  await sendConfirmation(env, { to: email, name, what: 'request' });
   return reply(request, 200, { ok: true });
 };
