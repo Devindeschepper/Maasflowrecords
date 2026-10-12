@@ -45,7 +45,7 @@ const jsonLd = [
         <p class="eyebrow"><span class="dot"></span>{releaseMeta(r)}{upcoming && ' · Upcoming'}</p>
         <h1>{r.title}</h1>
         <p class="by">{artistNames(r)}</p>
-        <p class="mono muted">{upcoming ? 'Release date' : 'Released'}: {r.releaseDate ? <time datetime={r.releaseDate}>{releaseDateLabel(r)}</time> : 'TBA'}</p>
+        <p class="mono muted">{upcoming ? 'Release date' : 'Released'}: {r.releaseDate ? <time datetime={r.releaseDate}>{releaseDateLabel(r)}</time> : 'Coming soon'}</p>
         {upcoming && r.releaseDate && <Countdown date={r.releaseDate} tentative={r.dateTentative} />}
         <p class="lead">{r.description}</p>
 

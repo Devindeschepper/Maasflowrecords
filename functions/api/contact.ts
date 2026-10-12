@@ -1,7 +1,7 @@
 import type { Env } from '../_lib/env';
 import { reply, sameOrigin, str, isEmail } from '../_lib/http';
 import { checkSpam } from '../_lib/spam';
-import { sendMail } from '../_lib/mail';
+import { sendConfirmation, sendMail } from '../_lib/mail';
 
 // Keep in sync with src/pages/contact.astro
 const TOPICS: Record<string, string> = {
@@ -55,5 +55,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return reply(request, 502, { ok: false, error: 'Your message could not be sent right now.' });
   }
 
+  await sendConfirmation(env, { to: email, name, what: 'message' });
   return reply(request, 200, { ok: true });
 };

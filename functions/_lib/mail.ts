@@ -15,6 +15,8 @@ export interface Mail {
   fields: [string, string][];
   attachments?: Attachment[];
   to?: string;
+  /** Optional paragraphs shown above the table (plain text, escaped). */
+  intro?: string[];
 }
 
 /**
@@ -35,7 +37,9 @@ export async function sendMail(env: Env, mail: Mail): Promise<void> {
         `<td style="padding:6px 0;font-family:sans-serif;white-space:pre-wrap">${escapeHtml(v)}</td></tr>`,
     )
     .join('');
-  const text = mail.fields.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join('\n\n');
+  const intro = mail.intro ?? [];
+  const introHtml = intro.map((p) => `<p style="font-family:sans-serif;line-height:1.5">${escapeHtml(p)}</p>`).join('');
+  const text = [...intro, ...mail.fields.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`)].join('\n\n');
 
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -45,7 +49,7 @@ export async function sendMail(env: Env, mail: Mail): Promise<void> {
       to: [to],
       subject: oneLine(mail.subject).slice(0, 200),
       reply_to: mail.replyTo,
-      html: `<table>${rows}</table>`,
+      html: rows ? `${introHtml}<table>${rows}</table>` : introHtml,
       text,
       attachments: mail.attachments,
     }),
@@ -56,6 +60,35 @@ export async function sendMail(env: Env, mail: Mail): Promise<void> {
   }
   // Emails to the label (no explicit `to`) also ping the label's WhatsApp; emails to customers don't.
   if (!mail.to) await notifyWhatsApp(env, whatsAppSummary(mail.subject, mail.fields));
+}
+
+/**
+ * Short thank-you email to the person who filled in a form. Replies go to the label.
+ * Fixed text only (no copy of what they typed), so the form can't be used to send spam to others.
+ * Never throws: the request already reached the label.
+ */
+export async function sendConfirmation(
+  env: Env,
+  c: { to: string; name: string; what: string; next?: string },
+): Promise<void> {
+  const label = env.CONTACT_TO_EMAIL ?? 'info@maasflowrecords.com';
+  const first = c.name.trim().split(/\s+/)[0]?.slice(0, 40) || 'there';
+  try {
+    await sendMail(env, {
+      to: c.to,
+      replyTo: label,
+      subject: `We received your ${c.what} - Maas Flow Records`,
+      intro: [
+        `Hi ${first},`,
+        `Thanks for your ${c.what}. ${c.next ?? 'It reached us and VIN will get back to you within 48 hours.'}`,
+        'Want to add something? Just reply to this email.',
+        'Maas Flow Records · maasflowrecords.com',
+      ],
+      fields: [],
+    });
+  } catch (err) {
+    console.error('Confirmation email failed', err);
+  }
 }
 
 export async function fileToAttachment(file: File): Promise<Attachment> {
