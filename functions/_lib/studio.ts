@@ -30,6 +30,8 @@ export async function db(env: Env): Promise<D1Database | null> {
       env.DB.prepare(
         'CREATE TABLE IF NOT EXISTS knocks (session_id INTEGER NOT NULL, visitor TEXT NOT NULL, at INTEGER NOT NULL, PRIMARY KEY (session_id, visitor))',
       ),
+      env.DB.prepare('CREATE TABLE IF NOT EXISTS login_fails (visitor TEXT NOT NULL, at INTEGER NOT NULL)'),
+      env.DB.prepare('CREATE INDEX IF NOT EXISTS login_fails_visitor ON login_fails (visitor, at)'),
     ]);
     schemaReady = true;
   }

@@ -12,7 +12,7 @@ import PageHero from '../components/PageHero.astro';
   <section class="section">
     <div class="container">
       <form class="unlock card pad" data-unlock hidden>
-        <label for="studio-token">Studio password <span class="muted">(your STUDIO_TOKEN)</span></label>
+        <label for="studio-token">Password</label>
         <div class="row">
           <input id="studio-token" type="password" autocomplete="current-password" required />
           <button class="btn btn-primary" type="submit">Show stats</button>
@@ -106,7 +106,6 @@ import PageHero from '../components/PageHero.astro';
     try {
       const res = await fetch('/api/studio/stats', { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } });
       const data = (await res.json()) as Stats;
-      if (res.status === 401) throw new Error('Wrong password.');
       if (!data.ok) throw new Error(data.error ?? 'Could not load the stats.');
       store.set(token);
       render(data);

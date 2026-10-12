@@ -22,6 +22,8 @@ export interface Env {
   STUDIO?: KVNamespace;
   /** Shared secret the studio PC sends to switch the light (16+ characters). */
   STUDIO_TOKEN?: string;
+  /** VIN's own password for /studio-stats/ (8+ characters). The STUDIO_TOKEN works there too. */
+  STATS_PASSWORD?: string;
   /** D1 database with studio sessions and knocks (binding in wrangler.toml). */
   DB?: D1Database;
 }

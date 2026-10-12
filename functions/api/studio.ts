@@ -13,7 +13,8 @@ import { db, openSession, sessionOff, sessionOn, summarize, weekStart, WEEK_MS, 
  * GET /api/studio → {"live": boolean, "last": ISO date | null}  (public, read by the header)
  * POST /api/studio/knock  (public) → visitors "knock on the door" while the light is on; one knock
  *   per visitor per session. Counted in D1 and reported on WhatsApp when the session ends.
- * GET /api/studio/stats  (Authorization: Bearer <STUDIO_TOKEN>) → hours and knocks for /studio-stats/.
+ * GET /api/studio/stats  (Authorization: Bearer <STATS_PASSWORD or STUDIO_TOKEN>) → hours and knocks for
+ *   /studio-stats/. Max 10 wrong passwords per visitor per hour.
  *
  * Off (live:false) when the STUDIO KV namespace or STUDIO_TOKEN is not set up.
  */
@@ -72,9 +73,7 @@ export const onKnock: PagesFunction<Env> = async ({ request, env }) => {
   if (!s) return jsonResponse(409, { ok: false, live: false, error: "VIN isn't in the studio right now." });
 
   // One knock per visitor per session. Only a salted hash of the IP is stored, never the IP itself.
-  const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${env.STUDIO_TOKEN ?? ''}|${s.id}|${ip}`));
-  const visitor = [...new Uint8Array(digest)].slice(0, 16).map((b) => b.toString(16).padStart(2, '0')).join('');
+  const visitor = await visitorHash(request, env, s.id);
   const res = await d.prepare('INSERT OR IGNORE INTO knocks (session_id, visitor, at) VALUES (?1, ?2, ?3)').bind(s.id, visitor, Date.now()).run();
   const counted = (res.meta.changes ?? 0) > 0;
   const row = counted
@@ -83,12 +82,34 @@ export const onKnock: PagesFunction<Env> = async ({ request, env }) => {
   return jsonResponse(200, { ok: true, counted, knocks: row?.knocks ?? s.knocks });
 };
 
-/** Private stats for /studio-stats/. */
+/** Salted hash of the visitor's IP (never stored in plain text). */
+async function visitorHash(request: Request, env: Env, scope: string | number): Promise<string> {
+  const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${env.STUDIO_TOKEN ?? ''}|${scope}|${ip}`));
+  return [...new Uint8Array(digest)].slice(0, 16).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+const MAX_FAILS = 10; // wrong stats passwords per visitor per hour
+
+/** Private stats for /studio-stats/. Accepts VIN's own STATS_PASSWORD or the STUDIO_TOKEN. */
 export const onStats: PagesFunction<Env> = async ({ request, env }) => {
-  const denied = checkToken(request, env);
-  if (denied) return denied;
   const d = await db(env);
-  if (!d) return jsonResponse(503, { ok: false, error: 'The stats database (D1) is not connected yet.' });
+  if (!env.STUDIO || !d) return jsonResponse(503, { ok: false, error: 'Studio stats are not set up yet.' });
+
+  const visitor = await visitorHash(request, env, 'stats-login');
+  const hourAgo = Date.now() - 3600000;
+  const fails = await d.prepare('SELECT COUNT(*) AS n FROM login_fails WHERE visitor = ?1 AND at > ?2').bind(visitor, hourAgo).first<{ n: number }>();
+  if ((fails?.n ?? 0) >= MAX_FAILS) return jsonResponse(429, { ok: false, error: 'Too many wrong passwords. Try again in an hour.' });
+
+  const given = request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '').trim() ?? '';
+  const valid = [env.STATS_PASSWORD?.trim(), env.STUDIO_TOKEN?.trim()].filter((p): p is string => !!p && p.length >= 8);
+  if (!given || !valid.some((p) => safeEqual(given, p))) {
+    await d.batch([
+      d.prepare('INSERT INTO login_fails (visitor, at) VALUES (?1, ?2)').bind(visitor, Date.now()),
+      d.prepare('DELETE FROM login_fails WHERE at < ?1').bind(hourAgo),
+    ]);
+    return jsonResponse(401, { ok: false, error: 'Wrong password.' });
+  }
 
   const now = Date.now();
   const thisWeek = weekStart(now);

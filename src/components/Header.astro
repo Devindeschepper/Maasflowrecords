@@ -109,17 +109,17 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
       const data = await res.json();
       if (res.status === 409) {
         setLive(false);
-        say("VIN just left the studio. Try next time!");
+        say('VIN has just left the studio. Check back soon.');
       } else if (data.ok) {
         const others = Math.max(0, (data.knocks ?? 1) - 1);
         say(
           data.counted
-            ? `You knocked 🚪 VIN is cooking 🔥${others ? ` (+${others} other${others === 1 ? '' : 's'} this session)` : ''}`
-            : `You already knocked. VIN heard you 🔥`,
+            ? `Knock received. VIN is in the studio working on new music.${others ? ` ${others} other${others === 1 ? '' : 's'} knocked this session.` : ''}`
+            : 'Your knock was already received. Thank you for the support.',
         );
       }
     } catch {
-      say("Couldn't knock right now. Try again in a moment.");
+      say('Something went wrong. Please try again in a moment.');
     }
   });
   checkStudio();
