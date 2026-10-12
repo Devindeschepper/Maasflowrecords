@@ -30,6 +30,10 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     </nav>
 
     <div class="actions">
+      {/* Lit by /api/studio while FL Studio is open on the studio PC (see tools/studio-light). */}
+      <span class="studio-sign" data-studio-light title="Lights up when VIN is in the studio" role="status" aria-label="Studio sign: off">
+        <span class="long">In the studio</span><span class="short" aria-hidden="true">Studio</span>
+      </span>
       {/* Always shown; while the shop is closed the cart page says "Coming soon". */}
       <a href="/cart/" class="cart-link" aria-label="Shopping cart">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -66,9 +70,56 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
   };
   render();
   onCartChange(render);
+
+  // Studio light: checked on load and every 2 minutes while the tab is visible.
+  const light = document.querySelector<HTMLElement>('[data-studio-light]');
+  const checkStudio = async () => {
+    if (!light || document.hidden) return;
+    try {
+      const res = await fetch('/api/studio', { headers: { Accept: 'application/json' } });
+      if (!res.ok) return;
+      const live = Boolean((await res.json()).live);
+      light.classList.toggle('is-live', live);
+      light.title = live ? 'VIN is in the studio right now' : 'Lights up when VIN is in the studio';
+      light.setAttribute('aria-label', live ? 'VIN is in the studio right now' : 'Studio sign: off');
+    } catch {
+      /* offline: leave as is */
+    }
+  };
+  checkStudio();
+  setInterval(checkStudio, 120_000);
+  document.addEventListener('visibilitychange', checkStudio);
 </script>
 
 <style>
+  /* Studio sign: dark when VIN is out, glowing red like an ON AIR light when FL Studio is open. */
+  .studio-sign {
+    display: inline-flex; align-items: center; margin-right: 0.9rem; padding: 0.3rem 0.6rem 0.25rem;
+    font-family: var(--font-display); font-size: 0.78rem; line-height: 1; letter-spacing: 0.14em; text-transform: uppercase;
+    white-space: nowrap; color: #4a4642; background: #141312; border: 1px solid #2a2725; border-radius: 3px;
+    transition: color 0.4s ease, background 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+  }
+  .studio-sign.is-live {
+    color: #fff4ef; background: var(--accent); border-color: #ff7a63;
+    text-shadow: 0 0 6px rgba(255, 220, 210, 0.8);
+    box-shadow: 0 0 10px rgba(228, 67, 45, 0.75), 0 0 26px rgba(228, 67, 45, 0.35), inset 0 0 6px rgba(255, 255, 255, 0.25);
+    animation: sign-on 0.9s steps(1, end) 1, sign-glow 3.2s ease-in-out 0.9s infinite;
+  }
+  .studio-sign .short { display: none; }
+  @media (max-width: 600px) {
+    .studio-sign { margin-right: 0.5rem; padding: 0.25rem 0.45rem 0.2rem; font-size: 0.7rem; }
+    .studio-sign .long { display: none; }
+    .studio-sign .short { display: inline; }
+  }
+  /* A neon tube flickering on, then a slow breathing glow. */
+  @keyframes sign-on {
+    0%, 20%, 45% { opacity: 1; } 10%, 35% { opacity: 0.35; }
+  }
+  @keyframes sign-glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(228, 67, 45, 0.75), 0 0 26px rgba(228, 67, 45, 0.35), inset 0 0 6px rgba(255, 255, 255, 0.25); }
+    50% { box-shadow: 0 0 14px rgba(228, 67, 45, 0.9), 0 0 34px rgba(228, 67, 45, 0.5), inset 0 0 6px rgba(255, 255, 255, 0.3); }
+  }
+  @media (prefers-reduced-motion: reduce) { .studio-sign.is-live { animation: none; } }
   .site-header {
     position: sticky; top: 0; z-index: 50;
     border-bottom: 1px solid var(--line);

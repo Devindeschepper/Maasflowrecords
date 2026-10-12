@@ -18,4 +18,8 @@ export interface Env {
   WHATSAPP_PHONE?: string;
   /** CallMeBot API key for that number (sent by CallMeBot on WhatsApp). */
   CALLMEBOT_API_KEY?: string;
+  /** KV namespace for the "in the studio" light (binding in wrangler.toml). */
+  STUDIO?: KVNamespace;
+  /** Shared secret the studio PC sends to switch the light (16+ characters). */
+  STUDIO_TOKEN?: string;
 }

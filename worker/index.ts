@@ -11,6 +11,7 @@ import { onRequestPost as booking } from '../functions/api/booking';
 import { onRequestPost as services } from '../functions/api/services';
 import { onRequestPost as stripeWebhook } from '../functions/api/webhooks/stripe';
 import { onRequestPost as cryptoWebhook } from '../functions/api/webhooks/crypto';
+import { onRequestGet as studioStatus, onRequestPost as studioSet } from '../functions/api/studio';
 
 interface WorkerEnv extends Env {
   ASSETS: Fetcher;
@@ -33,7 +34,16 @@ const routes: Record<string, Handler> = {
 export default {
   async fetch(request: Request, env: WorkerEnv): Promise<Response> {
     const { pathname } = new URL(request.url);
-    const handler = routes[pathname.replace(/\/$/, '')];
+    const route = pathname.replace(/\/$/, '');
+
+    // Studio light: public GET for the header, POST from the studio PC.
+    if (route === '/api/studio') {
+      if (request.method === 'GET') return (studioStatus as unknown as Handler)({ request, env });
+      if (request.method === 'POST') return (studioSet as unknown as Handler)({ request, env });
+      return jsonResponse(405, { ok: false, error: 'Method not allowed.' });
+    }
+
+    const handler = routes[route];
 
     if (handler) {
       if (request.method !== 'POST') return jsonResponse(405, { ok: false, error: 'Method not allowed.' });

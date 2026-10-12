@@ -19,6 +19,11 @@ not_found_handling = "404-page"
 # Only the form/checkout API goes through the Worker code; pages are served directly.
 run_worker_first = ["/api/*"]
 
+# "In the studio" light (functions/api/studio.ts). Created in Cloudflare → Storage & databases → Workers KV.
+[[kv_namespaces]]
+binding = "STUDIO"
+id = "22af6d99ff4a4d9d9cfb766ee2cf48d1"
+
 # Non-secret variables. Secrets (TURNSTILE_SECRET_KEY, RESEND_API_KEY, STRIPE_*, NOWPAYMENTS_*) are set in the
 # Cloudflare dashboard (Settings → Variables and Secrets) or in .dev.vars for local dev.
 [vars]
