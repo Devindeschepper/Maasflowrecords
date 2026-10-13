@@ -1,12 +1,12 @@
 import type { Env } from '../_lib/env';
 import { jsonResponse } from '../_lib/http';
 import { db } from '../_lib/studio';
-import { connectUrl, exchangeCode, takeState, tiktokConfigured } from '../_lib/tiktok';
+import { ACCOUNTS, connectUrl, exchangeCode, takeState, tiktokConfigured } from '../_lib/tiktok';
 import { checkStatsPassword } from './studio';
 
 /**
- * Connecting VIN's TikTok account for the follower count on /studio-stats/ (see functions/_lib/tiktok.ts).
- * GET /api/tiktok/connect  (Authorization: Bearer <STATS_PASSWORD>) → {"url": TikTok login page}
+ * Connecting the TikTok accounts for the follower counts on /studio-stats/ (see functions/_lib/tiktok.ts).
+ * GET /api/tiktok/connect?account=VIN|MFR  (Authorization: Bearer <STATS_PASSWORD>) → {"url": TikTok login page}
  * GET /api/tiktok/callback  TikTok sends VIN back here after he allows access; saves the login and
  *   returns to /studio-stats/?tiktok=connected (or ?tiktok=failed).
  */
@@ -15,7 +15,10 @@ export const onConnect: PagesFunction<Env> = async ({ request, env }) => {
   if (!env.STUDIO || !d || !tiktokConfigured(env)) return jsonResponse(503, { ok: false, error: 'TikTok is not set up yet.' });
   const denied = await checkStatsPassword(request, env, d);
   if (denied) return denied;
-  return jsonResponse(200, { ok: true, url: await connectUrl(env, new URL(request.url).origin) });
+  const url = new URL(request.url);
+  const ref = url.searchParams.get('account') ?? 'VIN';
+  if (!ACCOUNTS.includes(ref)) return jsonResponse(400, { ok: false, error: 'Unknown account.' });
+  return jsonResponse(200, { ok: true, url: await connectUrl(env, url.origin, ref) });
 };
 
 export const onCallback: PagesFunction<Env> = async ({ request, env }) => {
@@ -25,9 +28,10 @@ export const onCallback: PagesFunction<Env> = async ({ request, env }) => {
 
   const code = url.searchParams.get('code');
   // The state proves the login was started from the stats page (with the password) a few minutes ago.
-  if (!(await takeState(env, url.searchParams.get('state') ?? '')) || !code) return back('failed');
+  const ref = await takeState(env, url.searchParams.get('state') ?? '');
+  if (!ref || !code) return back('failed');
   try {
-    await exchangeCode(env, code, url.origin);
+    await exchangeCode(env, ref, code, url.origin);
   } catch (err) {
     console.error('TikTok connect failed', err);
     return back('failed');

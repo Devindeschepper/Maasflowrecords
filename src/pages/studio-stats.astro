@@ -116,11 +116,11 @@ import PageHero from '../components/PageHero.astro';
       .map((f) => {
         const [platform, name] = f.label.split(' · ');
         // TikTok needs a one-time "Connect" (TikTok login); after that the count updates by itself.
-        if (f.key === 'tt-vin' && f.count === null && f.error === 'TikTok not connected') {
+        if (f.platform === 'tiktok' && f.count === null && f.error === 'TikTok not connected') {
           return `<li class="f-tiktok">
           <span class="f-name"><span class="mono muted">${esc(platform)}</span>${esc(name ?? '')}</span>
-          <button class="btn f-connect" type="button" data-tiktok-connect>Connect TikTok</button>
-          <span class="f-week muted">One time only</span></li>`;
+          <button class="btn f-connect" type="button" data-tiktok-connect="${f.key === 'tt-mfr' ? 'MFR' : 'VIN'}">Connect</button>
+          <span class="f-week muted">${f.key === 'tt-mfr' ? 'Log in as @maasflowrecords' : 'One time only'}</span></li>`;
         }
         const count = f.count === null ? '—' : f.count.toLocaleString('en-US');
         const week =
@@ -131,7 +131,7 @@ import PageHero from '../components/PageHero.astro';
           <strong>${count}</strong>${f.count === null ? `<span class="f-week down" title="${esc(f.error ?? '')}">${esc(friendly(f.error))}</span>` : week}</li>`;
       })
       .join('');
-    box.querySelector<HTMLButtonElement>('[data-tiktok-connect]')?.addEventListener('click', connectTikTok);
+    box.querySelectorAll<HTMLButtonElement>('[data-tiktok-connect]').forEach((b) => b.addEventListener('click', connectTikTok));
     // Website visitors (Cloudflare Web Analytics).
     const v = s.visitors;
     const vBox = box.querySelector<HTMLElement>('[data-visitors]')!;
@@ -214,7 +214,7 @@ import PageHero from '../components/PageHero.astro';
     btn.disabled = true;
     btn.textContent = 'Opening TikTok…';
     try {
-      const res = await fetch('/api/tiktok/connect', { headers: { Authorization: `Bearer ${store.get()}`, Accept: 'application/json' } });
+      const res = await fetch(`/api/tiktok/connect?account=${btn.dataset.tiktokConnect}`, { headers: { Authorization: `Bearer ${store.get()}`, Accept: 'application/json' } });
       const data = (await res.json()) as { ok: boolean; url?: string; error?: string };
       if (!data.ok || !data.url) throw new Error(data.error ?? 'Could not open TikTok.');
       location.href = data.url;
