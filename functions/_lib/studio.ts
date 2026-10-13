@@ -1,6 +1,5 @@
 import type { Env } from './env';
 import { notifyWhatsApp } from './whatsapp';
-import { followerSummary, followersLine } from './followers';
 
 /**
  * Studio sessions and knocks, stored in D1 (binding DB). A session starts with the first
@@ -128,7 +127,6 @@ export async function weeklySummary(env: Env, now: number): Promise<void> {
       '🔴 Maas Flow Records · your week',
       `Studio: ${fmtDuration(week.ms)} in ${week.sessions} session${week.sessions === 1 ? '' : 's'}${trend}`,
       `Knocks: ${week.knocks}`,
-      followersLine(await followerSummary(env, now).catch(() => [])),
       'Stats: maasflowrecords.com/studio-stats/',
     ]
       .filter(Boolean)

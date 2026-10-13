@@ -56,8 +56,7 @@ CPU priority and then exits, so nothing stays in memory.
 
 ## Followers on the stats page (optional)
 
-`/studio-stats/` shows follower counts with the change over the last 7 days, and the Sunday WhatsApp gets a
-"Followers:" line. Counts are saved once a day (06:00 UTC) and when you open the stats page. Accounts are
+`/studio-stats/` shows follower counts with the change over the last 7 days (stats page only, no WhatsApp). Counts are saved once a day (06:00 UTC) and when you open the stats page. Accounts are
 listed in `functions/_lib/followers.ts`. Each platform only appears once its key is set as a Cloudflare
 **Secret** (Workers & Pages → maasflowrecords2 → Settings → Variables and Secrets).
 

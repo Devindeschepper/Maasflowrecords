@@ -2,7 +2,7 @@ import type { Env } from './env';
 import { db } from './studio';
 
 /**
- * Follower counts for the private stats page and the Sunday WhatsApp summary.
+ * Follower counts for the private stats page (not sent on WhatsApp).
  * A daily cron (and opening /studio-stats/ when the data is older than 6 hours) saves a snapshot per
  * account in D1, so the page can show growth over the last 7 days.
  *
@@ -146,12 +146,4 @@ export async function followerSummary(env: Env, now = Date.now()): Promise<Follo
     });
   }
   return rows;
-}
-
-/** One line for the Sunday WhatsApp, e.g. "Followers: IG @vintheartist 1,204 (+37) · YouTube · VIN 312 (+8)". */
-export function followersLine(rows: FollowerRow[]): string {
-  const parts = rows
-    .filter((r) => r.count !== null)
-    .map((r) => `${r.label.replace('Instagram · ', 'IG ').replace('YouTube · ', 'YT ')} ${r.count!.toLocaleString('en-US')}${r.week !== null ? ` (${r.week >= 0 ? '+' : ''}${r.week})` : ''}`);
-  return parts.length ? `Followers: ${parts.join(' · ')}` : '';
 }

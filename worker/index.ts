@@ -70,7 +70,7 @@ export default {
   // Crons (wrangler.toml [triggers]): daily follower snapshot; Sunday evening WhatsApp summary.
   async scheduled(controller: ScheduledController, env: WorkerEnv, ctx: ExecutionContext): Promise<void> {
     if (controller.cron === WEEKLY_CRON) {
-      ctx.waitUntil(refreshInstagramTokens(env).then(() => snapshotFollowers(env)).then(() => weeklySummary(env, Date.now())));
+      ctx.waitUntil(Promise.all([refreshInstagramTokens(env).then(() => snapshotFollowers(env)), weeklySummary(env, Date.now())]));
     } else {
       ctx.waitUntil(snapshotFollowers(env));
     }
