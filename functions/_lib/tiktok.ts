@@ -4,11 +4,12 @@ import type { Env } from './env';
  * TikTok follower count for the private stats page (TikTok Display API, Login Kit).
  * Needs a TikTok developer app (sandbox mode is enough, with VIN's account as target user):
  *   TIKTOK_CLIENT_KEY / TIKTOK_CLIENT_SECRET - from the app page on developers.tiktok.com (secrets)
- * VIN connects his account once with the "Connect TikTok" button on /studio-stats/. The login is kept
- * in KV ('tiktok-auth') and renewed automatically: the access token lasts a day, the refresh token a year
+ * Each account (VIN, MFR) is connected once with its "Connect" button on /studio-stats/. The login is kept
+ * in KV ('tiktok-auth-VIN' / 'tiktok-auth-MFR') and renewed automatically: the access token lasts a day, the refresh token a year
  * and every refresh gives a new one, so the daily cron keeps it alive.
  */
-const AUTH_KEY = 'tiktok-auth';
+const authKey = (ref: string) => `tiktok-auth-${ref}`;
+export const ACCOUNTS = ['VIN', 'MFR'];
 const TOKEN_URL = 'https://open.tiktokapis.com/v2/oauth/token/';
 export const NOT_CONNECTED = 'TikTok not connected';
 
@@ -26,10 +27,10 @@ export function tiktokConfigured(env: Env): boolean {
 
 export const redirectUri = (origin: string) => `${origin}/api/tiktok/callback`;
 
-/** TikTok login page for VIN; the state is checked again in the callback. */
-export async function connectUrl(env: Env, origin: string): Promise<string> {
+/** TikTok login page for one account; the state (remembering which account) is checked again in the callback. */
+export async function connectUrl(env: Env, origin: string, ref: string): Promise<string> {
   const state = [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, '0')).join('');
-  await env.STUDIO!.put(`tiktok-state-${state}`, '1', { expirationTtl: 600 });
+  await env.STUDIO!.put(`tiktok-state-${state}`, ref, { expirationTtl: 600 });
   const q = new URLSearchParams({
     client_key: env.TIKTOK_CLIENT_KEY!.trim(),
     scope: 'user.info.basic,user.info.stats',
@@ -40,16 +41,17 @@ export async function connectUrl(env: Env, origin: string): Promise<string> {
   return `https://www.tiktok.com/v2/auth/authorize/?${q}`;
 }
 
-/** true once (the state is deleted on use). */
-export async function takeState(env: Env, state: string): Promise<boolean> {
-  if (!/^[a-f0-9]{32}$/.test(state)) return false;
+/** The account the login was started for, only once (the state is deleted on use); null if unknown. */
+export async function takeState(env: Env, state: string): Promise<string | null> {
+  if (!/^[a-f0-9]{32}$/.test(state)) return null;
   const key = `tiktok-state-${state}`;
-  if (!(await env.STUDIO!.get(key))) return false;
+  const ref = await env.STUDIO!.get(key);
+  if (!ref || !ACCOUNTS.includes(ref)) return null;
   await env.STUDIO!.delete(key);
-  return true;
+  return ref;
 }
 
-async function tokenRequest(env: Env, params: Record<string, string>, now: number): Promise<TikTokAuth> {
+async function tokenRequest(env: Env, ref: string, params: Record<string, string>, now: number): Promise<TikTokAuth> {
   const res = await fetch(TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Cache-Control': 'no-cache' },
@@ -66,29 +68,29 @@ async function tokenRequest(env: Env, params: Record<string, string>, now: numbe
     expires_at: now + (data.expires_in ?? 86400) * 1000,
     refresh_expires_at: now + (data.refresh_expires_in ?? 31536000) * 1000,
   };
-  await env.STUDIO!.put(AUTH_KEY, JSON.stringify(auth));
+  await env.STUDIO!.put(authKey(ref), JSON.stringify(auth));
   return auth;
 }
 
 /** Callback: trades the one-time code for tokens and saves them. */
-export const exchangeCode = (env: Env, code: string, origin: string, now = Date.now()) =>
-  tokenRequest(env, { code, grant_type: 'authorization_code', redirect_uri: redirectUri(origin) }, now);
+export const exchangeCode = (env: Env, ref: string, code: string, origin: string, now = Date.now()) =>
+  tokenRequest(env, ref, { code, grant_type: 'authorization_code', redirect_uri: redirectUri(origin) }, now);
 
-export async function tiktokFollowers(env: Env, now = Date.now()): Promise<number> {
-  const raw = await env.STUDIO?.get(AUTH_KEY);
+export async function tiktokFollowers(env: Env, ref: string, now = Date.now()): Promise<number> {
+  const raw = await env.STUDIO?.get(authKey(ref));
   if (!raw) throw new Error(NOT_CONNECTED);
   let auth = JSON.parse(raw) as TikTokAuth;
   if (now > auth.refresh_expires_at) {
-    await env.STUDIO!.delete(AUTH_KEY);
+    await env.STUDIO!.delete(authKey(ref));
     throw new Error(NOT_CONNECTED);
   }
   if (now > auth.expires_at - 5 * 60 * 1000) {
     try {
-      auth = await tokenRequest(env, { grant_type: 'refresh_token', refresh_token: auth.refresh_token }, now);
+      auth = await tokenRequest(env, ref, { grant_type: 'refresh_token', refresh_token: auth.refresh_token }, now);
     } catch (err) {
       // A revoked or invalid login means VIN has to connect again; anything else is retried later.
       if (/invalid_grant|revoked|expired/i.test(err instanceof Error ? err.message : '')) {
-        await env.STUDIO!.delete(AUTH_KEY);
+        await env.STUDIO!.delete(authKey(ref));
         throw new Error(NOT_CONNECTED);
       }
       throw err;
@@ -102,7 +104,7 @@ export async function tiktokFollowers(env: Env, now = Date.now()): Promise<numbe
   const data = (await res.json().catch(() => ({}))) as { data?: { user?: { follower_count?: number } }; error?: { code?: string; message?: string } };
   if (data.error?.code === 'scope_not_authorized') throw new Error('Follower count not allowed (add user.info.stats to the app)');
   if (data.error?.code === 'access_token_invalid') {
-    await env.STUDIO!.delete(AUTH_KEY);
+    await env.STUDIO!.delete(authKey(ref));
     throw new Error(NOT_CONNECTED);
   }
   const n = Number(data.data?.user?.follower_count);

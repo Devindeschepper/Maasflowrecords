@@ -79,12 +79,13 @@ Spotify and TikTok are left out: their APIs don't (reliably) share follower coun
 ## TikTok followers on the stats page (optional)
 
 1. Go to developers.tiktok.com, log in with your TikTok account and create an app (Manage apps → Connect an app).
-2. Switch the app to **Sandbox** and add your own TikTok account as a **target user** (no app review needed).
+2. Switch the app to **Sandbox** and add both TikTok accounts as **target users** (no app review needed).
 3. Add the products **Login Kit** and the scopes **user.info.basic** and **user.info.stats**.
 4. In Login Kit, set the **Redirect URI** to `https://maasflowrecords.com/api/tiktok/callback`.
 5. Copy the **Client key** and **Client secret** into Cloudflare (Worker → Settings → Variables and Secrets)
    as secrets `TIKTOK_CLIENT_KEY` and `TIKTOK_CLIENT_SECRET`. Never paste them anywhere else.
-6. Open /studio-stats/ and tap **Connect TikTok** once. After that the count updates by itself.
+6. Open /studio-stats/ and tap **Connect** on each TikTok card once (log in to TikTok as that account first;
+   both accounts must be target users). After that the counts update by themselves.
 
 ## Website visitors on the stats page (optional)
 

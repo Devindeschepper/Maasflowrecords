@@ -17,7 +17,7 @@ interface Source {
   key: string;
   label: string;
   platform: 'instagram' | 'youtube' | 'tiktok';
-  /** YouTube: channel id (UC…) or handle (@…). Instagram: which token. TikTok: unused (one connected account). */
+  /** YouTube: channel id (UC…) or handle (@…). Instagram: which token. TikTok: which connected account. */
   ref: string;
 }
 
@@ -28,6 +28,7 @@ export const SOURCES: Source[] = [
   { key: 'yt-mfr', label: 'YouTube · Maas Flow Records', platform: 'youtube', ref: '@MaasFlowRecords' },
   { key: 'yt-beats', label: 'YouTube · VIN Beats', platform: 'youtube', ref: '@VINBeats1' },
   { key: 'tt-vin', label: 'TikTok · VIN', platform: 'tiktok', ref: 'VIN' },
+  { key: 'tt-mfr', label: 'TikTok · Maas Flow Records', platform: 'tiktok', ref: 'MFR' },
 ];
 
 const DAY = 24 * 3600 * 1000;
@@ -100,7 +101,7 @@ export async function snapshotFollowers(env: Env, now = Date.now()): Promise<Rec
     try {
       const n =
         s.platform === 'youtube' ? await youtube(env, s.ref)
-        : s.platform === 'tiktok' ? await tiktokFollowers(env, now)
+        : s.platform === 'tiktok' ? await tiktokFollowers(env, s.ref, now)
         : await instagram(env, s.ref);
       await d.prepare('INSERT INTO follower_snapshots (source, at, count) VALUES (?1, ?2, ?3)').bind(s.key, now, n).run();
     } catch (err) {
