@@ -109,7 +109,7 @@ import PageHero from '../components/PageHero.astro';
     const totalSince = withChange.map((f) => f.monthSince).filter((d): d is string => !!d).sort()[0] ?? null;
     const total = counted.length
       ? `<li class="f-total">
-          <span class="f-name"><span class="mono muted">All platforms</span>${plural(counted.length, 'account')}</span>
+          <span class="f-name"><span class="mono muted">All platforms</span>${plural(counted.length, 'platform')}</span>
           <strong>${sum('count', counted).toLocaleString('en-US')}</strong>${
             withChange.length ? `<span class="f-changes">${change(sum('week', withChange), 'last 7 days')}${change(sum('month', withChange), sinceLabel(totalSince))}</span>` : ''}</li>`
       : '';
