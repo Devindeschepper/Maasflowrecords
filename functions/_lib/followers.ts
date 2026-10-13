@@ -118,13 +118,16 @@ export interface FollowerRow {
   label: string;
   platform: Source['platform'];
   count: number | null;
-  /** Change versus the newest snapshot at least 7 days old (null until there is one). */
+  /** Change over the last 7 / 30 days (null with only one snapshot so far). */
   week: number | null;
+  month: number | null;
+  /** Set when there is less history than 30 days: the change is counted from this date instead. */
+  monthSince: string | null;
   at: string | null;
   error?: string;
 }
 
-/** Latest count + 7-day change per configured account (refreshes first when the data is older than 6 hours). */
+/** Latest count + 7- and 30-day change per configured account (refreshes first when the data is older than 6 hours). */
 export async function followerSummary(env: Env, now = Date.now()): Promise<FollowerRow[]> {
   const d = await db(env);
   if (!d) return [];
@@ -147,16 +150,25 @@ export async function followerSummary(env: Env, now = Date.now()): Promise<Follo
   const rows: FollowerRow[] = [];
   for (const s of active) {
     const last = await d.prepare('SELECT at, count FROM follower_snapshots WHERE source = ?1 ORDER BY at DESC LIMIT 1').bind(s.key).first<{ at: number; count: number }>();
-    const old = await d
-      .prepare('SELECT count FROM follower_snapshots WHERE source = ?1 AND at <= ?2 ORDER BY at DESC LIMIT 1')
-      .bind(s.key, now - 7 * DAY + 3600 * 1000)
-      .first<{ count: number }>();
+    // Baseline: the newest snapshot at least N days old; with less history, the first snapshot ever.
+    const since = async (days: number) => {
+      const full = await d
+        .prepare('SELECT at, count FROM follower_snapshots WHERE source = ?1 AND at <= ?2 ORDER BY at DESC LIMIT 1')
+        .bind(s.key, now - days * DAY + 3600 * 1000)
+        .first<{ at: number; count: number }>();
+      if (full) return { ...full, partial: false };
+      const first = await d.prepare('SELECT at, count FROM follower_snapshots WHERE source = ?1 ORDER BY at ASC LIMIT 1').bind(s.key).first<{ at: number; count: number }>();
+      return first && last && first.at < last.at ? { ...first, partial: true } : null;
+    };
+    const [w, m] = [await since(7), await since(30)];
     rows.push({
       key: s.key,
       label: s.label,
       platform: s.platform,
       count: last?.count ?? null,
-      week: last && old ? last.count - old.count : null,
+      week: last && w ? last.count - w.count : null,
+      month: last && m ? last.count - m.count : null,
+      monthSince: m?.partial ? new Date(m.at).toISOString() : null,
       at: last ? new Date(last.at).toISOString() : null,
       error: errors[s.key],
     });
