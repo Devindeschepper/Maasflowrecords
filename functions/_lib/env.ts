@@ -24,6 +24,14 @@ export interface Env {
   STUDIO_TOKEN?: string;
   /** VIN's own password for /studio-stats/ (8+ characters). The STUDIO_TOKEN works there too. */
   STATS_PASSWORD?: string;
+  /** Follower counts on /studio-stats/ (all optional; see functions/_lib/followers.ts). */
+  YOUTUBE_API_KEY?: string;
+  INSTAGRAM_TOKEN_VIN?: string;
+  INSTAGRAM_TOKEN_MFR?: string;
+  /** Website visitors on /studio-stats/ (Cloudflare Web Analytics; see functions/_lib/visitors.ts). */
+  CF_ACCOUNT_ID?: string;
+  CF_WEB_ANALYTICS_SITE?: string;
+  CF_ANALYTICS_TOKEN?: string;
   /** D1 database with studio sessions and knocks (binding in wrangler.toml). */
   DB?: D1Database;
 }

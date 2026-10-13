@@ -128,6 +128,8 @@ export async function weeklySummary(env: Env, now: number): Promise<void> {
       `Studio: ${fmtDuration(week.ms)} in ${week.sessions} session${week.sessions === 1 ? '' : 's'}${trend}`,
       `Knocks: ${week.knocks}`,
       'Stats: maasflowrecords.com/studio-stats/',
-    ].join('\n'),
+    ]
+      .filter(Boolean)
+      .join('\n'),
   );
 }

@@ -18,9 +18,11 @@ interface Props {
   jsonLd?: Record<string, unknown>[];
   /** No header, newsletter or footer (used by the /links page). */
   bare?: boolean;
+  /** Keep the header but drop the newsletter and footer (private tool pages). */
+  noFooter?: boolean;
 }
 
-const { title, description = site.description, image = site.ogImage, type = 'website', noindex = false, jsonLd = [], bare = false } = Astro.props;
+const { title, description = site.description, image = site.ogImage, type = 'website', noindex = false, jsonLd = [], bare = false, noFooter = false } = Astro.props;
 
 const fullTitle = title ? `${title} - ${site.name}` : `${site.name} - Independent Music Label`;
 const canonical = new URL(Astro.url.pathname, site.url).href;
@@ -78,7 +80,7 @@ const orgLd = {
     <main id="main">
       <slot />
     </main>
-    {!bare && <Newsletter />}
-    {!bare && <Footer />}
+    {!bare && !noFooter && <Newsletter />}
+    {!bare && !noFooter && <Footer />}
   </body>
 </html>

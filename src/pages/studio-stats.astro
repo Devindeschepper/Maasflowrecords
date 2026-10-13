@@ -6,8 +6,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from '../components/PageHero.astro';
 ---
 
-<BaseLayout title="Studio stats" description="Private studio stats." noindex>
-  <div data-hero hidden><PageHero eyebrow="Private" title="Studio stats" lead="Hours in FL Studio and knocks on the door." /></div>
+<BaseLayout title="Studio stats" description="Private studio stats." noindex noFooter>
+  <div class="hero-wrap" data-hero hidden><PageHero eyebrow="Private" title="Studio stats" lead="Hours in FL Studio and knocks on the door." /></div>
 
   <section class="section">
     <div class="container">
@@ -25,17 +25,36 @@ import PageHero from '../components/PageHero.astro';
       <div class="stats" data-stats hidden>
         <p class="status mono" data-status></p>
 
+        <h2 class="h3 sec">Studio</h2>
         <div class="tiles">
           <div class="tile"><span class="mono muted">This week</span><strong data-k="week.hours"></strong><span data-k="week.meta"></span></div>
           <div class="tile"><span class="mono muted">This month</span><strong data-k="month.hours"></strong><span data-k="month.meta"></span></div>
           <div class="tile"><span class="mono muted">All time</span><strong data-k="all.hours"></strong><span data-k="all.meta"></span></div>
         </div>
 
-        <h2 class="h3">Last 12 weeks</h2>
+
+        <section class="followers" data-followers hidden>
+          <h2 class="h3 sec">Followers</h2>
+          <ul class="f-list" data-follower-list></ul>
+          <p class="f-note mono muted" data-follower-note></p>
+        </section>
+
+        <section class="site-visits" data-visitors hidden>
+          <h2 class="h3 sec">Website <span class="mono muted">last 7 days · vs week before</span></h2>
+          <div class="v-grid">
+            <div class="v-tile"><span class="mono muted">Visits</span><strong data-v="visits"></strong><span class="v-trend" data-v="visits-trend"></span></div>
+            <div class="v-tile"><span class="mono muted">Page views</span><strong data-v="views"></strong><span class="v-trend" data-v="views-trend"></span></div>
+            <div class="v-tile v-days"><span class="mono muted">Visits per day</span><div class="v-bars" data-v="days"></div></div>
+            <div class="v-tile v-pages"><span class="mono muted">Top pages</span><ol data-v="pages"></ol></div>
+          </div>
+          <p class="v-error mono" data-v="error" hidden></p>
+        </section>
+
+        <h2 class="h3 sec">Hours per week</h2>
         <div class="weeks" data-weeks></div>
         <p class="legend mono muted"><span class="sw sw-h"></span> hours <span class="sw sw-k"></span> knocks</p>
 
-        <h2 class="h3">Recent sessions</h2>
+        <h2 class="h3 sec">Recent sessions</h2>
         <table class="sessions">
           <thead><tr><th>Started</th><th>Length</th><th>Knocks</th></tr></thead>
           <tbody data-sessions></tbody>
@@ -53,6 +72,8 @@ import PageHero from '../components/PageHero.astro';
     ok: boolean; error?: string; live: boolean; week: Sum; month: Sum; all: Sum;
     weeks: (Sum & { from: string })[];
     recent: { start: string; ms: number; knocks: number; open: boolean }[];
+    visitors?: { visits: number; views: number; prevVisits: number; prevViews: number; days: { date: string; visits: number; views: number }[]; pages: { path: string; views: number }[]; error?: string } | null;
+    followers?: { key: string; label: string; platform: string; count: number | null; week: number | null; at: string | null; error?: string }[];
   };
 
   const KEY = 'mfr-studio-token';
@@ -85,6 +106,63 @@ import PageHero from '../components/PageHero.astro';
     }
     box.querySelector('[data-status]')!.textContent = s.live ? '● In the studio right now' : '○ Not in the studio';
     box.querySelector('[data-status]')!.classList.toggle('live', s.live);
+
+    // Followers: latest count per account and the change over the last 7 days.
+    const fol = s.followers ?? [];
+    const fBox = box.querySelector<HTMLElement>('[data-followers]')!;
+    fBox.hidden = fol.length === 0;
+    // Our own messages are readable; network/HTTP errors get a generic text (details in the tooltip).
+    const friendly = (e?: string) => (!e ? 'Not available yet' : /^HTTP|internal error|fetch|timed? ?out|abort/i.test(e) ? "Couldn't load right now" : e);
+    const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+    box.querySelector('[data-follower-list]')!.innerHTML = fol
+      .map((f) => {
+        const [platform, name] = f.label.split(' · ');
+        const count = f.count === null ? '—' : f.count.toLocaleString('en-US');
+        const week =
+          f.week === null ? '<span class="f-week muted">new</span>'
+          : `<span class="f-week ${f.week > 0 ? 'up' : f.week < 0 ? 'down' : ''}">${f.week > 0 ? '▲' : f.week < 0 ? '▼' : '•'} ${Math.abs(f.week).toLocaleString('en-US')}<span class="wide"> this week</span></span>`;
+        return `<li class="f-${f.platform}">
+          <span class="f-name"><span class="mono muted">${esc(platform)}</span>${esc(name ?? '')}</span>
+          <strong>${count}</strong>${f.count === null ? `<span class="f-week down" title="${esc(f.error ?? '')}">${esc(friendly(f.error))}</span>` : week}</li>`;
+      })
+      .join('');
+    // Website visitors (Cloudflare Web Analytics).
+    const v = s.visitors;
+    const vBox = box.querySelector<HTMLElement>('[data-visitors]')!;
+    vBox.hidden = !v;
+    if (v) {
+      const q = (k: string) => vBox.querySelector<HTMLElement>(`[data-v="${k}"]`)!;
+      const trend = (now: number, prev: number) => {
+        if (!prev) return { text: now ? 'new' : '', cls: '' };
+        const pct = Math.round(((now - prev) / prev) * 100);
+        return { text: `${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct)}%`, cls: pct >= 0 ? 'up' : 'down' };
+      };
+      q('visits').textContent = v.visits.toLocaleString('en-US');
+      q('views').textContent = v.views.toLocaleString('en-US');
+      for (const [k, now, prev] of [['visits-trend', v.visits, v.prevVisits], ['views-trend', v.views, v.prevViews]] as const) {
+        const t = trend(now, prev);
+        q(k).textContent = t.text;
+        q(k).className = `v-trend ${t.cls}`;
+      }
+      const maxD = Math.max(1, ...v.days.map((d) => d.visits));
+      q('days').innerHTML = v.days
+        .map((d) => {
+          const day = new Date(`${d.date}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short' });
+          return `<div class="v-day" title="${d.date}: ${d.visits} visits, ${d.views} views"><span class="v-num">${d.visits || ''}</span><span class="v-bar"><span style="height:${d.visits ? Math.max(4, (d.visits / maxD) * 100) : 0}%"></span></span><span class="v-lbl">${day}</span></div>`;
+        })
+        .join('');
+      q('pages').innerHTML = v.pages.length
+        ? v.pages.map((pg) => `<li><span>${pg.path === '/' ? 'Home' : esc(pg.path)}</span><b>${pg.views.toLocaleString('en-US')}</b></li>`).join('')
+        : '<li class="muted">No visits yet</li>';
+      q('error').hidden = !v.error;
+      q('error').textContent = v.error ? `Couldn't load visitor data right now.` : '';
+      q('error').title = v.error ?? '';
+    }
+
+    const latest = fol.map((f) => f.at).filter(Boolean).sort().pop();
+    box.querySelector('[data-follower-note]')!.textContent = latest
+      ? `Checked ${new Date(latest).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })} · updates daily`
+      : '';
 
     const maxH = Math.max(1, ...s.weeks.map((w) => w.hours));
     const maxK = Math.max(1, ...s.weeks.map((w) => w.knocks));
@@ -156,6 +234,43 @@ import PageHero from '../components/PageHero.astro';
   .error { color: var(--accent); margin: 0; font-size: 0.9rem; }
   .status { margin: 0 0 1.25rem; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted, #9b978f); }
   .status.live { color: var(--accent); }
+  .followers { margin-bottom: 2.5rem; }
+  .followers .h3 { margin: 0 0 0.75rem; }
+  .f-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+  @media (max-width: 600px) { .f-list { grid-template-columns: 1fr 1fr; gap: 0.5rem; } .f-list :global(li) { padding: 0.8rem 0.85rem; } .f-list :global(strong) { font-size: 1.6rem; } }
+  .f-list :global(li) { display: grid; gap: 0.35rem; padding: 1rem 1.15rem; border: 1px solid var(--line); background: var(--surface); border-left: 3px solid var(--line); }
+  .f-list :global(li.f-instagram) { border-left-color: #c13584; }
+  .f-list :global(li.f-youtube) { border-left-color: #ff0033; }
+  .f-list :global(.f-name) { display: grid; gap: 0.15rem; font-size: 0.9rem; }
+  .f-list :global(.f-name .mono) { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; }
+  .f-list :global(strong) { font-family: var(--font-display); font-weight: 400; font-size: 2rem; line-height: 1; }
+  .f-list :global(.f-week) { font-size: 0.8rem; color: var(--muted, #9b978f); }
+  .f-list :global(.f-week.up) { color: var(--ok, #7fbf7f); }
+  .f-list :global(.f-week.down) { color: var(--accent); }
+  .f-note { font-size: 0.7rem; margin: 0.6rem 0 0; }
+
+  .site-visits { margin-bottom: 2.5rem; }
+  .site-visits .h3 { margin: 0 0 0.75rem; display: flex; align-items: baseline; gap: 0.75rem; }
+  .site-visits .h3 .mono { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; }
+  .v-grid { display: grid; gap: 0.75rem; grid-template-columns: 1fr 1fr 2fr 2fr; align-items: start; }
+  .v-tile { display: grid; gap: 0.4rem; align-content: start; padding: 1rem 1.15rem; border: 1px solid var(--line); background: var(--surface); }
+  .v-tile > .mono { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; }
+  .v-tile strong { font-family: var(--font-display); font-weight: 400; font-size: 2.2rem; line-height: 1; }
+  .v-trend { font-size: 0.8rem; color: var(--muted, #9b978f); }
+  .v-trend.up { color: var(--ok, #7fbf7f); }
+  .v-trend.down { color: var(--accent); }
+  .v-bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.35rem; height: 92px; }
+  .v-bars :global(.v-day) { display: grid; grid-template-rows: auto 1fr auto; gap: 0.2rem; text-align: center; min-width: 0; }
+  .v-bars :global(.v-num) { font-family: var(--font-mono); font-size: 0.6rem; color: var(--muted, #9b978f); height: 1em; }
+  .v-bars :global(.v-bar) { position: relative; background: #1c1b1a; border-radius: 2px; }
+  .v-bars :global(.v-bar span) { position: absolute; left: 0; right: 0; bottom: 0; background: var(--accent); border-radius: 2px; }
+  .v-bars :global(.v-lbl) { font-family: var(--font-mono); font-size: 0.55rem; color: var(--muted, #9b978f); }
+  .v-pages ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; font-size: 0.85rem; }
+  .v-pages :global(li) { display: flex; justify-content: space-between; gap: 0.75rem; border-bottom: 1px solid var(--line); padding-bottom: 0.3rem; }
+  .v-pages :global(li span) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .v-pages :global(li b) { font-family: var(--font-mono); font-weight: 400; }
+  .v-error { font-size: 0.75rem; color: var(--accent); margin: 0.6rem 0 0; }
+  @media (max-width: 860px) { .v-grid { grid-template-columns: 1fr 1fr; } .v-days, .v-pages { grid-column: 1 / -1; } }
   .tiles { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 2.5rem; }
   .tile { display: grid; gap: 0.35rem; padding: 1.25rem; border: 1px solid var(--line); background: var(--surface); }
   .tile .mono { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; }
@@ -178,4 +293,31 @@ import PageHero from '../components/PageHero.astro';
   .sessions th, .sessions :global(td) { padding: 0.6rem 0.5rem 0.6rem 0; border-bottom: 1px solid var(--line); }
   .sessions :global(.now) { color: var(--accent); font-size: 0.8rem; }
   @media (max-width: 600px) { .weeks :global(.lbl) { font-size: 0.5rem; } .tile strong { font-size: 2.1rem; } }
+  /* Phone layout: compact, most important first, nothing to scroll sideways. */
+  @media (max-width: 600px) {
+    .hero-wrap :global(.page-hero) { padding: 1.5rem 0 0.5rem; border: 0; }
+    .hero-wrap :global(.page-hero h1) { font-size: 2.4rem; margin: 0; }
+    .hero-wrap :global(.page-hero .lead) { display: none; }
+    .stats { margin-top: -1.5rem; }
+    .stats .sec { font-size: 1.35rem; margin: 1.75rem 0 0.6rem; }
+    .status { margin-bottom: 0.25rem; }
+    .tiles { grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; margin-bottom: 0; }
+    .tile { padding: 0.75rem 0.6rem; gap: 0.25rem; }
+    .tile .mono { font-size: 0.55rem; letter-spacing: 0.08em; }
+    .tile strong { font-size: 1.35rem; }
+    .tile span:last-child { font-size: 0.68rem; line-height: 1.3; }
+    .followers, .site-visits { margin-bottom: 0; }
+    .f-list :global(.wide) { display: none; }
+    .v-grid { gap: 0.4rem; }
+    .v-tile { padding: 0.8rem 0.85rem; }
+    .v-tile strong { font-size: 1.8rem; }
+    .site-visits .h3 { flex-wrap: wrap; row-gap: 0.2rem; }
+    .weeks { height: 150px; grid-template-columns: repeat(8, minmax(0, 1fr)); }
+    .weeks :global(.week:nth-child(-n+4)) { display: none; }
+    .weeks :global(.lbl) { font-size: 0.55rem; }
+    .legend { margin-bottom: 0; }
+    .sessions { font-size: 0.85rem; margin-bottom: 1rem; }
+    .sessions :global(tr:nth-child(n+9)) { display: none; }
+    .sessions th, .sessions :global(td) { padding: 0.5rem 0.4rem 0.5rem 0; }
+  }
 </style>

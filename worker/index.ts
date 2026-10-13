@@ -13,6 +13,10 @@ import { onRequestPost as stripeWebhook } from '../functions/api/webhooks/stripe
 import { onRequestPost as cryptoWebhook } from '../functions/api/webhooks/crypto';
 import { onRequestGet as studioStatus, onRequestPost as studioSet, onKnock, onStats } from '../functions/api/studio';
 import { weeklySummary } from '../functions/_lib/studio';
+import { refreshInstagramTokens, snapshotFollowers } from '../functions/_lib/followers';
+
+/** Must match the Sunday entry in wrangler.toml [triggers]. */
+const WEEKLY_CRON = '0 18 * * SUN';
 
 interface WorkerEnv extends Env {
   ASSETS: Fetcher;
@@ -63,8 +67,12 @@ export default {
     return env.ASSETS.fetch(request);
   },
 
-  // Cron (wrangler.toml [triggers]): Sunday-evening studio summary on WhatsApp.
-  async scheduled(_controller: ScheduledController, env: WorkerEnv, ctx: ExecutionContext): Promise<void> {
-    ctx.waitUntil(weeklySummary(env, Date.now()));
+  // Crons (wrangler.toml [triggers]): daily follower snapshot; Sunday evening WhatsApp summary.
+  async scheduled(controller: ScheduledController, env: WorkerEnv, ctx: ExecutionContext): Promise<void> {
+    if (controller.cron === WEEKLY_CRON) {
+      ctx.waitUntil(Promise.all([refreshInstagramTokens(env).then(() => snapshotFollowers(env)), weeklySummary(env, Date.now())]));
+    } else {
+      ctx.waitUntil(snapshotFollowers(env));
+    }
   },
 } satisfies ExportedHandler<WorkerEnv>;
