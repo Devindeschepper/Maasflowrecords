@@ -128,8 +128,7 @@ import PageHero from '../components/PageHero.astro';
           : `<span class="f-week ${f.week > 0 ? 'up' : f.week < 0 ? 'down' : ''}">${f.week > 0 ? '▲' : f.week < 0 ? '▼' : '•'} ${Math.abs(f.week).toLocaleString('en-US')}<span class="wide"> this week</span></span>`;
         return `<li class="f-${f.platform}">
           <span class="f-name"><span class="mono muted">${esc(platform)}</span>${esc(name ?? '')}</span>
-          <strong>${count}</strong>${f.count === null ? `<span class="f-week down" title="${esc(f.error ?? '')}">${esc(friendly(f.error))}</span>` : week}${
-            f.platform === 'tiktok' ? `<button class="f-reconnect" type="button" data-tiktok-connect="${f.key === 'tt-mfr' ? 'MFR' : 'VIN'}">Reconnect</button>` : ''}</li>`;
+          <strong>${count}</strong>${f.count === null ? `<span class="f-week down" title="${esc(f.error ?? '')}">${esc(friendly(f.error))}</span>` : week}</li>`;
       })
       .join('');
     box.querySelectorAll<HTMLButtonElement>('[data-tiktok-connect]').forEach((b) => b.addEventListener('click', connectTikTok));
@@ -275,7 +274,6 @@ import PageHero from '../components/PageHero.astro';
   .f-list :global(li.f-instagram) { border-left-color: #c13584; }
   .f-list :global(li.f-youtube) { border-left-color: #ff0033; }
   .f-list :global(li.f-tiktok) { border-left-color: #25f4ee; }
-  .f-list :global(.f-reconnect) { justify-self: start; padding: 0; border: 0; background: none; color: var(--muted, #9b978f); font-size: 0.7rem; text-decoration: underline; cursor: pointer; }
   .f-list :global(.f-connect) { padding: 0.55rem 0.8rem; font-size: 0.8rem; justify-self: start; }
   .tiktok-note { margin: 0 0 0.75rem; font-size: 0.8rem; color: var(--ok, #7fbf7f); }
   .tiktok-note.bad { color: var(--accent); }
