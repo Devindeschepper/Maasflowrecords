@@ -7,7 +7,7 @@ import PageHero from '../components/PageHero.astro';
 ---
 
 <BaseLayout title="Studio stats" description="Private studio stats." noindex noFooter>
-  <div class="hero-wrap" data-hero hidden><PageHero eyebrow="Private" title="Studio stats" lead="Hours in FL Studio and knocks on the door." /></div>
+  <div class="hero-wrap" data-hero hidden><PageHero eyebrow="Private" title="Studio stats" lead="Studio hours, followers and website visits." /></div>
 
   <section class="section">
     <div class="container">
@@ -50,16 +50,6 @@ import PageHero from '../components/PageHero.astro';
           <p class="v-error mono" data-v="error" hidden></p>
         </section>
 
-        <h2 class="h3 sec">Hours per week</h2>
-        <div class="weeks" data-weeks></div>
-        <p class="legend mono muted"><span class="sw sw-h"></span> hours <span class="sw sw-k"></span> knocks</p>
-
-        <h2 class="h3 sec">Recent sessions</h2>
-        <table class="sessions">
-          <thead><tr><th>Started</th><th>Length</th><th>Knocks</th></tr></thead>
-          <tbody data-sessions></tbody>
-        </table>
-
         <button class="btn btn-ghost lock" type="button" data-lock>Forget password on this device</button>
       </div>
     </div>
@@ -70,8 +60,6 @@ import PageHero from '../components/PageHero.astro';
   type Sum = { ms: number; hours: number; sessions: number; knocks: number };
   type Stats = {
     ok: boolean; error?: string; live: boolean; week: Sum; month: Sum; all: Sum;
-    weeks: (Sum & { from: string })[];
-    recent: { start: string; ms: number; knocks: number; open: boolean }[];
     visitors?: { visits: number; views: number; prevVisits: number; prevViews: number; days: { date: string; visits: number; views: number }[]; pages: { path: string; views: number }[]; error?: string } | null;
     followers?: { key: string; label: string; platform: string; count: number | null; week: number | null; at: string | null; error?: string }[];
   };
@@ -95,8 +83,6 @@ import PageHero from '../components/PageHero.astro';
     return h ? `${h}h ${String(min % 60).padStart(2, '0')}m` : `${min}m`;
   };
   const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
-  const fmtDay = (iso: string) =>
-    new Date(iso).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
   function render(s: Stats) {
     const set = (k: string, v: string) => { const el = box.querySelector(`[data-k="${k}"]`); if (el) el.textContent = v; };
@@ -170,22 +156,6 @@ import PageHero from '../components/PageHero.astro';
       ? `Checked ${new Date(latest).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })} · updates daily`
       : '';
 
-    const maxH = Math.max(1, ...s.weeks.map((w) => w.hours));
-    const maxK = Math.max(1, ...s.weeks.map((w) => w.knocks));
-    box.querySelector('[data-weeks]')!.innerHTML = s.weeks
-      .map((w) => {
-        const d = new Date(w.from).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-        return `<div class="week" title="Week of ${d}: ${dur(w.ms)}, ${plural(w.knocks, 'knock')}">
-          <div class="bars"><span class="bar h" style="height:${(w.hours / maxH) * 100}%"></span><span class="bar k" style="height:${(w.knocks / maxK) * 100}%"></span></div>
-          <span class="val">${w.hours ? `${w.hours}h` : ''}</span><span class="lbl mono muted">${d}</span></div>`;
-      })
-      .join('');
-
-    box.querySelector('[data-sessions]')!.innerHTML = s.recent.length
-      ? s.recent
-          .map((r) => `<tr><td>${fmtDay(r.start)}${r.open ? ' <span class="now">● now</span>' : ''}</td><td>${dur(r.ms)}</td><td>${r.knocks}</td></tr>`)
-          .join('')
-      : '<tr><td colspan="3" class="muted">No sessions yet. Open FL Studio on the studio PC.</td></tr>';
   }
 
   async function load(token: string) {
@@ -266,6 +236,7 @@ import PageHero from '../components/PageHero.astro';
   .unlock input { width: 100%; text-align: center; }
   .unlock .btn { width: 100%; }
   .error { color: var(--accent); margin: 0; font-size: 0.9rem; }
+  .lock { margin-top: 2.5rem; }
   .followers { margin-bottom: 2.5rem; }
   .followers .h3 { margin: 0 0 0.75rem; }
   .f-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
@@ -313,23 +284,7 @@ import PageHero from '../components/PageHero.astro';
   .tile .mono { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; }
   .tile strong { font-family: var(--font-display); font-size: 2.6rem; font-weight: 400; line-height: 1; }
   .tile span:last-child { font-size: 0.85rem; color: var(--muted, #9b978f); }
-  .weeks { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 0.4rem; align-items: end; height: 190px; margin: 1rem 0 0.5rem; }
-  .weeks :global(.week) { display: grid; grid-template-rows: 1fr auto auto; height: 100%; gap: 0.25rem; text-align: center; min-width: 0; }
-  .weeks :global(.bars) { display: flex; align-items: flex-end; justify-content: center; gap: 2px; height: 100%; }
-  .weeks :global(.bar) { width: 40%; min-height: 1px; border-radius: 2px 2px 0 0; }
-  .weeks :global(.bar.h) { background: var(--accent); }
-  .weeks :global(.bar.k) { background: var(--text); opacity: 0.55; }
-  .weeks :global(.val) { font-size: 0.7rem; height: 1em; }
-  .weeks :global(.lbl) { font-size: 0.6rem; white-space: nowrap; overflow: hidden; }
-  .legend { font-size: 0.72rem; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 2.5rem; }
-  .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
-  .sw-h { background: var(--accent); }
-  .sw-k { background: var(--text); opacity: 0.55; margin-left: 0.6rem; }
-  .sessions { width: 100%; border-collapse: collapse; margin: 1rem 0 2rem; font-size: 0.95rem; }
-  .sessions th { text-align: left; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted, #9b978f); font-weight: 400; }
-  .sessions th, .sessions :global(td) { padding: 0.6rem 0.5rem 0.6rem 0; border-bottom: 1px solid var(--line); }
-  .sessions :global(.now) { color: var(--accent); font-size: 0.8rem; }
-  @media (max-width: 600px) { .weeks :global(.lbl) { font-size: 0.5rem; } .tile strong { font-size: 2.1rem; } }
+  @media (max-width: 600px) { .tile strong { font-size: 2.1rem; } }
   /* Phone layout: compact, most important first, nothing to scroll sideways. */
   @media (max-width: 600px) {
     .hero-wrap :global(.page-hero) { padding: 1.5rem 0 0.5rem; border: 0; }
@@ -348,12 +303,5 @@ import PageHero from '../components/PageHero.astro';
     .v-tile { padding: 0.8rem 0.85rem; }
     .v-tile strong { font-size: 1.8rem; }
     .site-visits .h3 { flex-wrap: wrap; row-gap: 0.2rem; }
-    .weeks { height: 150px; grid-template-columns: repeat(8, minmax(0, 1fr)); }
-    .weeks :global(.week:nth-child(-n+4)) { display: none; }
-    .weeks :global(.lbl) { font-size: 0.55rem; }
-    .legend { margin-bottom: 0; }
-    .sessions { font-size: 0.85rem; margin-bottom: 1rem; }
-    .sessions :global(tr:nth-child(n+9)) { display: none; }
-    .sessions th, .sessions :global(td) { padding: 0.5rem 0.4rem 0.5rem 0; }
-  }
+                }
 </style>

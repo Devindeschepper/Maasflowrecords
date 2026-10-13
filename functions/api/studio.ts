@@ -3,7 +3,7 @@ import { jsonResponse, sameOrigin } from '../_lib/http';
 import { safeEqual } from '../_lib/sign';
 import { followerSummary } from '../_lib/followers';
 import { visitorStats } from '../_lib/visitors';
-import { db, openSession, sessionOff, sessionOn, summarize, weekStart, WEEK_MS, type Session } from '../_lib/studio';
+import { db, openSession, sessionOff, sessionOn, summarize, weekStart, type Session } from '../_lib/studio';
 
 /**
  * "VIN is in the studio" light.
@@ -15,8 +15,8 @@ import { db, openSession, sessionOff, sessionOn, summarize, weekStart, WEEK_MS, 
  * GET /api/studio → {"live": boolean, "last": ISO date | null}  (public, read by the header)
  * POST /api/studio/knock  (public) → visitors "knock on the door" while the light is on; one knock
  *   per visitor per session. Counted in D1, shown in the stats and the Sunday WhatsApp summary.
- * GET /api/studio/stats  (Authorization: Bearer <STATS_PASSWORD or STUDIO_TOKEN>) → hours and knocks for
- *   /studio-stats/. Max 10 wrong passwords per visitor per hour.
+ * GET /api/studio/stats  (Authorization: Bearer <STATS_PASSWORD or STUDIO_TOKEN>) → hours, knocks, followers and website visits
+ *   for /studio-stats/. Max 10 wrong passwords per visitor per hour.
  *
  * Off (live:false) when the STUDIO KV namespace or STUDIO_TOKEN is not set up.
  */
@@ -128,28 +128,16 @@ export const onStats: PagesFunction<Env> = async ({ request, env }) => {
   const local = new Date(new Date(now).toLocaleString('en-US', { timeZone: 'Europe/Luxembourg' }));
   const monthStart = now - ((local.getDate() - 1) * 86400000 + (local.getHours() * 3600 + local.getMinutes() * 60 + local.getSeconds()) * 1000);
 
-  const weeks = Array.from({ length: 12 }, (_, i) => {
-    const from = thisWeek - i * WEEK_MS;
-    return { from: new Date(from).toISOString(), ...summarize(results, from, Math.min(from + WEEK_MS, now)) };
-  }).reverse();
-
   return jsonResponse(200, {
     ok: true,
     live: Boolean(await env.STUDIO!.get('live')),
     week: summarize(results, thisWeek, now),
     month: summarize(results, monthStart, now),
     all: summarize(results, 0, now),
-    weeks,
     followers: await followerSummary(env, now).catch((err) => {
       console.error('Followers failed', err);
       return [];
     }),
     visitors: await visitorStats(env, now).catch(() => null),
-    recent: results.slice(0, 15).map((s) => ({
-      start: new Date(s.started_at).toISOString(),
-      ms: (s.ended_at ?? Math.min(now, s.last_beat + 60000)) - s.started_at,
-      knocks: s.knocks,
-      open: s.ended_at === null,
-    })),
   });
 };
