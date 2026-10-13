@@ -4,8 +4,9 @@ import { tiktokConfigured, tiktokFollowers } from './tiktok';
 
 /**
  * Follower counts for the private stats page (not sent on WhatsApp).
- * A daily cron (and opening /studio-stats/ when the data is older than 6 hours) saves a snapshot per
- * account in D1, so the page can show growth over the last 7 days.
+ * Checked once a day by the daily cron (08:00 Luxembourg), which saves a snapshot per account in D1 so the
+ * page can show growth. Opening /studio-stats/ only fetches accounts that have no data yet (just connected)
+ * or that the cron missed for more than a day.
  *
  * Each source only runs when its key is set as a Cloudflare secret:
  *   YOUTUBE_API_KEY                         - YouTube Data API v3 key (Google Cloud, free)
@@ -32,7 +33,8 @@ export const SOURCES: Source[] = [
 ];
 
 const DAY = 24 * 3600 * 1000;
-const STALE = 6 * 3600 * 1000;
+/** An account counts as missed when its newest snapshot is older than this (the cron runs every 24 h). */
+const STALE = 26 * 3600 * 1000;
 
 async function ensureTable(d: D1Database) {
   await d.batch([
@@ -91,13 +93,18 @@ function configured(env: Env, s: Source): boolean {
   return !!(s.ref === 'VIN' ? env.INSTAGRAM_TOKEN_VIN : env.INSTAGRAM_TOKEN_MFR)?.trim();
 }
 
-/** Fetches every configured account and saves a snapshot. Errors are kept per account, never thrown. */
-export async function snapshotFollowers(env: Env, now = Date.now()): Promise<Record<string, string>> {
+/**
+ * Fetches the configured accounts (all of them, or only the keys in `only`) and saves a snapshot.
+ * Errors are kept per account, never thrown.
+ */
+export async function snapshotFollowers(env: Env, now = Date.now(), only?: string[]): Promise<Record<string, string>> {
   const d = await db(env);
-  const errors: Record<string, string> = {};
+  // A partial run keeps the errors of the accounts it doesn't touch.
+  const errors: Record<string, string> = only ? JSON.parse((await env.STUDIO?.get('followers-errors')) ?? '{}') : {};
   if (!d) return errors;
   await ensureTable(d);
-  for (const s of SOURCES.filter((src) => configured(env, src))) {
+  for (const s of SOURCES.filter((src) => configured(env, src) && (!only || only.includes(src.key)))) {
+    delete errors[s.key];
     try {
       const n =
         s.platform === 'youtube' ? await youtube(env, s.ref)
@@ -127,7 +134,7 @@ export interface FollowerRow {
   error?: string;
 }
 
-/** Latest count + 7- and 30-day change per configured account (refreshes first when the data is older than 6 hours). */
+/** Latest count + 7- and 30-day change per configured account (fetches accounts without data first). */
 export async function followerSummary(env: Env, now = Date.now()): Promise<FollowerRow[]> {
   const d = await db(env);
   if (!d) return [];
@@ -135,16 +142,16 @@ export async function followerSummary(env: Env, now = Date.now()): Promise<Follo
   const active = SOURCES.filter((s) => configured(env, s));
   if (!active.length) return [];
 
-  // Refresh when any account's data is older than 6 hours, or when an account was just added and has no
-  // data yet (retried at most every 10 minutes, so a broken token doesn't call the API on every page load).
+  // The daily cron does the checking. Here only accounts that were just connected (no data yet) or that the
+  // cron missed are fetched, at most every 10 minutes so a broken token doesn't call the API on every page load.
   const { results: latest } = await d.prepare('SELECT source, MAX(at) AS at FROM follower_snapshots GROUP BY source').all<{ source: string; at: number }>();
   const lastAt = new Map(latest.map((r) => [r.source, r.at]));
-  const stale = active.some((s) => now - (lastAt.get(s.key) ?? 0) > STALE);
+  const missing = active.filter((s) => now - (lastAt.get(s.key) ?? 0) > STALE).map((s) => s.key);
   const lastTry = Number((await env.STUDIO?.get('followers-last-try')) ?? 0);
   let errors: Record<string, string> = JSON.parse((await env.STUDIO?.get('followers-errors')) ?? '{}');
-  if (stale && now - lastTry > 10 * 60 * 1000) {
+  if (missing.length && now - lastTry > 10 * 60 * 1000) {
     await env.STUDIO?.put('followers-last-try', String(now));
-    errors = await snapshotFollowers(env, now);
+    errors = await snapshotFollowers(env, now, missing);
   }
 
   const rows: FollowerRow[] = [];
