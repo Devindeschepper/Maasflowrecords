@@ -118,7 +118,7 @@ export interface FollowerRow {
   label: string;
   platform: Source['platform'];
   count: number | null;
-  /** Change over the last 7 / 30 days (null with only one snapshot so far). */
+  /** Change over the last 7 / 30 days (0 with only one snapshot so far; null without any). */
   week: number | null;
   month: number | null;
   /** Set when there is less history than 30 days: the change is counted from this date instead. */
@@ -150,7 +150,8 @@ export async function followerSummary(env: Env, now = Date.now()): Promise<Follo
   const rows: FollowerRow[] = [];
   for (const s of active) {
     const last = await d.prepare('SELECT at, count FROM follower_snapshots WHERE source = ?1 ORDER BY at DESC LIMIT 1').bind(s.key).first<{ at: number; count: number }>();
-    // Baseline: the newest snapshot at least N days old; with less history, the first snapshot ever.
+    // Baseline: the newest snapshot at least N days old; with less history, the first snapshot ever (so a
+    // brand-new account shows 0 "since <today>" instead of nothing).
     const since = async (days: number) => {
       const full = await d
         .prepare('SELECT at, count FROM follower_snapshots WHERE source = ?1 AND at <= ?2 ORDER BY at DESC LIMIT 1')
@@ -158,7 +159,7 @@ export async function followerSummary(env: Env, now = Date.now()): Promise<Follo
         .first<{ at: number; count: number }>();
       if (full) return { ...full, partial: false };
       const first = await d.prepare('SELECT at, count FROM follower_snapshots WHERE source = ?1 ORDER BY at ASC LIMIT 1').bind(s.key).first<{ at: number; count: number }>();
-      return first && last && first.at < last.at ? { ...first, partial: true } : null;
+      return first ? { ...first, partial: true } : null;
     };
     const [w, m] = [await since(7), await since(30)];
     rows.push({
