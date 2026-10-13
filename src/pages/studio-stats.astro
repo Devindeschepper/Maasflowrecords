@@ -61,7 +61,7 @@ import PageHero from '../components/PageHero.astro';
   type Stats = {
     ok: boolean; error?: string; live: boolean; week: Sum; month: Sum; all: Sum;
     visitors?: { visits: number; views: number; prevVisits: number; prevViews: number; days: { date: string; visits: number; views: number }[]; pages: { path: string; views: number }[]; error?: string } | null;
-    followers?: { key: string; label: string; platform: string; count: number | null; week: number | null; at: string | null; error?: string }[];
+    followers?: { key: string; label: string; platform: string; count: number | null; week: number | null; month: number | null; monthSince: string | null; at: string | null; error?: string }[];
   };
 
   const KEY = 'mfr-studio-token';
@@ -109,9 +109,13 @@ import PageHero from '../components/PageHero.astro';
           <span class="f-week muted">${f.key === 'tt-mfr' ? 'Log in as @maasflowrecords' : 'One time only'}</span></li>`;
         }
         const count = f.count === null ? '—' : f.count.toLocaleString('en-US');
+        // Change lines under the number: last 7 days and last month (or since tracking started).
+        const change = (n: number, label: string) =>
+          `<span class="f-week ${n > 0 ? 'up' : n < 0 ? 'down' : ''}">${n > 0 ? '▲' : n < 0 ? '▼' : '•'} ${Math.abs(n).toLocaleString('en-US')} <span class="f-when">${label}</span></span>`;
+        const monthLabel = f.monthSince ? `since ${new Date(f.monthSince).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : 'last month';
         const week =
-          f.week === null ? '<span class="f-week muted">new</span>'
-          : `<span class="f-week ${f.week > 0 ? 'up' : f.week < 0 ? 'down' : ''}">${f.week > 0 ? '▲' : f.week < 0 ? '▼' : '•'} ${Math.abs(f.week).toLocaleString('en-US')}<span class="wide"> this week</span></span>`;
+          f.week === null || f.month === null ? ''
+          : `<span class="f-changes">${change(f.week, 'last 7 days')}${change(f.month, monthLabel)}</span>`;
         return `<li class="f-${f.platform}">
           <span class="f-name"><span class="mono muted">${esc(platform)}</span>${esc(name ?? '')}</span>
           <strong>${count}</strong>${f.count === null ? `<span class="f-week down" title="${esc(f.error ?? '')}">${esc(friendly(f.error))}</span>` : week}</li>`;
@@ -255,6 +259,8 @@ import PageHero from '../components/PageHero.astro';
   .f-list :global(.f-week) { font-size: 0.8rem; color: var(--muted, #9b978f); }
   .f-list :global(.f-week.up) { color: var(--ok, #7fbf7f); }
   .f-list :global(.f-week.down) { color: var(--accent); }
+  .f-list :global(.f-changes) { display: grid; gap: 0.15rem; }
+  .f-list :global(.f-when) { color: var(--muted, #9b978f); font-size: 0.7rem; }
   .f-note { font-size: 0.7rem; margin: 0.6rem 0 0; }
 
   .site-visits { margin-bottom: 2.5rem; }
@@ -298,7 +304,6 @@ import PageHero from '../components/PageHero.astro';
     .tile strong { font-size: 1.35rem; }
     .tile span:last-child { font-size: 0.68rem; line-height: 1.3; }
     .followers, .site-visits { margin-bottom: 0; }
-    .f-list :global(.wide) { display: none; }
     .v-grid { gap: 0.4rem; }
     .v-tile { padding: 0.8rem 0.85rem; }
     .v-tile strong { font-size: 1.8rem; }
