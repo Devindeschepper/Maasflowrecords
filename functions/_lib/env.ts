@@ -28,6 +28,10 @@ export interface Env {
   YOUTUBE_API_KEY?: string;
   INSTAGRAM_TOKEN_VIN?: string;
   INSTAGRAM_TOKEN_MFR?: string;
+  /** Website visitors on /studio-stats/ (Cloudflare Web Analytics; see functions/_lib/visitors.ts). */
+  CF_ACCOUNT_ID?: string;
+  CF_WEB_ANALYTICS_SITE?: string;
+  CF_ANALYTICS_TOKEN?: string;
   /** D1 database with studio sessions and knocks (binding in wrangler.toml). */
   DB?: D1Database;
 }

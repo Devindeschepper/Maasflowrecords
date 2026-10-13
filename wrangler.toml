@@ -39,6 +39,8 @@ crons = ["0 6 * * *", "0 18 * * SUN"]
 # Cloudflare dashboard (Settings → Variables and Secrets) or in .dev.vars for local dev.
 [vars]
 CONTACT_TO_EMAIL = "info@maasflowrecords.com"
+# Cloudflare account id (not secret; also in every dashboard URL). Used for website visitors on /studio-stats/.
+CF_ACCOUNT_ID = "81bec14c188ccd990d6bd257e425ead2"
 
 # Same values for preview deployments (non-production branches, `wrangler preview`).
 [previews.vars]

@@ -75,3 +75,13 @@ listed in `functions/_lib/followers.ts`. Each platform only appears once its key
    them only once.
 
 Spotify and TikTok are left out: their APIs don't (reliably) share follower counts with small apps.
+
+## Website visitors on the stats page (optional)
+
+Shows visits and page views of the last 7 days (vs the week before), visits per day and the top pages, from
+Cloudflare Web Analytics. `CF_ACCOUNT_ID` is already in `wrangler.toml`. Add two **Secrets**:
+
+1. `CF_ANALYTICS_TOKEN`: Cloudflare → My Profile → **API Tokens** → Create Token → **Create Custom Token** →
+   Permissions: **Account → Account Analytics → Read** → Account resources: your account → Create → copy.
+2. `CF_WEB_ANALYTICS_SITE`: Cloudflare → **Analytics & Logs → Web Analytics** → open maasflowrecords.com.
+   The site tag is in the page address after `siteTag~in=` (a long code of letters and numbers).
