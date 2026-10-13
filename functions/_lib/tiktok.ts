@@ -12,6 +12,8 @@ const authKey = (ref: string) => `tiktok-auth-${ref}`;
 export const ACCOUNTS = ['VIN', 'MFR'];
 const TOKEN_URL = 'https://open.tiktokapis.com/v2/oauth/token/';
 export const NOT_CONNECTED = 'TikTok not connected';
+/** Thrown when a card is connected with the TikTok account that is already on the other card. */
+export const SAME_ACCOUNT = 'same account';
 
 interface TikTokAuth {
   access_token: string;
@@ -19,6 +21,8 @@ interface TikTokAuth {
   /** ms timestamps */
   expires_at: number;
   refresh_expires_at: number;
+  /** TikTok's id for the account (to spot the same account on both cards). */
+  open_id?: string;
 }
 
 export function tiktokConfigured(env: Env): boolean {
@@ -37,6 +41,8 @@ export async function connectUrl(env: Env, origin: string, ref: string): Promise
     response_type: 'code',
     redirect_uri: redirectUri(origin),
     state,
+    // Always show TikTok's page (with "switch account") instead of silently reusing whoever is logged in.
+    disable_auto_auth: '1',
   });
   return `https://www.tiktok.com/v2/auth/authorize/?${q}`;
 }
@@ -59,7 +65,7 @@ async function tokenRequest(env: Env, ref: string, params: Record<string, string
     signal: AbortSignal.timeout(8000),
   });
   const data = (await res.json().catch(() => ({}))) as {
-    access_token?: string; refresh_token?: string; expires_in?: number; refresh_expires_in?: number; error?: string; error_description?: string;
+    access_token?: string; refresh_token?: string; expires_in?: number; refresh_expires_in?: number; open_id?: string; error?: string; error_description?: string;
   };
   if (!data.access_token || !data.refresh_token) throw new Error(data.error_description || data.error || `HTTP ${res.status}`);
   const auth: TikTokAuth = {
@@ -67,26 +73,42 @@ async function tokenRequest(env: Env, ref: string, params: Record<string, string
     refresh_token: data.refresh_token,
     expires_at: now + (data.expires_in ?? 86400) * 1000,
     refresh_expires_at: now + (data.refresh_expires_in ?? 31536000) * 1000,
+    open_id: data.open_id,
   };
-  await env.STUDIO!.put(authKey(ref), JSON.stringify(auth));
   return auth;
 }
 
-/** Callback: trades the one-time code for tokens and saves them. */
-export const exchangeCode = (env: Env, ref: string, code: string, origin: string, now = Date.now()) =>
-  tokenRequest(env, ref, { code, grant_type: 'authorization_code', redirect_uri: redirectUri(origin) }, now);
+const readAuth = async (env: Env, ref: string) => {
+  const raw = await env.STUDIO?.get(authKey(ref));
+  return raw ? (JSON.parse(raw) as TikTokAuth) : null;
+};
+
+/**
+ * Callback: trades the one-time code for tokens and saves them. Refuses the account that is already on the
+ * other card. Returns true when this card now shows a different account than before (old counts are wrong then).
+ */
+export async function exchangeCode(env: Env, ref: string, code: string, origin: string, now = Date.now()): Promise<boolean> {
+  const auth = await tokenRequest(env, ref, { code, grant_type: 'authorization_code', redirect_uri: redirectUri(origin) }, now);
+  for (const other of ACCOUNTS.filter((a) => a !== ref)) {
+    if (auth.open_id && (await readAuth(env, other))?.open_id === auth.open_id) throw new Error(SAME_ACCOUNT);
+  }
+  const before = await readAuth(env, ref);
+  await env.STUDIO!.put(authKey(ref), JSON.stringify(auth));
+  return !before || before.open_id !== auth.open_id;
+}
 
 export async function tiktokFollowers(env: Env, ref: string, now = Date.now()): Promise<number> {
-  const raw = await env.STUDIO?.get(authKey(ref));
-  if (!raw) throw new Error(NOT_CONNECTED);
-  let auth = JSON.parse(raw) as TikTokAuth;
+  let auth = await readAuth(env, ref);
+  if (!auth) throw new Error(NOT_CONNECTED);
   if (now > auth.refresh_expires_at) {
     await env.STUDIO!.delete(authKey(ref));
     throw new Error(NOT_CONNECTED);
   }
   if (now > auth.expires_at - 5 * 60 * 1000) {
     try {
-      auth = await tokenRequest(env, ref, { grant_type: 'refresh_token', refresh_token: auth.refresh_token }, now);
+      const fresh = await tokenRequest(env, ref, { grant_type: 'refresh_token', refresh_token: auth.refresh_token }, now);
+      auth = { ...fresh, open_id: fresh.open_id ?? auth.open_id };
+      await env.STUDIO!.put(authKey(ref), JSON.stringify(auth));
     } catch (err) {
       // A revoked or invalid login means VIN has to connect again; anything else is retried later.
       if (/invalid_grant|revoked|expired/i.test(err instanceof Error ? err.message : '')) {
@@ -101,12 +123,15 @@ export async function tiktokFollowers(env: Env, ref: string, now = Date.now()): 
     headers: { Authorization: `Bearer ${auth.access_token}` },
     signal: AbortSignal.timeout(8000),
   });
-  const data = (await res.json().catch(() => ({}))) as { data?: { user?: { follower_count?: number } }; error?: { code?: string; message?: string } };
+  const data = (await res.json().catch(() => ({}))) as { data?: { user?: { open_id?: string; follower_count?: number } }; error?: { code?: string; message?: string } };
   if (data.error?.code === 'scope_not_authorized') throw new Error('Follower count not allowed (add user.info.stats to the app)');
   if (data.error?.code === 'access_token_invalid') {
     await env.STUDIO!.delete(authKey(ref));
     throw new Error(NOT_CONNECTED);
   }
+  // Logins saved before the account id was kept get it filled in here.
+  const openId = data.data?.user?.open_id;
+  if (openId && !auth.open_id) await env.STUDIO!.put(authKey(ref), JSON.stringify({ ...auth, open_id: openId }));
   const n = Number(data.data?.user?.follower_count);
   if (!res.ok || !Number.isFinite(n)) throw new Error(data.error?.message || `HTTP ${res.status}`);
   return n;

@@ -1,14 +1,15 @@
 import type { Env } from '../_lib/env';
 import { jsonResponse } from '../_lib/http';
 import { db } from '../_lib/studio';
-import { ACCOUNTS, connectUrl, exchangeCode, takeState, tiktokConfigured } from '../_lib/tiktok';
+import { ACCOUNTS, connectUrl, exchangeCode, SAME_ACCOUNT, takeState, tiktokConfigured } from '../_lib/tiktok';
 import { checkStatsPassword } from './studio';
 
 /**
  * Connecting the TikTok accounts for the follower counts on /studio-stats/ (see functions/_lib/tiktok.ts).
  * GET /api/tiktok/connect?account=VIN|MFR  (Authorization: Bearer <STATS_PASSWORD>) → {"url": TikTok login page}
  * GET /api/tiktok/callback  TikTok sends VIN back here after he allows access; saves the login and
- *   returns to /studio-stats/?tiktok=connected (or ?tiktok=failed).
+ *   returns to /studio-stats/?tiktok=connected (or ?tiktok=failed, or ?tiktok=same when that TikTok account
+ *   is already on the other card).
  */
 export const onConnect: PagesFunction<Env> = async ({ request, env }) => {
   const d = await db(env);
@@ -23,7 +24,7 @@ export const onConnect: PagesFunction<Env> = async ({ request, env }) => {
 
 export const onCallback: PagesFunction<Env> = async ({ request, env }) => {
   const url = new URL(request.url);
-  const back = (result: 'connected' | 'failed') => Response.redirect(`${url.origin}/studio-stats/?tiktok=${result}`, 303);
+  const back = (result: 'connected' | 'failed' | 'same') => Response.redirect(`${url.origin}/studio-stats/?tiktok=${result}`, 303);
   if (!env.STUDIO || !tiktokConfigured(env)) return back('failed');
 
   const code = url.searchParams.get('code');
@@ -31,10 +32,13 @@ export const onCallback: PagesFunction<Env> = async ({ request, env }) => {
   const ref = await takeState(env, url.searchParams.get('state') ?? '');
   if (!ref || !code) return back('failed');
   try {
-    await exchangeCode(env, ref, code, url.origin);
+    // Another account on this card than before: its old counts belong to the other account.
+    if (await exchangeCode(env, ref, code, url.origin)) {
+      await (await db(env))?.prepare('DELETE FROM follower_snapshots WHERE source = ?1').bind(`tt-${ref.toLowerCase()}`).run().catch(() => {});
+    }
   } catch (err) {
     console.error('TikTok connect failed', err);
-    return back('failed');
+    return back(err instanceof Error && err.message === SAME_ACCOUNT ? 'same' : 'failed');
   }
   // Fetch the count on the next page load instead of waiting up to 10 minutes.
   await env.STUDIO.delete('followers-last-try');
