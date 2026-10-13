@@ -98,7 +98,23 @@ import PageHero from '../components/PageHero.astro';
     // Our own messages are readable; network/HTTP errors get a generic text (details in the tooltip).
     const friendly = (e?: string) => (!e ? 'Not available yet' : /^HTTP|internal error|fetch|timed? ?out|abort/i.test(e) ? "Couldn't load right now" : e);
     const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
-    box.querySelector('[data-follower-list]')!.innerHTML = fol
+    const change = (n: number, label: string) =>
+      `<span class="f-week ${n > 0 ? 'up' : n < 0 ? 'down' : ''}">${n > 0 ? '▲' : n < 0 ? '▼' : '•'} ${Math.abs(n).toLocaleString('en-US')} <span class="f-when">${label}</span></span>`;
+    const sinceLabel = (iso: string | null) => (iso ? `since ${new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : 'last month');
+
+    // All platforms together: sum of the latest counts and of each account's change.
+    const counted = fol.filter((f) => f.count !== null);
+    const withChange = counted.filter((f) => f.week !== null && f.month !== null);
+    const sum = (k: 'count' | 'week' | 'month', list: typeof fol) => list.reduce((n, f) => n + (f[k] ?? 0), 0);
+    const totalSince = withChange.map((f) => f.monthSince).filter((d): d is string => !!d).sort()[0] ?? null;
+    const total = counted.length
+      ? `<li class="f-total">
+          <span class="f-name"><span class="mono muted">All platforms</span>${plural(counted.length, 'account')}</span>
+          <strong>${sum('count', counted).toLocaleString('en-US')}</strong>${
+            withChange.length ? `<span class="f-changes">${change(sum('week', withChange), 'last 7 days')}${change(sum('month', withChange), sinceLabel(totalSince))}</span>` : ''}</li>`
+      : '';
+
+    box.querySelector('[data-follower-list]')!.innerHTML = total + fol
       .map((f) => {
         const [platform, name] = f.label.split(' · ');
         // TikTok needs a one-time "Connect" (TikTok login); after that the count updates by itself.
@@ -110,9 +126,7 @@ import PageHero from '../components/PageHero.astro';
         }
         const count = f.count === null ? '—' : f.count.toLocaleString('en-US');
         // Change lines under the number: last 7 days and last month (or since tracking started).
-        const change = (n: number, label: string) =>
-          `<span class="f-week ${n > 0 ? 'up' : n < 0 ? 'down' : ''}">${n > 0 ? '▲' : n < 0 ? '▼' : '•'} ${Math.abs(n).toLocaleString('en-US')} <span class="f-when">${label}</span></span>`;
-        const monthLabel = f.monthSince ? `since ${new Date(f.monthSince).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : 'last month';
+        const monthLabel = sinceLabel(f.monthSince);
         const week =
           f.week === null || f.month === null ? ''
           : `<span class="f-changes">${change(f.week, 'last 7 days')}${change(f.month, monthLabel)}</span>`;
@@ -249,6 +263,8 @@ import PageHero from '../components/PageHero.astro';
   .f-list :global(li.f-instagram) { border-left-color: #c13584; }
   .f-list :global(li.f-youtube) { border-left-color: #ff0033; }
   .f-list :global(li.f-tiktok) { border-left-color: #25f4ee; }
+  .f-list :global(li.f-total) { grid-column: 1 / -1; border-left-color: var(--accent); background: linear-gradient(90deg, rgba(228, 67, 45, 0.1), transparent 60%), var(--surface); }
+  .f-list :global(li.f-total strong) { font-size: 2.8rem; }
   .f-list :global(.f-connect) { padding: 0.55rem 0.8rem; font-size: 0.8rem; justify-self: start; }
   .tiktok-note { margin: 0 0 0.75rem; font-size: 0.8rem; color: var(--ok, #7fbf7f); }
   .tiktok-note.bad { color: var(--accent); }
