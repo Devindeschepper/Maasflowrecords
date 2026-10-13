@@ -23,7 +23,6 @@ import PageHero from '../components/PageHero.astro';
       </form>
 
       <div class="stats" data-stats hidden>
-        <p class="status mono" data-status></p>
 
         <h2 class="h3 sec">Studio</h2>
         <div class="tiles">
@@ -104,8 +103,6 @@ import PageHero from '../components/PageHero.astro';
       set(`${name}.hours`, dur(sum.ms));
       set(`${name}.meta`, `${plural(sum.sessions, 'session')} · ${plural(sum.knocks, 'knock')}`);
     }
-    box.querySelector('[data-status]')!.textContent = s.live ? '● In the studio right now' : '○ Not in the studio';
-    box.querySelector('[data-status]')!.classList.toggle('live', s.live);
 
     // Followers: latest count per account and the change over the last 7 days.
     const fol = s.followers ?? [];
@@ -232,8 +229,6 @@ import PageHero from '../components/PageHero.astro';
   .unlock input { width: 100%; text-align: center; }
   .unlock .btn { width: 100%; }
   .error { color: var(--accent); margin: 0; font-size: 0.9rem; }
-  .status { margin: 0 0 1.25rem; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted, #9b978f); }
-  .status.live { color: var(--accent); }
   .followers { margin-bottom: 2.5rem; }
   .followers .h3 { margin: 0 0 0.75rem; }
   .f-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
@@ -300,7 +295,6 @@ import PageHero from '../components/PageHero.astro';
     .hero-wrap :global(.page-hero .lead) { display: none; }
     .stats { margin-top: -1.5rem; }
     .stats .sec { font-size: 1.35rem; margin: 1.75rem 0 0.6rem; }
-    .status { margin-bottom: 0.25rem; }
     .tiles { grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; margin-bottom: 0; }
     .tile { padding: 0.75rem 0.6rem; gap: 0.25rem; }
     .tile .mono { font-size: 0.55rem; letter-spacing: 0.08em; }
