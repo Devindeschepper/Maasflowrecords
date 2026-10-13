@@ -73,7 +73,7 @@ export default {
     return env.ASSETS.fetch(request);
   },
 
-  // Crons (wrangler.toml [triggers]): daily follower check (the only one per day); Sunday evening WhatsApp
+  // Crons (wrangler.toml [triggers]): hourly follower check; Sunday evening WhatsApp
   // summary and Instagram token renewal.
   async scheduled(controller: ScheduledController, env: WorkerEnv, ctx: ExecutionContext): Promise<void> {
     if (controller.cron === WEEKLY_CRON) {

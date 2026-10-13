@@ -171,7 +171,7 @@ import PageHero from '../components/PageHero.astro';
 
     const latest = fol.map((f) => f.at).filter(Boolean).sort().pop();
     box.querySelector('[data-follower-note]')!.textContent = latest
-      ? `Checked ${new Date(latest).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })} · updates daily`
+      ? `Checked ${new Date(latest).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })} · updates every hour`
       : '';
 
   }
