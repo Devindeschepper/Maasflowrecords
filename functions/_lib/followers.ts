@@ -1,5 +1,6 @@
 import type { Env } from './env';
 import { db } from './studio';
+import { tiktokConfigured, tiktokFollowers } from './tiktok';
 
 /**
  * Follower counts for the private stats page (not sent on WhatsApp).
@@ -10,12 +11,13 @@ import { db } from './studio';
  *   YOUTUBE_API_KEY                         - YouTube Data API v3 key (Google Cloud, free)
  *   INSTAGRAM_TOKEN_VIN / INSTAGRAM_TOKEN_MFR - Instagram API (Instagram Login) user tokens; refreshed
  *                                             automatically and the newest copy kept in KV
+ *   TIKTOK_CLIENT_KEY / TIKTOK_CLIENT_SECRET  - TikTok app; VIN connects once on the page (see ./tiktok.ts)
  */
 interface Source {
   key: string;
   label: string;
-  platform: 'instagram' | 'youtube';
-  /** YouTube: channel id (UC…) or handle (@…). Instagram: which token. */
+  platform: 'instagram' | 'youtube' | 'tiktok';
+  /** YouTube: channel id (UC…) or handle (@…). Instagram: which token. TikTok: unused (one connected account). */
   ref: string;
 }
 
@@ -25,6 +27,7 @@ export const SOURCES: Source[] = [
   { key: 'yt-vin', label: 'YouTube · VIN', platform: 'youtube', ref: 'UC8dDWNLNjAxwDzcRoadqSvg' },
   { key: 'yt-mfr', label: 'YouTube · Maas Flow Records', platform: 'youtube', ref: '@MaasFlowRecords' },
   { key: 'yt-beats', label: 'YouTube · VIN Beats', platform: 'youtube', ref: '@VINBeats1' },
+  { key: 'tt-vin', label: 'TikTok · VIN', platform: 'tiktok', ref: 'VIN' },
 ];
 
 const DAY = 24 * 3600 * 1000;
@@ -83,6 +86,7 @@ export async function refreshInstagramTokens(env: Env): Promise<void> {
 
 function configured(env: Env, s: Source): boolean {
   if (s.platform === 'youtube') return !!env.YOUTUBE_API_KEY?.trim();
+  if (s.platform === 'tiktok') return tiktokConfigured(env);
   return !!(s.ref === 'VIN' ? env.INSTAGRAM_TOKEN_VIN : env.INSTAGRAM_TOKEN_MFR)?.trim();
 }
 
@@ -94,7 +98,10 @@ export async function snapshotFollowers(env: Env, now = Date.now()): Promise<Rec
   await ensureTable(d);
   for (const s of SOURCES.filter((src) => configured(env, src))) {
     try {
-      const n = s.platform === 'youtube' ? await youtube(env, s.ref) : await instagram(env, s.ref);
+      const n =
+        s.platform === 'youtube' ? await youtube(env, s.ref)
+        : s.platform === 'tiktok' ? await tiktokFollowers(env, now)
+        : await instagram(env, s.ref);
       await d.prepare('INSERT INTO follower_snapshots (source, at, count) VALUES (?1, ?2, ?3)').bind(s.key, now, n).run();
     } catch (err) {
       errors[s.key] = err instanceof Error ? err.message : String(err);

@@ -93,11 +93,11 @@ async function visitorHash(request: Request, env: Env, scope: string | number): 
 
 const MAX_FAILS = 10; // wrong stats passwords per visitor per hour
 
-/** Private stats for /studio-stats/. Accepts VIN's own STATS_PASSWORD or the STUDIO_TOKEN. */
-export const onStats: PagesFunction<Env> = async ({ request, env }) => {
-  const d = await db(env);
-  if (!env.STUDIO || !d) return jsonResponse(503, { ok: false, error: 'Studio stats are not set up yet.' });
-
+/**
+ * null when the request carries STATS_PASSWORD or STUDIO_TOKEN, otherwise the error response to return.
+ * Wrong passwords are counted per visitor; after MAX_FAILS in an hour that visitor is locked out.
+ */
+export async function checkStatsPassword(request: Request, env: Env, d: D1Database): Promise<Response | null> {
   const visitor = await visitorHash(request, env, 'stats-login');
   const hourAgo = Date.now() - 3600000;
   const fails = await d.prepare('SELECT COUNT(*) AS n FROM login_fails WHERE visitor = ?1 AND at > ?2').bind(visitor, hourAgo).first<{ n: number }>();
@@ -112,6 +112,15 @@ export const onStats: PagesFunction<Env> = async ({ request, env }) => {
     ]);
     return jsonResponse(401, { ok: false, error: 'Wrong password.' });
   }
+  return null;
+}
+
+/** Private stats for /studio-stats/. Accepts VIN's own STATS_PASSWORD or the STUDIO_TOKEN. */
+export const onStats: PagesFunction<Env> = async ({ request, env }) => {
+  const d = await db(env);
+  if (!env.STUDIO || !d) return jsonResponse(503, { ok: false, error: 'Studio stats are not set up yet.' });
+  const denied = await checkStatsPassword(request, env, d);
+  if (denied) return denied;
 
   const now = Date.now();
   const thisWeek = weekStart(now);

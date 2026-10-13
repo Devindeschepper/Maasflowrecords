@@ -12,6 +12,7 @@ import { onRequestPost as services } from '../functions/api/services';
 import { onRequestPost as stripeWebhook } from '../functions/api/webhooks/stripe';
 import { onRequestPost as cryptoWebhook } from '../functions/api/webhooks/crypto';
 import { onRequestGet as studioStatus, onRequestPost as studioSet, onKnock, onStats } from '../functions/api/studio';
+import { onConnect as tiktokConnect, onCallback as tiktokCallback } from '../functions/api/tiktok';
 import { weeklySummary } from '../functions/_lib/studio';
 import { refreshInstagramTokens, snapshotFollowers } from '../functions/_lib/followers';
 
@@ -54,6 +55,11 @@ export default {
     if (route === '/api/studio/stats') {
       if (request.method !== 'GET') return jsonResponse(405, { ok: false, error: 'Method not allowed.' });
       return (onStats as unknown as Handler)({ request, env });
+    }
+    // TikTok login for the follower count on /studio-stats/.
+    if (route === '/api/tiktok/connect' || route === '/api/tiktok/callback') {
+      if (request.method !== 'GET') return jsonResponse(405, { ok: false, error: 'Method not allowed.' });
+      return ((route.endsWith('connect') ? tiktokConnect : tiktokCallback) as unknown as Handler)({ request, env });
     }
 
     const handler = routes[route];
