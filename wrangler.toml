@@ -41,6 +41,8 @@ crons = ["0 6 * * *", "0 18 * * SUN"]
 CONTACT_TO_EMAIL = "info@maasflowrecords.com"
 # Cloudflare account id (not secret; also in every dashboard URL). Used for website visitors on /studio-stats/.
 CF_ACCOUNT_ID = "81bec14c188ccd990d6bd257e425ead2"
+# Web Analytics site tag of maasflowrecords.com (not secret). The API token CF_ANALYTICS_TOKEN is a secret.
+CF_WEB_ANALYTICS_SITE = "d6a39ed565d04652aaa51126008b3906"
 
 # Same values for preview deployments (non-production branches, `wrangler preview`).
 [previews.vars]
