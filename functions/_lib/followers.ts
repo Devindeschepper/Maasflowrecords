@@ -124,9 +124,17 @@ export async function followerSummary(env: Env, now = Date.now()): Promise<Follo
   const active = SOURCES.filter((s) => configured(env, s));
   if (!active.length) return [];
 
-  const newest = await d.prepare('SELECT MAX(at) AS at FROM follower_snapshots').first<{ at: number | null }>();
+  // Refresh when any account's data is older than 6 hours, or when an account was just added and has no
+  // data yet (retried at most every 10 minutes, so a broken token doesn't call the API on every page load).
+  const { results: latest } = await d.prepare('SELECT source, MAX(at) AS at FROM follower_snapshots GROUP BY source').all<{ source: string; at: number }>();
+  const lastAt = new Map(latest.map((r) => [r.source, r.at]));
+  const stale = active.some((s) => now - (lastAt.get(s.key) ?? 0) > STALE);
+  const lastTry = Number((await env.STUDIO?.get('followers-last-try')) ?? 0);
   let errors: Record<string, string> = JSON.parse((await env.STUDIO?.get('followers-errors')) ?? '{}');
-  if (!newest?.at || now - newest.at > STALE) errors = await snapshotFollowers(env, now);
+  if (stale && now - lastTry > 10 * 60 * 1000) {
+    await env.STUDIO?.put('followers-last-try', String(now));
+    errors = await snapshotFollowers(env, now);
+  }
 
   const rows: FollowerRow[] = [];
   for (const s of active) {
