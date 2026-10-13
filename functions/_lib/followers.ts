@@ -1,0 +1,157 @@
+import type { Env } from './env';
+import { db } from './studio';
+
+/**
+ * Follower counts for the private stats page and the Sunday WhatsApp summary.
+ * A daily cron (and opening /studio-stats/ when the data is older than 6 hours) saves a snapshot per
+ * account in D1, so the page can show growth over the last 7 days.
+ *
+ * Each source only runs when its key is set as a Cloudflare secret:
+ *   YOUTUBE_API_KEY                         - YouTube Data API v3 key (Google Cloud, free)
+ *   INSTAGRAM_TOKEN_VIN / INSTAGRAM_TOKEN_MFR - Instagram API (Instagram Login) user tokens; refreshed
+ *                                             automatically and the newest copy kept in KV
+ */
+interface Source {
+  key: string;
+  label: string;
+  platform: 'instagram' | 'youtube';
+  /** YouTube: channel id (UC…) or handle (@…). Instagram: which token. */
+  ref: string;
+}
+
+export const SOURCES: Source[] = [
+  { key: 'ig-vin', label: 'Instagram · @vintheartist', platform: 'instagram', ref: 'VIN' },
+  { key: 'ig-mfr', label: 'Instagram · @maasflowrecords', platform: 'instagram', ref: 'MFR' },
+  { key: 'yt-vin', label: 'YouTube · VIN', platform: 'youtube', ref: 'UC8dDWNLNjAxwDzcRoadqSvg' },
+  { key: 'yt-mfr', label: 'YouTube · Maas Flow Records', platform: 'youtube', ref: '@MaasFlowRecords' },
+  { key: 'yt-beats', label: 'YouTube · VIN Beats', platform: 'youtube', ref: '@VINBeats1' },
+];
+
+const DAY = 24 * 3600 * 1000;
+const STALE = 6 * 3600 * 1000;
+
+async function ensureTable(d: D1Database) {
+  await d.batch([
+    d.prepare('CREATE TABLE IF NOT EXISTS follower_snapshots (source TEXT NOT NULL, at INTEGER NOT NULL, count INTEGER NOT NULL)'),
+    d.prepare('CREATE INDEX IF NOT EXISTS follower_snapshots_src ON follower_snapshots (source, at)'),
+  ]);
+}
+
+const getJson = async (url: string, init?: RequestInit) => {
+  const res = await fetch(url, { ...init, signal: AbortSignal.timeout(8000) });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return (await res.json()) as Record<string, unknown>;
+};
+
+async function youtube(env: Env, ref: string): Promise<number> {
+  const by = ref.startsWith('@') ? `forHandle=${encodeURIComponent(ref)}` : `id=${encodeURIComponent(ref)}`;
+  const data = await getJson(`https://www.googleapis.com/youtube/v3/channels?part=statistics&${by}&key=${env.YOUTUBE_API_KEY}`);
+  const n = Number((data.items as { statistics?: { subscriberCount?: string } }[] | undefined)?.[0]?.statistics?.subscriberCount);
+  if (!Number.isFinite(n)) throw new Error('Channel not found or subscriber count hidden');
+  return n;
+}
+
+async function instagramToken(env: Env, ref: string): Promise<string | undefined> {
+  const fromSecret = ref === 'VIN' ? env.INSTAGRAM_TOKEN_VIN : env.INSTAGRAM_TOKEN_MFR;
+  if (!fromSecret?.trim()) return undefined;
+  // A refreshed token (saved by refreshInstagramTokens) wins over the original secret.
+  return (await env.STUDIO?.get(`ig-token-${ref}`)) ?? fromSecret.trim();
+}
+
+async function instagram(env: Env, ref: string): Promise<number> {
+  const token = await instagramToken(env, ref);
+  const data = await getJson(`https://graph.instagram.com/me?fields=username,followers_count&access_token=${encodeURIComponent(token ?? '')}`);
+  const n = Number(data.followers_count);
+  if (!Number.isFinite(n)) throw new Error('No follower count (is it a Professional account?)');
+  return n;
+}
+
+/** Instagram tokens last 60 days; refreshing once a week keeps them alive forever. */
+export async function refreshInstagramTokens(env: Env): Promise<void> {
+  if (!env.STUDIO) return;
+  for (const ref of ['VIN', 'MFR']) {
+    const token = await instagramToken(env, ref);
+    if (!token) continue;
+    try {
+      const data = await getJson(`https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${encodeURIComponent(token)}`);
+      if (typeof data.access_token === 'string') await env.STUDIO.put(`ig-token-${ref}`, data.access_token);
+    } catch (err) {
+      console.error(`Instagram token refresh failed (${ref})`, err);
+    }
+  }
+}
+
+function configured(env: Env, s: Source): boolean {
+  if (s.platform === 'youtube') return !!env.YOUTUBE_API_KEY?.trim();
+  return !!(s.ref === 'VIN' ? env.INSTAGRAM_TOKEN_VIN : env.INSTAGRAM_TOKEN_MFR)?.trim();
+}
+
+/** Fetches every configured account and saves a snapshot. Errors are kept per account, never thrown. */
+export async function snapshotFollowers(env: Env, now = Date.now()): Promise<Record<string, string>> {
+  const d = await db(env);
+  const errors: Record<string, string> = {};
+  if (!d) return errors;
+  await ensureTable(d);
+  for (const s of SOURCES.filter((src) => configured(env, src))) {
+    try {
+      const n = s.platform === 'youtube' ? await youtube(env, s.ref) : await instagram(env, s.ref);
+      await d.prepare('INSERT INTO follower_snapshots (source, at, count) VALUES (?1, ?2, ?3)').bind(s.key, now, n).run();
+    } catch (err) {
+      errors[s.key] = err instanceof Error ? err.message : String(err);
+      console.error(`Follower count failed (${s.key})`, err);
+    }
+  }
+  if (env.STUDIO) await env.STUDIO.put('followers-errors', JSON.stringify(errors));
+  return errors;
+}
+
+export interface FollowerRow {
+  key: string;
+  label: string;
+  platform: Source['platform'];
+  count: number | null;
+  /** Change versus the newest snapshot at least 7 days old (null until there is one). */
+  week: number | null;
+  at: string | null;
+  error?: string;
+}
+
+/** Latest count + 7-day change per configured account (refreshes first when the data is older than 6 hours). */
+export async function followerSummary(env: Env, now = Date.now()): Promise<FollowerRow[]> {
+  const d = await db(env);
+  if (!d) return [];
+  await ensureTable(d);
+  const active = SOURCES.filter((s) => configured(env, s));
+  if (!active.length) return [];
+
+  const newest = await d.prepare('SELECT MAX(at) AS at FROM follower_snapshots').first<{ at: number | null }>();
+  let errors: Record<string, string> = JSON.parse((await env.STUDIO?.get('followers-errors')) ?? '{}');
+  if (!newest?.at || now - newest.at > STALE) errors = await snapshotFollowers(env, now);
+
+  const rows: FollowerRow[] = [];
+  for (const s of active) {
+    const last = await d.prepare('SELECT at, count FROM follower_snapshots WHERE source = ?1 ORDER BY at DESC LIMIT 1').bind(s.key).first<{ at: number; count: number }>();
+    const old = await d
+      .prepare('SELECT count FROM follower_snapshots WHERE source = ?1 AND at <= ?2 ORDER BY at DESC LIMIT 1')
+      .bind(s.key, now - 7 * DAY + 3600 * 1000)
+      .first<{ count: number }>();
+    rows.push({
+      key: s.key,
+      label: s.label,
+      platform: s.platform,
+      count: last?.count ?? null,
+      week: last && old ? last.count - old.count : null,
+      at: last ? new Date(last.at).toISOString() : null,
+      error: errors[s.key],
+    });
+  }
+  return rows;
+}
+
+/** One line for the Sunday WhatsApp, e.g. "Followers: IG @vintheartist 1,204 (+37) · YouTube · VIN 312 (+8)". */
+export function followersLine(rows: FollowerRow[]): string {
+  const parts = rows
+    .filter((r) => r.count !== null)
+    .map((r) => `${r.label.replace('Instagram · ', 'IG ').replace('YouTube · ', 'YT ')} ${r.count!.toLocaleString('en-US')}${r.week !== null ? ` (${r.week >= 0 ? '+' : ''}${r.week})` : ''}`);
+  return parts.length ? `Followers: ${parts.join(' · ')}` : '';
+}

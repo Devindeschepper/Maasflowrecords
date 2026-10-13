@@ -25,6 +25,12 @@ import PageHero from '../components/PageHero.astro';
       <div class="stats" data-stats hidden>
         <p class="status mono" data-status></p>
 
+        <section class="followers" data-followers hidden>
+          <h2 class="h3">Followers</h2>
+          <ul class="f-list" data-follower-list></ul>
+          <p class="f-note mono muted" data-follower-note></p>
+        </section>
+
         <div class="tiles">
           <div class="tile"><span class="mono muted">This week</span><strong data-k="week.hours"></strong><span data-k="week.meta"></span></div>
           <div class="tile"><span class="mono muted">This month</span><strong data-k="month.hours"></strong><span data-k="month.meta"></span></div>
@@ -53,6 +59,7 @@ import PageHero from '../components/PageHero.astro';
     ok: boolean; error?: string; live: boolean; week: Sum; month: Sum; all: Sum;
     weeks: (Sum & { from: string })[];
     recent: { start: string; ms: number; knocks: number; open: boolean }[];
+    followers?: { key: string; label: string; platform: string; count: number | null; week: number | null; at: string | null; error?: string }[];
   };
 
   const KEY = 'mfr-studio-token';
@@ -85,6 +92,30 @@ import PageHero from '../components/PageHero.astro';
     }
     box.querySelector('[data-status]')!.textContent = s.live ? '● In the studio right now' : '○ Not in the studio';
     box.querySelector('[data-status]')!.classList.toggle('live', s.live);
+
+    // Followers: latest count per account and the change over the last 7 days.
+    const fol = s.followers ?? [];
+    const fBox = box.querySelector<HTMLElement>('[data-followers]')!;
+    fBox.hidden = fol.length === 0;
+    // Our own messages are readable; network/HTTP errors get a generic text (details in the tooltip).
+    const friendly = (e?: string) => (!e ? 'Not available yet' : /^HTTP|internal error|fetch|timed? ?out|abort/i.test(e) ? "Couldn't load right now" : e);
+    const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+    box.querySelector('[data-follower-list]')!.innerHTML = fol
+      .map((f) => {
+        const [platform, name] = f.label.split(' · ');
+        const count = f.count === null ? '—' : f.count.toLocaleString('en-US');
+        const week =
+          f.week === null ? '<span class="f-week muted">new</span>'
+          : `<span class="f-week ${f.week > 0 ? 'up' : f.week < 0 ? 'down' : ''}">${f.week > 0 ? '▲' : f.week < 0 ? '▼' : '•'} ${Math.abs(f.week).toLocaleString('en-US')} this week</span>`;
+        return `<li class="f-${f.platform}">
+          <span class="f-name"><span class="mono muted">${esc(platform)}</span>${esc(name ?? '')}</span>
+          <strong>${count}</strong>${f.count === null ? `<span class="f-week down" title="${esc(f.error ?? '')}">${esc(friendly(f.error))}</span>` : week}</li>`;
+      })
+      .join('');
+    const latest = fol.map((f) => f.at).filter(Boolean).sort().pop();
+    box.querySelector('[data-follower-note]')!.textContent = latest
+      ? `Checked ${new Date(latest).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })} · updates daily`
+      : '';
 
     const maxH = Math.max(1, ...s.weeks.map((w) => w.hours));
     const maxK = Math.max(1, ...s.weeks.map((w) => w.knocks));
@@ -156,6 +187,20 @@ import PageHero from '../components/PageHero.astro';
   .error { color: var(--accent); margin: 0; font-size: 0.9rem; }
   .status { margin: 0 0 1.25rem; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted, #9b978f); }
   .status.live { color: var(--accent); }
+  .followers { margin-bottom: 2.5rem; }
+  .followers .h3 { margin: 0 0 0.75rem; }
+  .f-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+  @media (max-width: 600px) { .f-list { grid-template-columns: 1fr 1fr; gap: 0.5rem; } .f-list :global(li) { padding: 0.8rem 0.85rem; } .f-list :global(strong) { font-size: 1.6rem; } }
+  .f-list :global(li) { display: grid; gap: 0.35rem; padding: 1rem 1.15rem; border: 1px solid var(--line); background: var(--surface); border-left: 3px solid var(--line); }
+  .f-list :global(li.f-instagram) { border-left-color: #c13584; }
+  .f-list :global(li.f-youtube) { border-left-color: #ff0033; }
+  .f-list :global(.f-name) { display: grid; gap: 0.15rem; font-size: 0.9rem; }
+  .f-list :global(.f-name .mono) { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; }
+  .f-list :global(strong) { font-family: var(--font-display); font-weight: 400; font-size: 2rem; line-height: 1; }
+  .f-list :global(.f-week) { font-size: 0.8rem; color: var(--muted, #9b978f); }
+  .f-list :global(.f-week.up) { color: var(--ok, #7fbf7f); }
+  .f-list :global(.f-week.down) { color: var(--accent); }
+  .f-note { font-size: 0.7rem; margin: 0.6rem 0 0; }
   .tiles { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 2.5rem; }
   .tile { display: grid; gap: 0.35rem; padding: 1.25rem; border: 1px solid var(--line); background: var(--surface); }
   .tile .mono { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; }

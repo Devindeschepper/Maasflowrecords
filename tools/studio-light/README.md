@@ -53,3 +53,26 @@ CPU priority and then exits, so nothing stays in memory.
 - Light never turns on: check the token in `studio-light.ps1` is exactly the same as `STUDIO_TOKEN` in Cloudflare.
 - FL Studio's program name is checked as `FL64`, `FL` or `FL Studio…`. If a new version uses another name,
   open Task Manager → Details while FL is open and add that name in `studio-light.ps1`.
+
+## Followers on the stats page (optional)
+
+`/studio-stats/` shows follower counts with the change over the last 7 days, and the Sunday WhatsApp gets a
+"Followers:" line. Counts are saved once a day (06:00 UTC) and when you open the stats page. Accounts are
+listed in `functions/_lib/followers.ts`. Each platform only appears once its key is set as a Cloudflare
+**Secret** (Workers & Pages → maasflowrecords2 → Settings → Variables and Secrets).
+
+**YouTube** (VIN, Maas Flow Records, VIN Beats). Secret `YOUTUBE_API_KEY`:
+1. console.cloud.google.com → create a project (e.g. "Maas Flow Records").
+2. APIs & Services → Library → **YouTube Data API v3** → Enable.
+3. APIs & Services → Credentials → Create credentials → **API key**. Edit it → API restrictions →
+   YouTube Data API v3 → Save. Copy the key into the secret.
+
+**Instagram** (@vintheartist, @maasflowrecords). Secrets `INSTAGRAM_TOKEN_VIN`, `INSTAGRAM_TOKEN_MFR`:
+1. Each account must be a **Professional account** (Instagram → Settings → Account type → Creator or Business).
+2. developers.facebook.com → My Apps → **Create app** → use case for the **Instagram API** (Instagram login).
+3. In the app: Instagram → **API setup with Instagram login** → Generate access tokens → add the account,
+   log in, copy the token. Do this once per account.
+4. Tokens normally expire after 60 days; the site refreshes them every Sunday automatically, so you set
+   them only once.
+
+Spotify and TikTok are left out: their APIs don't (reliably) share follower counts with small apps.

@@ -1,6 +1,7 @@
 import type { Env } from '../_lib/env';
 import { jsonResponse, sameOrigin } from '../_lib/http';
 import { safeEqual } from '../_lib/sign';
+import { followerSummary } from '../_lib/followers';
 import { db, openSession, sessionOff, sessionOn, summarize, weekStart, WEEK_MS, type Session } from '../_lib/studio';
 
 /**
@@ -129,6 +130,10 @@ export const onStats: PagesFunction<Env> = async ({ request, env }) => {
     month: summarize(results, monthStart, now),
     all: summarize(results, 0, now),
     weeks,
+    followers: await followerSummary(env, now).catch((err) => {
+      console.error('Followers failed', err);
+      return [];
+    }),
     recent: results.slice(0, 15).map((s) => ({
       start: new Date(s.started_at).toISOString(),
       ms: (s.ended_at ?? Math.min(now, s.last_beat + 60000)) - s.started_at,
