@@ -28,6 +28,8 @@ export interface Env {
   YOUTUBE_API_KEY?: string;
   INSTAGRAM_TOKEN_VIN?: string;
   INSTAGRAM_TOKEN_MFR?: string;
+  TIKTOK_CLIENT_KEY?: string;
+  TIKTOK_CLIENT_SECRET?: string;
   /** Website visitors on /studio-stats/ (Cloudflare Web Analytics; see functions/_lib/visitors.ts). */
   CF_ACCOUNT_ID?: string;
   CF_WEB_ANALYTICS_SITE?: string;

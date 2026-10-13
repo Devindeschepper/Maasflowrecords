@@ -34,6 +34,7 @@ import PageHero from '../components/PageHero.astro';
 
         <section class="followers" data-followers hidden>
           <h2 class="h3 sec">Followers</h2>
+          <p class="tiktok-note mono" data-tiktok-note hidden></p>
           <ul class="f-list" data-follower-list></ul>
           <p class="f-note mono muted" data-follower-note></p>
         </section>
@@ -114,6 +115,13 @@ import PageHero from '../components/PageHero.astro';
     box.querySelector('[data-follower-list]')!.innerHTML = fol
       .map((f) => {
         const [platform, name] = f.label.split(' · ');
+        // TikTok needs a one-time "Connect" (TikTok login); after that the count updates by itself.
+        if (f.key === 'tt-vin' && f.count === null && f.error === 'TikTok not connected') {
+          return `<li class="f-tiktok">
+          <span class="f-name"><span class="mono muted">${esc(platform)}</span>${esc(name ?? '')}</span>
+          <button class="btn f-connect" type="button" data-tiktok-connect>Connect TikTok</button>
+          <span class="f-week muted">One time only</span></li>`;
+        }
         const count = f.count === null ? '—' : f.count.toLocaleString('en-US');
         const week =
           f.week === null ? '<span class="f-week muted">new</span>'
@@ -123,6 +131,7 @@ import PageHero from '../components/PageHero.astro';
           <strong>${count}</strong>${f.count === null ? `<span class="f-week down" title="${esc(f.error ?? '')}">${esc(friendly(f.error))}</span>` : week}</li>`;
       })
       .join('');
+    box.querySelector<HTMLButtonElement>('[data-tiktok-connect]')?.addEventListener('click', connectTikTok);
     // Website visitors (Cloudflare Web Analytics).
     const v = s.visitors;
     const vBox = box.querySelector<HTMLElement>('[data-visitors]')!;
@@ -200,6 +209,31 @@ import PageHero from '../components/PageHero.astro';
     }
   }
 
+  async function connectTikTok(e: Event) {
+    const btn = e.currentTarget as HTMLButtonElement;
+    btn.disabled = true;
+    btn.textContent = 'Opening TikTok…';
+    try {
+      const res = await fetch('/api/tiktok/connect', { headers: { Authorization: `Bearer ${store.get()}`, Accept: 'application/json' } });
+      const data = (await res.json()) as { ok: boolean; url?: string; error?: string };
+      if (!data.ok || !data.url) throw new Error(data.error ?? 'Could not open TikTok.');
+      location.href = data.url;
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = err instanceof Error ? err.message : 'Try again';
+    }
+  }
+
+  // Back from the TikTok login: short note, then a clean URL.
+  const tiktok = new URLSearchParams(location.search).get('tiktok');
+  if (tiktok) {
+    const note = document.querySelector<HTMLElement>('[data-tiktok-note]')!;
+    note.textContent = tiktok === 'connected' ? 'TikTok connected. Your followers now update by themselves.' : "TikTok couldn't be connected. Try again.";
+    note.classList.toggle('bad', tiktok !== 'connected');
+    note.hidden = false;
+    history.replaceState(null, '', location.pathname);
+  }
+
   form.addEventListener('submit', (e) => { e.preventDefault(); load(input.value.trim()); });
   document.querySelector('[data-lock]')!.addEventListener('click', () => { store.clear(); location.reload(); });
 
@@ -236,6 +270,11 @@ import PageHero from '../components/PageHero.astro';
   .f-list :global(li) { display: grid; gap: 0.35rem; padding: 1rem 1.15rem; border: 1px solid var(--line); background: var(--surface); border-left: 3px solid var(--line); }
   .f-list :global(li.f-instagram) { border-left-color: #c13584; }
   .f-list :global(li.f-youtube) { border-left-color: #ff0033; }
+  .f-list :global(li.f-tiktok) { border-left-color: #25f4ee; }
+  .f-list :global(.f-connect) { padding: 0.55rem 0.8rem; font-size: 0.8rem; justify-self: start; }
+  .tiktok-note { margin: 0 0 0.75rem; font-size: 0.8rem; color: var(--ok, #7fbf7f); }
+  .tiktok-note.bad { color: var(--accent); }
+  .tiktok-note[hidden] { display: none; }
   .f-list :global(.f-name) { display: grid; gap: 0.15rem; font-size: 0.9rem; }
   .f-list :global(.f-name .mono) { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; }
   .f-list :global(strong) { font-family: var(--font-display); font-weight: 400; font-size: 2rem; line-height: 1; }
