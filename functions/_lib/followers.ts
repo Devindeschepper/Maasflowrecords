@@ -4,9 +4,9 @@ import { tiktokConfigured, tiktokFollowers } from './tiktok';
 
 /**
  * Follower counts for the private stats page (not sent on WhatsApp).
- * Checked once a day by the daily cron (08:00 Luxembourg), which saves a snapshot per account in D1 so the
- * page can show growth. Opening /studio-stats/ only fetches accounts that have no data yet (just connected)
- * or that the cron missed for more than a day.
+ * Checked every hour by the cron, which saves a snapshot per account in D1 so the page can show growth.
+ * Opening /studio-stats/ only fetches accounts that have no data yet (just connected) or that the cron
+ * missed for a few hours.
  *
  * Each source only runs when its key is set as a Cloudflare secret:
  *   YOUTUBE_API_KEY                         - YouTube Data API v3 key (Google Cloud, free)
@@ -33,8 +33,8 @@ export const SOURCES: Source[] = [
 ];
 
 const DAY = 24 * 3600 * 1000;
-/** An account counts as missed when its newest snapshot is older than this (the cron runs every 24 h). */
-const STALE = 26 * 3600 * 1000;
+/** An account counts as missed when its newest snapshot is older than this (the cron runs every hour). */
+const STALE = 3 * 3600 * 1000;
 
 async function ensureTable(d: D1Database) {
   await d.batch([
