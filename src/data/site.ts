@@ -14,6 +14,15 @@ export const site = {
   analyticsToken: /^[a-f0-9]{32}$/i.test(String(settings.analyticsToken ?? '').trim()) ? String(settings.analyticsToken).trim() : '',
 };
 
+/**
+ * Seller identity for the Terms page (admin panel → Settings). EU law requires the seller's name and
+ * address to be shown before the shop opens. Empty = not shown.
+ */
+export const legal = {
+  name: String(settings.legalName ?? '').trim(),
+  address: String(settings.legalAddress ?? '').trim(),
+};
+
 /** Label socials (footer, shop page) — edited in the admin panel (/admin → Settings). */
 export const labelSocials = cleanLinks(settings.labelSocials);
 

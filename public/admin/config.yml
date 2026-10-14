@@ -320,6 +320,16 @@ collections:
             widget: boolean
             default: true
             hint: 'Needs NOWPAYMENTS_API_KEY + NOWPAYMENTS_IPN_SECRET in Cloudflare.'
+          - name: legalName
+            label: Legal name (Terms page)
+            widget: string
+            required: false
+            hint: 'Your name or registered business name, shown on the Terms page. Required before the shop opens.'
+          - name: legalAddress
+            label: Business address (Terms page)
+            widget: string
+            required: false
+            hint: 'Postal address shown on the Terms page. EU law requires it before the shop opens.'
           - name: turnstileSiteKey
             label: Turnstile site key (spam protection)
             widget: string

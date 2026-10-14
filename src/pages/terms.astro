@@ -1,0 +1,69 @@
+---
+import Email from '../components/Email.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import { site, legal } from '../data/site';
+// NOTE: a plain-language starting point, not legal advice. Have it checked before relying on it.
+// Before the shop opens, fill in the legal name and address in the admin panel (Settings): EU law requires
+// the seller's identity and address to be shown to buyers.
+const updated = '14 October 2026';
+---
+
+<BaseLayout title="Terms" description={`Terms of use, services and sales of ${site.name}.`}>
+  <PageHero eyebrow="Legal" title="Terms" lead={`Last updated: ${updated}`} />
+
+  <section class="section">
+    <div class="container prose">
+      <h2 class="h3">Who we are</h2>
+      <p>
+        This website and the services and products on it are offered by {site.name}, an independent music label
+        based in Luxembourg{legal.name ? <>, run by {legal.name}</> : ''}.
+        {legal.address && <><br />Address: {legal.address}</>}
+      </p>
+      <p>Contact: <Email /></p>
+
+      <h2 class="h3">Using this website</h2>
+      <ul>
+        <li>All music, videos, artwork, photos, logos and texts on this site belong to {site.name} or its artists. You may listen, watch and share links, but you may not copy, download, re-upload or use them commercially without written permission.</li>
+        <li>Please only send real information through our forms and don't use them for spam or anything illegal.</li>
+        <li>Links to other services (Spotify, YouTube, Instagram, TikTok, BeatStars and others) are provided for convenience. Their own terms apply there and we are not responsible for their content.</li>
+      </ul>
+
+      <h2 class="h3">Studio services (mixing, mastering, custom beats)</h2>
+      <ul>
+        <li>Prices are shown on the <a href="/services/">Services</a> page. The final price is confirmed by email before we start.</li>
+        <li>50% is paid upfront. The rest is paid before you receive the final files.</li>
+        <li>Two rounds of changes are included. Extra rounds are charged as shown on the Services page.</li>
+        <li>You confirm that you own or have the rights to everything you send us (vocals, beats, samples, stems). You remain the owner of your song; we may mention the work as a credit (for example "Mixed by VIN") unless you ask us not to.</li>
+        <li>If you cancel before we start working, the upfront payment is refunded. Once you have asked us to start, you agree that you lose your 14-day right of withdrawal for the work already done, as allowed by EU consumer law.</li>
+      </ul>
+
+      <h2 class="h3">Beats on BeatStars</h2>
+      <p>Beat leases and exclusives are sold on BeatStars. The licence you choose there and BeatStars' terms apply to those purchases.</p>
+
+      <h2 class="h3">Shop orders</h2>
+      <ul>
+        <li>Prices are in euros and include VAT where it applies. Shipping costs are shown before you pay.</li>
+        <li>Payments are handled by Stripe (card, PayPal and others) or NOWPayments (crypto). We never see your card or wallet details.</li>
+        <li>Your order is confirmed by email. Pre-orders ship on or around the release date.</li>
+        <li><strong>Right of withdrawal:</strong> if you live in the EU, you can cancel your order within 14 days of delivery without giving a reason. Email us, then send the item back unused within 14 days. We refund the price and the standard shipping cost within 14 days of receiving it; return shipping is paid by you. CDs and records can only be returned if the seal is unbroken.</li>
+        <li><strong>Guarantee:</strong> if an item arrives damaged or faulty, email us with a photo and we will replace or refund it. Your legal guarantee rights always apply.</li>
+      </ul>
+
+      <h2 class="h3">Liability</h2>
+      <p>We do our best to keep this site correct and online, but we can't guarantee it is always available or error-free. As far as the law allows, we are not liable for indirect damage. Nothing in these terms limits your rights as a consumer.</p>
+
+      <h2 class="h3">Changes and applicable law</h2>
+      <p>We may update these terms; the date at the top shows the latest version. The terms that applied when you ordered stay valid for that order. Luxembourg law applies. If you are a consumer, you also keep the protection of the law of the country where you live.</p>
+
+      <h2 class="h3">Questions or problems</h2>
+      <p>Email <Email /> and we'll find a solution together. Also see our <a href="/privacy/">Privacy Policy</a>.</p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .h3 { font-size: clamp(1.35rem, 3vw, 1.75rem); margin-top: 2.2rem; }
+  .prose ul { padding-left: 1.1rem; color: #d9d5ce; }
+  .prose li { padding: 0.3rem 0; }
+</style>
