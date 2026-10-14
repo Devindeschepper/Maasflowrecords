@@ -9,6 +9,7 @@ import Email from '../components/Email.astro';
 import { artists } from '../data/artists';
 import { labelReleases } from '../data/releases';
 import { labelSocials } from '../data/site';
+import press from '../content/press.json';
 
 const vin = artists[0];
 const releases = labelReleases();
@@ -31,6 +32,22 @@ const facts = [
 
 <BaseLayout title="Press kit" description="Press kit for Maas Flow Records and VIN: bios, facts, press photos, releases and contact for press, radio and promoters.">
   <PageHero eyebrow="Press kit" title="Press" lead="Bios, photos, music and contact for press, radio, curators and promoters." />
+
+  <section class="section kit">
+    <div class="container two">
+      <div>
+        <h2>Press kit</h2>
+        <p class="muted small">Everything in one download: bios, facts, links, press photos and logos.</p>
+      </div>
+      <div class="kit-box">
+        <a class="btn btn-primary" href="/press/maas-flow-records-press-kit.zip" download>Download press kit (ZIP)</a>
+        <div class="logos">
+          <a href="/press/mfr-logo-light.png" download class="logo-dl on-dark"><img src="/press/mfr-logo-light.png" alt="Maas Flow Records logo, light version" width="230" height="86" loading="lazy" /><span class="mono muted">Logo · for dark backgrounds</span></a>
+          <a href="/press/mfr-logo-dark.png" download class="logo-dl on-light"><img src="/press/mfr-logo-dark.png" alt="Maas Flow Records logo, dark version" width="230" height="86" loading="lazy" /><span class="mono muted">Logo · for light backgrounds</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <section class="section">
     <div class="container two">
@@ -59,11 +76,7 @@ const facts = [
         </article>
         <article class="bio-box">
           <p class="mono muted">Maas Flow Records - short bio</p>
-          <p>
-            Maas Flow Records is an independent music label founded by producer and rapper VIN. Everything happens in-house:
-            the beat, the recording, the mix, the master and the release. The label puts out VIN's music and is open to
-            artists who want to grow at their own pace and stay who they are.
-          </p>
+          <p>{press.labelBio}</p>
         </article>
       </div>
     </div>
@@ -124,6 +137,15 @@ const facts = [
 </BaseLayout>
 
 <style>
+  .kit-box { display: grid; gap: 1.25rem; justify-items: start; }
+  .logos { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; width: 100%; }
+  .logo-dl { display: grid; gap: 0.5rem; padding: 1rem; border: 1px solid var(--line); text-decoration: none; }
+  .logo-dl img { width: 100%; height: auto; }
+  .logo-dl.on-dark { background: #0d0d0d; }
+  .logo-dl.on-light { background: #f4f1ec; }
+  .logo-dl.on-light .muted { color: #555; }
+  .logo-dl span { font-size: 0.68rem; }
+  @media (max-width: 600px) { .logos { grid-template-columns: 1fr; } .kit-box .btn { width: 100%; text-align: center; } }
   .two { display: grid; gap: 1.5rem; }
   @media (min-width: 900px) { .two { grid-template-columns: 1fr 2fr; gap: 3rem; } }
   .small { font-size: 0.9rem; }
