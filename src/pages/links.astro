@@ -42,7 +42,7 @@ const items: Item[] = [
 <BaseLayout title="Links" description="All Maas Flow Records links: new music from VIN, streaming, beats, mixing & mastering and casting." bare noindex>
   <div class="links-page">
     <header class="top">
-      <a href="/" aria-label="Maas Flow Records - home"><Logo size="lg" /></a>
+      <h1 class="brand"><a href="/"><Logo size="lg" /></a></h1>
       <p class="muted">Independent music label · Founded by VIN</p>
       <PlatformLinks links={labelSocials} variant="icons" context="Maas Flow Records on" />
     </header>
@@ -72,6 +72,7 @@ const items: Item[] = [
 </BaseLayout>
 
 <style>
+  .brand { margin: 0; font-size: inherit; line-height: 1; text-transform: none; letter-spacing: normal; font-weight: inherit; }
   .links-page { max-width: 560px; margin-inline: auto; padding: clamp(2rem, 7vw, 3.5rem) var(--gutter) 1rem; }
   .top { display: grid; justify-items: center; gap: 0.9rem; text-align: center; margin-bottom: 2rem; }
   .top p { margin: 0; font-size: 0.9rem; }
