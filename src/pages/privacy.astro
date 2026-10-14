@@ -4,7 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from '../components/PageHero.astro';
 import { site } from '../data/site';
 // NOTE: a plain-language starting point, not legal advice. Have it checked before relying on it.
-const updated = '29 September 2026';
+const updated = '14 October 2026';
 ---
 
 <BaseLayout title="Privacy Policy" description={`How ${site.name} handles your personal data: contact, casting, booking and newsletter forms, and orders.`}>
@@ -23,12 +23,14 @@ const updated = '29 September 2026';
         <li><strong>Newsletter:</strong> your email address, only if you sign up and tick the consent box. We use it to send news about music, releases and events. You can unsubscribe at any time via the link in every email or by emailing us.</li>
         <li><strong>Contact and casting forms:</strong> the details you fill in (such as name, email, links, message and any file you upload). We use them only to answer your message or review your submission. They are sent to us by email and are not published.</li>
         <li><strong>Orders</strong> (once the shop is open): name, email and shipping address, to process and ship your order.</li>
+        <li><strong>Studio sign:</strong> when you knock on the studio door, we count the knock. To count each visitor only once we store a scrambled code made from your IP address, never the IP address itself.</li>
       </ul>
       <p>We do not sell your data and do not use advertising trackers on this website.</p>
 
       <h2 class="h3">Services we use</h2>
       <ul>
-        <li><strong>Cloudflare</strong> hosts the website and provides spam protection (Turnstile).</li>
+        <li><strong>Cloudflare</strong> hosts the website, provides spam protection (Turnstile) and counts visits with Cloudflare Web Analytics, which uses no cookies and doesn't track you across sites.</li>
+        <li><strong>CallMeBot</strong> sends us a short WhatsApp notification when a form is submitted, with the type of request and your name or email (not your message).</li>
         <li><strong>Resend</strong> delivers form emails and stores the newsletter list.</li>
         <li><strong>Stripe</strong> processes card and PayPal payments, and <strong>NOWPayments</strong> processes crypto payments. You pay on their secure pages; we never see your card or wallet details.</li>
       </ul>
