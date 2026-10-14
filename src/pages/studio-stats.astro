@@ -39,6 +39,16 @@ import PageHero from '../components/PageHero.astro';
           <p class="f-note mono muted" data-follower-note></p>
         </section>
 
+        <section class="newsletter" data-newsletter hidden>
+          <h2 class="h3 sec">Newsletter</h2>
+          <div class="tiles">
+            <div class="tile"><span class="mono muted">Subscribers</span><strong data-n="total"></strong><span>on your list</span></div>
+            <div class="tile"><span class="mono muted">This month</span><strong data-n="month"></strong><span>new sign-ups</span></div>
+            <div class="tile"><span class="mono muted">Last 7 days</span><strong data-n="week"></strong><span>new sign-ups</span></div>
+          </div>
+          <p class="v-error mono" data-n="error" hidden></p>
+        </section>
+
         <section class="site-visits" data-visitors hidden>
           <h2 class="h3 sec">Website <span class="mono muted">last 7 days · vs week before</span></h2>
           <div class="v-grid">
@@ -61,6 +71,7 @@ import PageHero from '../components/PageHero.astro';
   type Stats = {
     ok: boolean; error?: string; live: boolean; week: Sum; month: Sum; all: Sum;
     visitors?: { visits: number; views: number; prevVisits: number; prevViews: number; days: { date: string; visits: number; views: number }[]; pages: { path: string; views: number }[]; error?: string } | null;
+    newsletter?: { total: number; month: number; week: number; error?: string } | null;
     followers?: { key: string; label: string; platform: string; count: number | null; week: number | null; month: number | null; monthSince: string | null; at: string | null; error?: string }[];
   };
 
@@ -136,6 +147,19 @@ import PageHero from '../components/PageHero.astro';
       })
       .join('');
     box.querySelectorAll<HTMLButtonElement>('[data-tiktok-connect]').forEach((b) => b.addEventListener('click', connectTikTok));
+    // Newsletter subscribers (Resend contact list).
+    const nl = s.newsletter;
+    const nBox = box.querySelector<HTMLElement>('[data-newsletter]')!;
+    nBox.hidden = !nl;
+    if (nl) {
+      const n = (k: string) => nBox.querySelector<HTMLElement>(`[data-n="${k}"]`)!;
+      n('total').textContent = nl.total.toLocaleString('en-US');
+      n('month').textContent = `+${nl.month.toLocaleString('en-US')}`;
+      n('week').textContent = `+${nl.week.toLocaleString('en-US')}`;
+      n('error').hidden = !nl.error;
+      n('error').textContent = nl.error ? "Couldn't load the newsletter list right now." : '';
+      n('error').title = nl.error ?? '';
+    }
     // Website visitors (Cloudflare Web Analytics).
     const v = s.visitors;
     const vBox = box.querySelector<HTMLElement>('[data-visitors]')!;
@@ -319,7 +343,7 @@ import PageHero from '../components/PageHero.astro';
     .tile .mono { font-size: 0.55rem; letter-spacing: 0.08em; }
     .tile strong { font-size: 1.35rem; }
     .tile span:last-child { font-size: 0.68rem; line-height: 1.3; }
-    .followers, .site-visits { margin-bottom: 0; }
+    .followers, .site-visits, .newsletter { margin-bottom: 0; }
     .v-grid { gap: 0.4rem; }
     .v-tile { padding: 0.8rem 0.85rem; }
     .v-tile strong { font-size: 1.8rem; }

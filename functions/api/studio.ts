@@ -3,6 +3,7 @@ import { jsonResponse, sameOrigin } from '../_lib/http';
 import { safeEqual } from '../_lib/sign';
 import { followerSummary } from '../_lib/followers';
 import { visitorStats } from '../_lib/visitors';
+import { newsletterStats } from '../_lib/newsletter';
 import { db, openSession, sessionOff, sessionOn, summarize, weekStart, type Session } from '../_lib/studio';
 
 /**
@@ -139,5 +140,6 @@ export const onStats: PagesFunction<Env> = async ({ request, env }) => {
       return [];
     }),
     visitors: await visitorStats(env, now).catch(() => null),
+    newsletter: await newsletterStats(env, now, monthStart).catch(() => null),
   });
 };
