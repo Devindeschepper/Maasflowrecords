@@ -58,12 +58,13 @@ const siteKeyFromSettings = String(settings.turnstileSiteKey ?? '').trim();
 export const turnstileSiteKey: string =
   /^0x[A-Za-z0-9_-]{10,40}$/.test(siteKeyFromSettings) ? siteKeyFromSettings : ((import.meta as { env?: Record<string, string | undefined> }).env?.PUBLIC_TURNSTILE_SITE_KEY ?? '') // `?.`: this file is also bundled into the Worker, where import.meta.env does not exist;
 
+/** Main menu (header + footer). The shop only shows once it is open (admin panel → Settings). */
 export const nav = [
   { href: '/', label: 'Home' },
   { href: '/artists/', label: 'Artists' },
   { href: '/music/', label: 'Music' },
   { href: '/events/', label: 'Events' },
-  { href: '/casting/', label: 'Casting' },
+  { href: '/casting/', label: 'Join' },
   { href: '/services/', label: 'Services' },
-  { href: '/shop/', label: 'Shop' },
+  ...(shopOpen ? [{ href: '/shop/', label: 'Shop' }] : []),
 ];
