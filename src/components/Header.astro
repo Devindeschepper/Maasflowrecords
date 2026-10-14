@@ -31,7 +31,7 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
 
     <div class="actions">
       {/* Lit by /api/studio while FL Studio is open on the studio PC (see tools/studio-light). */}
-      <button type="button" class="studio-sign" data-studio-light disabled title="Lights up when VIN is in the studio" aria-label="Studio sign: off">
+      <button type="button" class="studio-sign" data-studio-light disabled title="Lights up when VIN is in the studio" aria-label="In the studio: off">
         <span class="long">In the studio</span><span class="short" aria-hidden="true">Studio</span>
       </button>
       <p class="knock-toast" data-knock-toast role="status" aria-live="polite" hidden></p>
@@ -89,7 +89,7 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     light.classList.toggle('is-live', live);
     light.disabled = !live;
     light.title = live ? 'VIN is in the studio right now. Click to knock' : 'Lights up when VIN is in the studio';
-    light.setAttribute('aria-label', live ? 'VIN is in the studio right now. Knock on the door' : 'Studio sign: off');
+    light.setAttribute('aria-label', live ? 'In the studio: VIN is in the studio right now. Knock on the door' : 'In the studio: off');
   };
   const checkStudio = async () => {
     if (!light || document.hidden) return;

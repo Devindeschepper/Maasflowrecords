@@ -7,7 +7,8 @@ import sitemap from '@astrojs/sitemap';
 export default defineConfig({
   site: 'https://maasflowrecords.com',
   trailingSlash: 'ignore',
-  build: { format: 'directory' },
+  // Small per-page CSS is inlined: fewer render-blocking requests on phones. The CSP allows inline styles.
+  build: { format: 'directory', inlineStylesheets: 'always' },
   // Keep all JS in external files so the Content-Security-Policy in public/_headers
   // doesn't need 'unsafe-inline' for scripts.
   vite: { build: { assetsInlineLimit: 0 } },

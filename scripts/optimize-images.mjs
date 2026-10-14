@@ -44,3 +44,17 @@ for await (const file of walk(ROOT)) {
   }
 }
 console.log(`optimize-images: saved ${Math.round(saved / 1024)} KB`);
+
+// Phone-sized WebP copy of every photo (name.w800.webp), used in `srcset` by photoSrcset() in
+// src/data/img.ts, so phones download ~50 KB instead of the full photo.
+let variants = 0;
+for await (const file of walk(ROOT)) {
+  if (!/\.(jpe?g|png|webp)$/i.test(file) || /\.w800\.webp$/i.test(file)) continue;
+  await sharp(file, { failOn: 'none' })
+    .rotate()
+    .resize({ width: 800, withoutEnlargement: true })
+    .webp({ quality: 78 })
+    .toFile(file.replace(/\.[^.]+$/, '.w800.webp'));
+  variants++;
+}
+console.log(`optimize-images: ${variants} phone-sized WebP copies`);
