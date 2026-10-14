@@ -64,7 +64,7 @@ export const nav = [
   { href: '/artists/', label: 'Artists' },
   { href: '/music/', label: 'Music' },
   { href: '/events/', label: 'Events' },
-  { href: '/casting/', label: 'Join' },
   { href: '/services/', label: 'Services' },
   ...(shopOpen ? [{ href: '/shop/', label: 'Shop' }] : []),
+  { href: '/casting/', label: 'Join' },
 ];
