@@ -4,12 +4,14 @@ import { sendMail } from './mail';
 import { contactList } from './newsletter';
 import { ensureSalesTable, type SaleDetails } from './sales';
 import { db, type Session } from './studio';
+import { shopOpen } from '../../src/data/site';
 import { toBase64, xlsx, type Cell } from './xlsx';
 
 /**
  * Monthly backup (cron on the 1st, with the monthly report): one Excel file emailed to the label with all
  * the data the website keeps: sales (every detail), studio sessions, followers (one row per day) and the
  * newsletter list. If anything ever happens to the database, the history is safe in the inbox.
+ * Starts once the shop is open (shopOpen in the admin panel); until then nothing is sent.
  */
 const TZ = 'Europe/Luxembourg';
 const when = (t: number | null | undefined) =>
@@ -92,6 +94,7 @@ export async function backupWorkbook(env: Env): Promise<{ file: Uint8Array; coun
 }
 
 export async function monthlyBackup(env: Env, now = Date.now()): Promise<void> {
+  if (!shopOpen) return;
   try {
     const { file, counts } = await backupWorkbook(env);
     const stamp = day(now);
