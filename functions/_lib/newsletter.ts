@@ -21,40 +21,46 @@ function parseDate(s: unknown): number {
   return Number.isFinite(t) ? t : 0;
 }
 
-export async function newsletterStats(env: Env, now: number, monthStart: number): Promise<Newsletter | null> {
-  const key = env.RESEND_API_KEY?.trim();
-  if (!key) return null;
-  const cached = await env.STUDIO?.get('newsletter-cache');
-  if (cached) return JSON.parse(cached) as Newsletter;
-
+/** Sign-up times (ms) of all subscribed contacts. Throws when Resend can't be read. */
+export async function contactDates(env: Env): Promise<number[]> {
+  const key = env.RESEND_API_KEY!.trim();
   const base = env.RESEND_AUDIENCE_ID
     ? `https://api.resend.com/audiences/${encodeURIComponent(env.RESEND_AUDIENCE_ID)}/contacts`
     : 'https://api.resend.com/contacts';
-  const result: Newsletter = { total: 0, month: 0, week: 0 };
-  try {
-    let after = '';
-    const seen = new Set<string>(); // guards against counting a page twice if the API ignores `after`
-    for (let page = 0; page < MAX_PAGES; page++) {
-      const url = `${base}?limit=${PAGE}${after ? `&after=${encodeURIComponent(after)}` : ''}`;
-      const res = await fetch(url, { headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(8000) });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const body = (await res.json()) as { data?: { id: string; created_at?: string; unsubscribed?: boolean }[]; has_more?: boolean };
-      const list = (body.data ?? []).filter((c) => !seen.has(c.id));
-      for (const c of list) {
-        seen.add(c.id);
-        if (c.unsubscribed) continue;
-        result.total++;
-        const at = parseDate(c.created_at);
-        if (at >= monthStart) result.month++;
-        if (at >= now - 7 * 86400000) result.week++;
-      }
-      if (!body.has_more || !list.length) break;
-      after = list[list.length - 1].id;
+  const dates: number[] = [];
+  let after = '';
+  const seen = new Set<string>(); // guards against counting a page twice if the API ignores `after`
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const url = `${base}?limit=${PAGE}${after ? `&after=${encodeURIComponent(after)}` : ''}`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(8000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const body = (await res.json()) as { data?: { id: string; created_at?: string; unsubscribed?: boolean }[]; has_more?: boolean };
+    const list = (body.data ?? []).filter((c) => !seen.has(c.id));
+    for (const c of list) {
+      seen.add(c.id);
+      if (!c.unsubscribed) dates.push(parseDate(c.created_at));
     }
+    if (!body.has_more || !list.length) break;
+    after = list[list.length - 1].id;
+  }
+  return dates;
+}
+
+export async function newsletterStats(env: Env, now: number, monthStart: number): Promise<Newsletter | null> {
+  if (!env.RESEND_API_KEY?.trim()) return null;
+  const cached = await env.STUDIO?.get('newsletter-cache');
+  if (cached) return JSON.parse(cached) as Newsletter;
+  try {
+    const dates = await contactDates(env);
+    const result: Newsletter = {
+      total: dates.length,
+      month: dates.filter((at) => at >= monthStart).length,
+      week: dates.filter((at) => at >= now - 7 * 86400000).length,
+    };
     await env.STUDIO?.put('newsletter-cache', JSON.stringify(result), { expirationTtl: 3600 });
     return result;
   } catch (err) {
     console.error('Newsletter count failed', err);
-    return { ...result, error: err instanceof Error ? err.message : String(err) };
+    return { total: 0, month: 0, week: 0, error: err instanceof Error ? err.message : String(err) };
   }
 }

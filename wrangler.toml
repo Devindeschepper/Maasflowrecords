@@ -31,9 +31,10 @@ database_name = "maasflow"
 database_id = "f8871ad2-7c01-426e-a5c1-44870e073a5d"
 
 # Every hour: follower snapshot. Sunday 18:00 UTC (19:00/20:00 Luxembourg): weekly summary on
-# WhatsApp (the Sunday string must match WEEKLY_CRON in worker/index.ts).
+# WhatsApp. The 1st at 08:00 UTC: monthly report on WhatsApp. (The Sunday and monthly strings must
+# match WEEKLY_CRON and MONTHLY_CRON in worker/index.ts.)
 [triggers]
-crons = ["0 * * * *", "0 18 * * SUN"]
+crons = ["0 * * * *", "0 18 * * SUN", "0 8 1 * *"]
 
 # Non-secret variables. Secrets (TURNSTILE_SECRET_KEY, RESEND_API_KEY, STRIPE_*, NOWPAYMENTS_*) are set in the
 # Cloudflare dashboard (Settings → Variables and Secrets) or in .dev.vars for local dev.
