@@ -31,7 +31,15 @@ import PageHero from '../components/PageHero.astro';
           <ul class="w-grid" data-w="items"></ul>
         </section>
 
-        <h2 class="h3 sec">Studio</h2>
+        <nav class="glance" aria-label="At a glance">
+          <a href="#studio"><span class="mono muted">Studio · week</span><strong data-g="studio"></strong></a>
+          <a href="#followers" data-g-box="followers" hidden><span class="mono muted">Followers</span><strong data-g="followers"></strong><span data-g="followers-meta"></span></a>
+          <a href="#website" data-g-box="website" hidden><span class="mono muted">Website · 7 days</span><strong data-g="website"></strong></a>
+          <a href="#newsletter" data-g-box="newsletter" hidden><span class="mono muted">Newsletter</span><strong data-g="newsletter"></strong></a>
+          <a href="#shop" data-g-box="shop" hidden><span class="mono muted">Shop · month</span><strong data-g="shop"></strong></a>
+        </nav>
+
+        <h2 class="h3 sec" id="studio">Studio</h2>
         <div class="tiles">
           <div class="tile"><span class="mono muted">This week</span><strong data-k="week.hours"></strong><span data-k="week.meta"></span></div>
           <div class="tile"><span class="mono muted">This month</span><strong data-k="month.hours"></strong><span data-k="month.meta"></span></div>
@@ -39,7 +47,7 @@ import PageHero from '../components/PageHero.astro';
         </div>
 
 
-        <section class="shop-stats" data-shop hidden>
+        <section class="shop-stats" id="shop" data-shop hidden>
           <h2 class="h3 sec">Shop <span class="shop-status mono" data-s="note"></span></h2>
           <p class="shop-closed muted" data-s="closed" hidden>The shop is closed (coming soon). Sales and stock show here once it opens.</p>
           <div class="tiles" data-s="tiles">
@@ -54,14 +62,14 @@ import PageHero from '../components/PageHero.astro';
           </div>
         </section>
 
-        <section class="followers" data-followers hidden>
+        <section class="followers" id="followers" data-followers hidden>
           <h2 class="h3 sec">Followers</h2>
           <p class="tiktok-note mono" data-tiktok-note hidden></p>
           <ul class="f-list" data-follower-list></ul>
           <p class="f-note mono muted" data-follower-note></p>
         </section>
 
-        <section class="newsletter" data-newsletter hidden>
+        <section class="newsletter" id="newsletter" data-newsletter hidden>
           <h2 class="h3 sec">Newsletter</h2>
           <div class="tiles">
             <div class="tile"><span class="mono muted">Subscribers</span><strong data-n="total"></strong><span>on your list</span></div>
@@ -71,7 +79,7 @@ import PageHero from '../components/PageHero.astro';
           <p class="v-error mono" data-n="error" hidden></p>
         </section>
 
-        <section class="site-visits" data-visitors hidden>
+        <section class="site-visits" id="website" data-visitors hidden>
           <h2 class="h3 sec">Website <span class="mono muted">last 7 days · vs week before</span></h2>
           <div class="v-grid">
             <div class="v-tile"><span class="mono muted">Visits</span><strong data-v="visits"></strong><span class="v-trend" data-v="visits-trend"></span></div>
@@ -286,6 +294,25 @@ import PageHero from '../components/PageHero.astro';
       q('error').title = v.error ?? '';
     }
 
+    // At a glance: the main numbers on top; each one jumps to its section.
+    const g = (k: string) => box.querySelector<HTMLElement>(`[data-g="${k}"]`)!;
+    const gBox = (k: string, show: boolean) => { box.querySelector<HTMLElement>(`[data-g-box="${k}"]`)!.hidden = !show; };
+    g('studio').textContent = dur(s.week.ms);
+    gBox('followers', counted.length > 0);
+    g('followers').textContent = sum('count', counted).toLocaleString('en-US');
+    const fw = sum('week', withChange);
+    g('followers-meta').textContent = withChange.length ? `${fw > 0 ? '▲' : fw < 0 ? '▼' : '•'} ${Math.abs(fw)} this week` : '';
+    g('followers-meta').className = `g-meta ${fw > 0 ? 'up' : fw < 0 ? 'down' : ''}`;
+    gBox('website', !!v && !v.error);
+    if (v) g('website').textContent = `${v.visits.toLocaleString('en-US')} visits`;
+    gBox('newsletter', !!nl && !nl.error);
+    if (nl) g('newsletter').textContent = nl.total.toLocaleString('en-US');
+    gBox('shop', !!sh?.open);
+    if (sh?.open) g('shop').textContent = `€${(sh.month.revenue / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    // Shop closed: its one line goes to the bottom so the numbers you use come first.
+    const lock = box.querySelector('[data-lock]')!;
+    if (sh && !sh.open) lock.before(shBox);
+
     const latest = fol.map((f) => f.at).filter(Boolean).sort().pop();
     box.querySelector('[data-follower-note]')!.textContent = latest
       ? `Checked ${new Date(latest).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })} · updates every hour`
@@ -390,6 +417,18 @@ import PageHero from '../components/PageHero.astro';
   .w-grid :global(li.w-main strong) { font-size: clamp(2.6rem, 10vw, 3.6rem); }
   .w-grid :global(li span:last-child) { font-size: 0.8rem; color: var(--muted, #9b978f); }
   @media (max-width: 600px) { .w-grid { grid-template-columns: 1fr 1fr; gap: 0.4rem; } .w-grid :global(strong) { font-size: 1.45rem; } .wrapped { margin-bottom: 0; } }
+  /* At a glance: the main numbers in one look; tap one to jump to its section. */
+  .glance { display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 0 0 2rem; }
+  .glance a { display: grid; gap: 0.2rem; padding: 0.8rem 0.9rem; border: 1px solid var(--line); border-top: 2px solid var(--accent); background: var(--surface); color: inherit; text-decoration: none; transition: border-color 0.2s, background 0.2s; }
+  .glance a:hover, .glance a:focus-visible { border-color: var(--accent); background: rgba(228, 67, 45, 0.08); }
+  .glance a[hidden] { display: none; }
+  .glance .mono { font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; }
+  .glance strong { font-family: var(--font-display); font-weight: 400; font-size: 1.7rem; line-height: 1; }
+  .glance .g-meta { font-size: 0.75rem; color: var(--muted, #9b978f); }
+  .glance .g-meta.up { color: var(--ok, #7fbf7f); }
+  .glance .g-meta.down { color: var(--accent); }
+  @media (max-width: 600px) { .glance { grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-bottom: 0.5rem; } .glance strong { font-size: 1.4rem; } }
+  [id='studio'], .followers, .site-visits, .newsletter, .shop-stats { scroll-margin-top: 5rem; }
   .shop-stats { margin-bottom: 2.5rem; }
   .shop-stats .h3 { display: flex; align-items: baseline; gap: 0.75rem; }
   .shop-stats .h3 .mono { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; }
