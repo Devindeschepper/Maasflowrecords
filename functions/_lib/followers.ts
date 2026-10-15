@@ -185,3 +185,32 @@ export async function followerSummary(env: Env, now = Date.now()): Promise<Follo
   }
   return rows;
 }
+
+export interface FollowerTotals {
+  rows: { key: string; short: string; count: number; change: number }[];
+  total: number;
+  change: number;
+}
+
+/**
+ * Per account: the last count before `to` and its change since `from` (against the last count before `from`,
+ * or the first count after it for accounts connected later). Accounts without data before `to` are left out.
+ */
+export async function followerTotals(env: Env, from: number, to: number): Promise<FollowerTotals | null> {
+  const d = await db(env);
+  if (!d) return null;
+  await ensureTable(d);
+  const out: FollowerTotals = { rows: [], total: 0, change: 0 };
+  const at = (q: string, key: string, t: number) => d.prepare(q).bind(key, t).first<{ count: number }>();
+  for (const s of SOURCES.filter((src) => configured(env, src))) {
+    const last = await at('SELECT count FROM follower_snapshots WHERE source = ?1 AND at < ?2 ORDER BY at DESC LIMIT 1', s.key, to);
+    if (!last) continue;
+    const first =
+      (await at('SELECT count FROM follower_snapshots WHERE source = ?1 AND at < ?2 ORDER BY at DESC LIMIT 1', s.key, from)) ??
+      (await at('SELECT count FROM follower_snapshots WHERE source = ?1 AND at >= ?2 ORDER BY at ASC LIMIT 1', s.key, from))!;
+    out.rows.push({ key: s.key, short: s.short, count: last.count, change: last.count - first.count });
+    out.total += last.count;
+    out.change += last.count - first.count;
+  }
+  return out.rows.length ? out : null;
+}

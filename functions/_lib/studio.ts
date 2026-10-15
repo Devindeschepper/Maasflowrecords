@@ -111,13 +111,19 @@ export function weekStart(t: number): number {
 
 export const WEEK_MS = 7 * 24 * 3600 * 1000;
 
-/** Luxembourg wall-clock time minus UTC at instant `t` (ms; +1h in winter, +2h in summer). */
-function luxOffset(t: number): number {
+/** Luxembourg calendar date and hour at instant `t`. */
+export function luxParts(t: number): { year: number; month: number; day: number; hour: number; minute: number; second: number } {
   const p = Object.fromEntries(
     new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Luxembourg', hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' })
       .formatToParts(t)
       .map((x) => [x.type, Number(x.value)]),
   );
+  return { year: p.year, month: p.month, day: p.day, hour: p.hour, minute: p.minute, second: p.second };
+}
+
+/** Luxembourg wall-clock time minus UTC at instant `t` (ms; +1h in winter, +2h in summer). */
+function luxOffset(t: number): number {
+  const p = luxParts(t);
   return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - Math.floor(t / 1000) * 1000;
 }
 
@@ -126,6 +132,27 @@ export function monthStart(t: number): number {
   const local = new Date(t + luxOffset(t));
   const wall = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), 1);
   return wall - luxOffset(wall - luxOffset(wall));
+}
+
+/** Days without studio before the reminder is sent (once per break). */
+export const NUDGE_DAYS = 3;
+
+/**
+ * Hourly cron: at 18:00 Luxembourg time, a friendly WhatsApp when FL Studio hasn't been open for NUDGE_DAYS
+ * days. Sent once per break (KV 'nudge-for' remembers the session it was about).
+ */
+export async function studioNudge(env: Env, now: number): Promise<void> {
+  if (luxParts(now).hour !== 18 || !env.STUDIO) return;
+  const d = await db(env);
+  if (!d) return;
+  const last = await d.prepare('SELECT * FROM sessions ORDER BY started_at DESC LIMIT 1').first<Session>();
+  if (!last) return;
+  const lastSeen = last.ended_at ?? last.last_beat;
+  if (last.ended_at === null && now - last.last_beat <= STALE_MS) return; // in the studio right now
+  const days = Math.floor((now - lastSeen) / 86400000);
+  if (days < NUDGE_DAYS || (await env.STUDIO.get('nudge-for')) === String(last.id)) return;
+  await env.STUDIO.put('nudge-for', String(last.id));
+  await notifyWhatsApp(env, `🎧 ${days} days without studio. 30 minutes today? Even one idea counts.`);
 }
 
 /** Sunday-evening WhatsApp summary of the week (cron in wrangler.toml). */

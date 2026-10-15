@@ -4,6 +4,7 @@ import { safeEqual } from '../_lib/sign';
 import { followerSummary } from '../_lib/followers';
 import { visitorStats } from '../_lib/visitors';
 import { newsletterStats } from '../_lib/newsletter';
+import { wrappedStats, wrappedYear, type Wrapped } from '../_lib/wrapped';
 import { db, openSession, sessionOff, sessionOn, summarize, weekStart, type Session } from '../_lib/studio';
 
 /**
@@ -116,6 +117,23 @@ export async function checkStatsPassword(request: Request, env: Env, d: D1Databa
   return null;
 }
 
+/** The year's Wrapped when it is due (December/January) or asked for; cached for an hour. */
+async function wrapped(env: Env, now: number, preview: boolean): Promise<Wrapped | null> {
+  const year = wrappedYear(now, preview);
+  if (year === null) return null;
+  const key = `wrapped-cache-${year}`;
+  const cached = await env.STUDIO?.get(key);
+  if (cached) return JSON.parse(cached) as Wrapped;
+  try {
+    const w = await wrappedStats(env, year, now);
+    await env.STUDIO?.put(key, JSON.stringify(w), { expirationTtl: 3600 });
+    return w;
+  } catch (err) {
+    console.error('Wrapped failed', err);
+    return null;
+  }
+}
+
 /** Private stats for /studio-stats/. Accepts VIN's own STATS_PASSWORD or the STUDIO_TOKEN. */
 export const onStats: PagesFunction<Env> = async ({ request, env }) => {
   const d = await db(env);
@@ -141,5 +159,6 @@ export const onStats: PagesFunction<Env> = async ({ request, env }) => {
     }),
     visitors: await visitorStats(env, now).catch(() => null),
     newsletter: await newsletterStats(env, now, monthStart).catch(() => null),
+    wrapped: await wrapped(env, now, new URL(request.url).searchParams.has('wrapped')),
   });
 };
