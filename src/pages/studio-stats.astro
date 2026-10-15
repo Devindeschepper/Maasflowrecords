@@ -31,7 +31,7 @@ import PageHero from '../components/PageHero.astro';
           <ul class="w-grid" data-w="items"></ul>
         </section>
 
-        <h2 class="h3 sec">Studio</h2>
+        <h2 class="h3 sec" id="studio">Studio</h2>
         <div class="tiles">
           <div class="tile"><span class="mono muted">This week</span><strong data-k="week.hours"></strong><span data-k="week.meta"></span></div>
           <div class="tile"><span class="mono muted">This month</span><strong data-k="month.hours"></strong><span data-k="month.meta"></span></div>
@@ -39,7 +39,7 @@ import PageHero from '../components/PageHero.astro';
         </div>
 
 
-        <section class="shop-stats" data-shop hidden>
+        <section class="shop-stats" id="shop" data-shop hidden>
           <h2 class="h3 sec">Shop <span class="shop-status mono" data-s="note"></span></h2>
           <p class="shop-closed muted" data-s="closed" hidden>The shop is closed (coming soon). Sales and stock show here once it opens.</p>
           <div class="tiles" data-s="tiles">
@@ -54,14 +54,14 @@ import PageHero from '../components/PageHero.astro';
           </div>
         </section>
 
-        <section class="followers" data-followers hidden>
+        <section class="followers" id="followers" data-followers hidden>
           <h2 class="h3 sec">Followers</h2>
           <p class="tiktok-note mono" data-tiktok-note hidden></p>
           <ul class="f-list" data-follower-list></ul>
           <p class="f-note mono muted" data-follower-note></p>
         </section>
 
-        <section class="newsletter" data-newsletter hidden>
+        <section class="newsletter" id="newsletter" data-newsletter hidden>
           <h2 class="h3 sec">Newsletter</h2>
           <div class="tiles">
             <div class="tile"><span class="mono muted">Subscribers</span><strong data-n="total"></strong><span>on your list</span></div>
@@ -71,7 +71,7 @@ import PageHero from '../components/PageHero.astro';
           <p class="v-error mono" data-n="error" hidden></p>
         </section>
 
-        <section class="site-visits" data-visitors hidden>
+        <section class="site-visits" id="website" data-visitors hidden>
           <h2 class="h3 sec">Website <span class="mono muted">last 7 days · vs week before</span></h2>
           <div class="v-grid">
             <div class="v-tile"><span class="mono muted">Visits</span><strong data-v="visits"></strong><span class="v-trend" data-v="visits-trend"></span></div>
@@ -286,6 +286,10 @@ import PageHero from '../components/PageHero.astro';
       q('error').title = v.error ?? '';
     }
 
+    // Shop closed: its one line goes to the bottom so the numbers you use come first.
+    const lock = box.querySelector('[data-lock]')!;
+    if (sh && !sh.open) lock.before(shBox);
+
     const latest = fol.map((f) => f.at).filter(Boolean).sort().pop();
     box.querySelector('[data-follower-note]')!.textContent = latest
       ? `Checked ${new Date(latest).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })} · updates every hour`
@@ -390,6 +394,7 @@ import PageHero from '../components/PageHero.astro';
   .w-grid :global(li.w-main strong) { font-size: clamp(2.6rem, 10vw, 3.6rem); }
   .w-grid :global(li span:last-child) { font-size: 0.8rem; color: var(--muted, #9b978f); }
   @media (max-width: 600px) { .w-grid { grid-template-columns: 1fr 1fr; gap: 0.4rem; } .w-grid :global(strong) { font-size: 1.45rem; } .wrapped { margin-bottom: 0; } }
+  [id='studio'], .followers, .site-visits, .newsletter, .shop-stats { scroll-margin-top: 5rem; }
   .shop-stats { margin-bottom: 2.5rem; }
   .shop-stats .h3 { display: flex; align-items: baseline; gap: 0.75rem; }
   .shop-stats .h3 .mono { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; }
