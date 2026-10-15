@@ -16,12 +16,13 @@ const LOW = 5; // same as "Only X left" on the shop
 
 export async function ensureSalesTable(d: D1Database) {
   await d.prepare(
-    "CREATE TABLE IF NOT EXISTS sales (order_id TEXT PRIMARY KEY, at INTEGER NOT NULL, total_cents INTEGER NOT NULL, via TEXT NOT NULL, lines TEXT NOT NULL, test INTEGER NOT NULL DEFAULT 0, country TEXT NOT NULL DEFAULT '', details TEXT NOT NULL DEFAULT '{}', notified INTEGER NOT NULL DEFAULT 1)",
+    "CREATE TABLE IF NOT EXISTS sales (order_id TEXT PRIMARY KEY, at INTEGER NOT NULL, total_cents INTEGER NOT NULL, via TEXT NOT NULL, lines TEXT NOT NULL, test INTEGER NOT NULL DEFAULT 0, country TEXT NOT NULL DEFAULT '', details TEXT NOT NULL DEFAULT '{}', notified INTEGER NOT NULL DEFAULT 1, shipped_at INTEGER)",
   ).run();
   // Tables made before these columns existed get them added (fails harmlessly when they're already there).
   await d.prepare("ALTER TABLE sales ADD COLUMN country TEXT NOT NULL DEFAULT ''").run().catch(() => {});
   await d.prepare("ALTER TABLE sales ADD COLUMN details TEXT NOT NULL DEFAULT '{}'").run().catch(() => {});
   await d.prepare('ALTER TABLE sales ADD COLUMN notified INTEGER NOT NULL DEFAULT 1').run().catch(() => {});
+  await d.prepare('ALTER TABLE sales ADD COLUMN shipped_at INTEGER').run().catch(() => {});
 }
 
 /** The country as customers type it ("luxemburg", "NL", "Deutschland") → one name per country. */
@@ -197,4 +198,50 @@ export async function shopStats(env: Env, now: number, monthStart: number): Prom
     stock,
     countries: [...byCountry].map(([name, orders]) => ({ name, orders })).sort((a, b) => b.orders - a.orders || a.name.localeCompare(b.name)),
   };
+}
+
+export interface ShopOrder {
+  orderId: string;
+  at: number;
+  via: string;
+  total: number;
+  items: { name: string; qty: number; size?: string }[];
+  customer: SaleDetails['customer'] | null;
+  shippingZone: string;
+  shippedAt: number | null;
+}
+
+/** Paid orders for the shop page: all not shipped yet (oldest first) and the last 20 shipped. */
+export async function shopOrders(env: Env): Promise<{ toShip: ShopOrder[]; shipped: ShopOrder[] }> {
+  const d = await db(env);
+  if (!d) return { toShip: [], shipped: [] };
+  await ensureSalesTable(d);
+  type Row = { order_id: string; at: number; via: string; total_cents: number; lines: string; details: string; shipped_at: number | null };
+  const map = (r: Row): ShopOrder => {
+    const det = JSON.parse(r.details || '{}') as SaleDetails;
+    return {
+      orderId: r.order_id,
+      at: r.at,
+      via: r.via,
+      total: r.total_cents,
+      items: (JSON.parse(r.lines || '[]') as Line[]).map((l) => ({ name: l.name, qty: l.qty, ...(l.size ? { size: l.size } : {}) })),
+      customer: det.customer ?? null,
+      shippingZone: det.shippingZone ?? '',
+      shippedAt: r.shipped_at,
+    };
+  };
+  const t = shopTestMode ? 1 : 0;
+  const cols = 'order_id, at, via, total_cents, lines, details, shipped_at';
+  const toShip = await d.prepare(`SELECT ${cols} FROM sales WHERE test = ?1 AND shipped_at IS NULL ORDER BY at`).bind(t).all<Row>();
+  const shipped = await d.prepare(`SELECT ${cols} FROM sales WHERE test = ?1 AND shipped_at IS NOT NULL ORDER BY shipped_at DESC LIMIT 20`).bind(t).all<Row>();
+  return { toShip: toShip.results.map(map), shipped: shipped.results.map(map) };
+}
+
+/** Ticks an order as shipped (or back to "to ship"). Returns false when the order doesn't exist. */
+export async function markShipped(env: Env, orderId: string, shipped: boolean, now = Date.now()): Promise<boolean> {
+  const d = await db(env);
+  if (!d) return false;
+  await ensureSalesTable(d);
+  const res = await d.prepare('UPDATE sales SET shipped_at = ?1 WHERE order_id = ?2').bind(shipped ? now : null, orderId).run();
+  return (res.meta.changes ?? 0) > 0;
 }
