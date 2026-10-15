@@ -7,6 +7,7 @@ import type { Order, OrderLine, PaymentMethod } from '../_lib/payments/types';
 import { products, orderableZones, MAX_QTY_PER_ITEM } from '../../src/data/products';
 import { priceForZone, vatIn, vatNote } from '../../src/data/vat';
 import { shopOpen, paymentMethods } from '../../src/data/site';
+import { rememberOrder } from '../_lib/sales';
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   // Checkout is JS-only (the cart lives in the browser), so always answer with JSON.
@@ -98,6 +99,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   };
 
   try {
+    await rememberOrder(env, order).catch((err) => console.error('Could not remember the order', err));
     const result = await provider.createCheckout(order, env, new URL(request.url).origin);
     return json(200, { ok: true, orderId: order.orderId, ...result });
   } catch (err) {

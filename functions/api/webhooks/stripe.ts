@@ -2,6 +2,7 @@ import type { Env } from '../../_lib/env';
 import { jsonResponse } from '../../_lib/http';
 import { hmacHex, safeEqual } from '../../_lib/sign';
 import { eur, mailPaidOrder } from '../../_lib/payments/notify';
+import { recordSale } from '../../_lib/sales';
 
 interface Session {
   id: string;
@@ -34,6 +35,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (!paid) return jsonResponse(200, { ok: true, ignored: event.type });
 
   const m = s.metadata ?? {};
+  await recordSale(env, { orderId: m.order_id ?? s.id, totalCents: s.amount_total ?? 0, via: 'Stripe' });
   try {
     await mailPaidOrder(env, {
       orderId: m.order_id ?? s.id,
