@@ -14,12 +14,13 @@ import { shopOpen, shopTestMode } from '../../src/data/site';
  */
 const LOW = 5; // same as "Only X left" on the shop
 
-async function ensureTable(d: D1Database) {
+export async function ensureSalesTable(d: D1Database) {
   await d.prepare(
-    "CREATE TABLE IF NOT EXISTS sales (order_id TEXT PRIMARY KEY, at INTEGER NOT NULL, total_cents INTEGER NOT NULL, via TEXT NOT NULL, lines TEXT NOT NULL, test INTEGER NOT NULL DEFAULT 0, country TEXT NOT NULL DEFAULT '')",
+    "CREATE TABLE IF NOT EXISTS sales (order_id TEXT PRIMARY KEY, at INTEGER NOT NULL, total_cents INTEGER NOT NULL, via TEXT NOT NULL, lines TEXT NOT NULL, test INTEGER NOT NULL DEFAULT 0, country TEXT NOT NULL DEFAULT '', details TEXT NOT NULL DEFAULT '{}')",
   ).run();
-  // Tables made before the country column existed get it added (fails harmlessly when it's already there).
+  // Tables made before these columns existed get them added (fails harmlessly when they're already there).
   await d.prepare("ALTER TABLE sales ADD COLUMN country TEXT NOT NULL DEFAULT ''").run().catch(() => {});
+  await d.prepare("ALTER TABLE sales ADD COLUMN details TEXT NOT NULL DEFAULT '{}'").run().catch(() => {});
 }
 
 /** The country as customers type it ("luxemburg", "NL", "Deutschland") → one name per country. */
@@ -42,11 +43,29 @@ export function countryName(raw: string): string {
   return t.length <= 3 ? t.toUpperCase() : t.replace(/(^|[\s-])\p{L}/gu, (c) => c.toUpperCase());
 }
 
-type Line = { id: string; name: string; qty: number; unitPrice: number };
+type Line = { id: string; name: string; qty: number; unitPrice: number; size?: string };
+
+/** Everything about a sale kept for VIN's records (and the monthly backup). Amounts in cents. */
+export interface SaleDetails {
+  subtotal?: number;
+  shipping?: number;
+  vat?: number;
+  vatNote?: string;
+  shippingZone?: string;
+  customer?: { name: string; email: string; address: string; postalCode: string; city: string; country: string; notes: string };
+}
 
 export async function rememberOrder(env: Env, order: Order): Promise<void> {
-  const lines: Line[] = order.lines.map((l) => ({ id: l.id, name: l.name, qty: l.qty, unitPrice: l.unitPrice }));
-  await env.STUDIO?.put(`order-${order.orderId}`, JSON.stringify({ lines, country: countryName(order.customer.country) }), { expirationTtl: 7 * 86400 });
+  const lines: Line[] = order.lines.map((l) => ({ id: l.id, name: l.name, qty: l.qty, unitPrice: l.unitPrice, ...(l.size ? { size: l.size } : {}) }));
+  const details: SaleDetails = {
+    subtotal: order.subtotal,
+    shipping: order.shipping,
+    vat: order.vat,
+    vatNote: order.vatNote,
+    shippingZone: order.shippingZone,
+    customer: order.customer,
+  };
+  await env.STUDIO?.put(`order-${order.orderId}`, JSON.stringify({ lines, country: countryName(order.customer.country), details }), { expirationTtl: 7 * 86400 });
 }
 
 /** Called by the payment webhooks once an order is paid. Never throws: the order email matters more. */
@@ -54,11 +73,14 @@ export async function recordSale(env: Env, sale: { orderId: string; totalCents: 
   try {
     const d = await db(env);
     if (!d) return;
-    await ensureTable(d);
-    const saved = JSON.parse((await env.STUDIO?.get(`order-${sale.orderId}`)) ?? '{}') as { lines?: Line[]; country?: string };
+    await ensureSalesTable(d);
+    const saved = JSON.parse((await env.STUDIO?.get(`order-${sale.orderId}`)) ?? '{}') as { lines?: Line[]; country?: string; details?: SaleDetails };
     await d
-      .prepare('INSERT OR IGNORE INTO sales (order_id, at, total_cents, via, lines, test, country) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)')
-      .bind(sale.orderId, now, Math.max(0, Math.round(sale.totalCents)), sale.via, JSON.stringify(saved.lines ?? []), shopTestMode ? 1 : 0, saved.country ?? '')
+      .prepare('INSERT OR IGNORE INTO sales (order_id, at, total_cents, via, lines, test, country, details) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)')
+      .bind(
+        sale.orderId, now, Math.max(0, Math.round(sale.totalCents)), sale.via, JSON.stringify(saved.lines ?? []), shopTestMode ? 1 : 0,
+        saved.country ?? '', JSON.stringify(saved.details ?? {}),
+      )
       .run();
   } catch (err) {
     console.error('Recording the sale failed', err);
@@ -78,7 +100,7 @@ export interface ShopStats {
 export async function shopStats(env: Env, now: number, monthStart: number): Promise<ShopStats | null> {
   const d = await db(env);
   if (!d) return null;
-  await ensureTable(d);
+  await ensureSalesTable(d);
   const { results } = await d
     .prepare('SELECT at, total_cents, lines, country FROM sales WHERE test = ?1 ORDER BY at')
     .bind(shopTestMode ? 1 : 0)
