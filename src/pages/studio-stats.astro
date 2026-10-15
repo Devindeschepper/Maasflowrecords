@@ -39,6 +39,17 @@ import PageHero from '../components/PageHero.astro';
         </div>
 
 
+        <section class="shop-stats" data-shop hidden>
+          <h2 class="h3 sec">Shop <span class="shop-status mono" data-s="note"></span></h2>
+          <p class="shop-closed muted" data-s="closed" hidden>The shop is closed (coming soon). Sales and stock show here once it opens.</p>
+          <div class="tiles" data-s="tiles">
+            <div class="tile"><span class="mono muted">This month</span><strong data-s="month"></strong><span data-s="month-meta"></span></div>
+            <div class="tile"><span class="mono muted">Best seller</span><strong data-s="best"></strong><span data-s="best-meta"></span></div>
+            <div class="tile"><span class="mono muted">All time</span><strong data-s="all"></strong><span data-s="all-meta"></span></div>
+          </div>
+          <ul class="stock-list" data-s="stock"></ul>
+        </section>
+
         <section class="followers" data-followers hidden>
           <h2 class="h3 sec">Followers</h2>
           <p class="tiktok-note mono" data-tiktok-note hidden></p>
@@ -84,6 +95,12 @@ import PageHero from '../components/PageHero.astro';
       studio: { ms: number; sessions: number; days: number; streak: number } | null;
       longest: { ms: number; date: string } | null; bestMonth: { name: string; ms: number } | null;
       followers: { total: number; change: number } | null; visits: number | null; newsletter: { total: number; added: number } | null;
+    } | null;
+    shop?: {
+      open: boolean; test: boolean;
+      month: { orders: number; revenue: number; best: { name: string; qty: number } | null };
+      all: { orders: number; revenue: number };
+      stock: { id: string; name: string; stock: number; sold: number; left: number; low: boolean }[];
     } | null;
     followers?: { key: string; label: string; platform: string; count: number | null; week: number | null; month: number | null; monthSince: string | null; at: string | null; error?: string }[];
   };
@@ -140,6 +157,31 @@ import PageHero from '../components/PageHero.astro';
       q('since').textContent = w.since ? `Studio tracked since ${w.since}` : '';
       q('items').innerHTML = items
         .map(([label, value, meta], i) => `<li${i === 0 ? ' class="w-main"' : ''}><span class="mono muted">${esc(label)}</span><strong>${esc(value)}</strong><span>${esc(meta)}</span></li>`)
+        .join('');
+    }
+
+    // Shop: sales (paid orders, incl. shipping and VAT) and stock left.
+    const sh = s.shop;
+    const shBox = box.querySelector<HTMLElement>('[data-shop]')!;
+    shBox.hidden = !sh;
+    if (sh) {
+      const q = (k: string) => shBox.querySelector<HTMLElement>(`[data-s="${k}"]`)!;
+      const money = (c: number) => `€${(c / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      // Online / test mode / closed, like a status light.
+      q('note').textContent = !sh.open ? 'Closed' : sh.test ? 'Test mode' : 'Online';
+      q('note').className = `shop-status mono ${!sh.open ? 'off' : sh.test ? 'test' : 'on'}`;
+      const empty = !sh.open && !sh.all.orders;
+      q('closed').hidden = !empty;
+      q('tiles').hidden = empty;
+      q('stock').hidden = empty;
+      q('month').textContent = money(sh.month.revenue);
+      q('month-meta').textContent = plural(sh.month.orders, 'order');
+      q('best').textContent = sh.month.best ? `${sh.month.best.qty}×` : '—';
+      q('best-meta').textContent = sh.month.best ? sh.month.best.name : 'No sales yet this month';
+      q('all').textContent = money(sh.all.revenue);
+      q('all-meta').textContent = plural(sh.all.orders, 'order');
+      q('stock').innerHTML = sh.stock
+        .map((p) => `<li class="${p.left === 0 ? 'out' : p.low ? 'low' : ''}"><span>${esc(p.name)}</span><b>${p.left === 0 ? 'Sold out' : `${p.left} left`}</b>${p.low && p.left > 0 ? '<em>Almost sold out</em>' : ''}</li>`)
         .join('');
     }
 
@@ -337,6 +379,24 @@ import PageHero from '../components/PageHero.astro';
   .w-grid :global(li.w-main strong) { font-size: clamp(2.6rem, 10vw, 3.6rem); }
   .w-grid :global(li span:last-child) { font-size: 0.8rem; color: var(--muted, #9b978f); }
   @media (max-width: 600px) { .w-grid { grid-template-columns: 1fr 1fr; gap: 0.4rem; } .w-grid :global(strong) { font-size: 1.45rem; } .wrapped { margin-bottom: 0; } }
+  .shop-stats { margin-bottom: 2.5rem; }
+  .shop-stats .h3 { display: flex; align-items: baseline; gap: 0.75rem; }
+  .shop-stats .h3 .mono { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; }
+  .shop-stats .tiles { margin-bottom: 0.75rem; }
+  .shop-status { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted, #9b978f); }
+  .shop-status::before { content: ''; width: 0.55rem; height: 0.55rem; border-radius: 50%; background: currentColor; }
+  .shop-status.on { color: var(--ok, #7fbf7f); }
+  .shop-status.on::before { box-shadow: 0 0 8px currentColor; }
+  .shop-status.test { color: #e0b44c; }
+  .shop-closed { margin: 0; font-size: 0.9rem; }
+  .shop-closed[hidden], [data-s='tiles'][hidden], .stock-list[hidden] { display: none; }
+  .stock-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+  .stock-list :global(li) { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.75rem; padding: 0.7rem 1rem; border: 1px solid var(--line); background: var(--surface); border-left: 3px solid var(--ok, #7fbf7f); }
+  .stock-list :global(li span) { flex: 1; min-width: 0; }
+  .stock-list :global(li b) { font-family: var(--font-mono); font-weight: 400; }
+  .stock-list :global(li em) { font-style: normal; font-size: 0.75rem; color: var(--accent); width: 100%; }
+  .stock-list :global(li.low), .stock-list :global(li.out) { border-left-color: var(--accent); }
+  .stock-list :global(li.out b) { color: var(--accent); }
   .followers { margin-bottom: 2.5rem; }
   .followers .h3 { margin: 0 0 0.75rem; }
   .f-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
@@ -401,7 +461,7 @@ import PageHero from '../components/PageHero.astro';
     .tile .mono { font-size: 0.55rem; letter-spacing: 0.08em; }
     .tile strong { font-size: 1.35rem; }
     .tile span:last-child { font-size: 0.68rem; line-height: 1.3; }
-    .followers, .site-visits, .newsletter { margin-bottom: 0; }
+    .followers, .site-visits, .newsletter, .shop-stats { margin-bottom: 0; }
     .v-grid { gap: 0.4rem; }
     .v-tile { padding: 0.8rem 0.85rem; }
     .v-tile strong { font-size: 1.8rem; }
