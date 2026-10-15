@@ -9,6 +9,7 @@ import { notifyWhatsApp } from './whatsapp';
  *  - a milestone (100, 250, 500, 1,000 …) reached by an account or by all platforms together; each one only
  *    once, even if the count drops below it and comes back (KV 'milestone-<key>')
  *  - an account that grew much faster than normal in the last 24 hours (a post that works)
+ *  - an account that lost DROP_MIN or more followers in the last 24 hours
  *  - an account that stopped updating (broken login or key), once when it breaks and once when it works again
  *    (KV 'followers-alerted')
  */
@@ -20,6 +21,8 @@ export const MILESTONES = [
 /** Spike: at least SPIKE_MIN new followers in 24 hours and SPIKE_FACTOR times the normal daily growth. */
 export const SPIKE_MIN = 10;
 export const SPIKE_FACTOR = 3;
+/** Drop: at least this many followers lost (net) in 24 hours. */
+export const DROP_MIN = 10;
 const SPIKE_BASE_DAYS = 14;
 const DAY = 86400000;
 
@@ -83,9 +86,16 @@ export async function followerAlerts(env: Env, now: number, errors: Record<strin
     const dayAgo = await countAt(s.key, now - DAY);
     const before = await countAt(s.key, now - SPIKE_BASE_DAYS * DAY - DAY);
     const oldest = await d.prepare('SELECT at, count FROM follower_snapshots WHERE source = ?1 ORDER BY at ASC LIMIT 1').bind(s.key).first<{ at: number; count: number }>();
-    const base = before ?? oldest;
-    if (!dayAgo || !base || dayAgo.at - base.at < 3 * DAY) continue; // not enough history to know what's normal
+    if (!dayAgo || now - dayAgo.at > DAY + STALE) continue;
     const gain = now24.count - dayAgo.count;
+    // Drop: a clear net loss in 24 hours (unfollows after a post or a change), at most once a day.
+    if (gain <= -DROP_MIN && !(await env.STUDIO.get(`drop-${s.key}`))) {
+      await env.STUDIO.put(`drop-${s.key}`, '1', { expirationTtl: 86400 });
+      lines.push(`📉 ${s.short}: −${fmt(-gain)} in the last 24 hours. Check if a post or a change made people unfollow.`);
+      continue;
+    }
+    const base = before ?? oldest;
+    if (!base || dayAgo.at - base.at < 3 * DAY) continue; // not enough history to know what's normal
     const normal = Math.max(0, (dayAgo.count - base.count) / ((dayAgo.at - base.at) / DAY));
     if (gain < Math.max(SPIKE_MIN, SPIKE_FACTOR * normal)) continue;
     if (await env.STUDIO.get(`spike-${s.key}`)) continue;
