@@ -8,6 +8,7 @@ import { notifyWhatsApp } from './whatsapp';
  * WhatsApp alerts after the hourly follower check (cron), sent as one message per run:
  *  - a milestone (100, 250, 500, 1,000 …) reached by an account or by all platforms together; each one only
  *    once, even if the count drops below it and comes back (KV 'milestone-<key>')
+ *  - an account that grew much faster than normal in the last 24 hours (a post that works)
  *  - an account that stopped updating (broken login or key), once when it breaks and once when it works again
  *    (KV 'followers-alerted')
  */
@@ -15,6 +16,12 @@ export const MILESTONES = [
   100, 250, 500, 750, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 7500, 10000, 15000, 20000, 25000, 50000, 75000,
   100000, 250000, 500000, 1000000,
 ];
+
+/** Spike: at least SPIKE_MIN new followers in 24 hours and SPIKE_FACTOR times the normal daily growth. */
+export const SPIKE_MIN = 10;
+export const SPIKE_FACTOR = 3;
+const SPIKE_BASE_DAYS = 14;
+const DAY = 86400000;
 
 const fmt = (n: number) => n.toLocaleString('en-US');
 const reached = (n: number) => MILESTONES.filter((m) => m <= n).at(-1) ?? 0;
@@ -64,6 +71,28 @@ export async function followerAlerts(env: Env, now: number, errors: Record<strin
   }
   // The total only counts once every account has data, so connecting one doesn't look like a jump.
   if (active.length && active.every((s) => latest.has(s.key))) await milestone('total', 'All platforms', total, 'followers');
+
+  // Spikes: an account that grew much faster than normal in the last 24 hours. "Normal" is its average daily
+  // growth over the two weeks before; at most one alert per account per day (KV 'spike-<key>').
+  const countAt = async (key: string, t: number) =>
+    (await d.prepare('SELECT at, count FROM follower_snapshots WHERE source = ?1 AND at <= ?2 ORDER BY at DESC LIMIT 1').bind(key, t).first<{ at: number; count: number }>()) ??
+    null;
+  for (const s of active) {
+    const now24 = latest.get(s.key);
+    if (!now24 || now - now24.at > STALE) continue;
+    const dayAgo = await countAt(s.key, now - DAY);
+    const before = await countAt(s.key, now - SPIKE_BASE_DAYS * DAY - DAY);
+    const oldest = await d.prepare('SELECT at, count FROM follower_snapshots WHERE source = ?1 ORDER BY at ASC LIMIT 1').bind(s.key).first<{ at: number; count: number }>();
+    const base = before ?? oldest;
+    if (!dayAgo || !base || dayAgo.at - base.at < 3 * DAY) continue; // not enough history to know what's normal
+    const gain = now24.count - dayAgo.count;
+    const normal = Math.max(0, (dayAgo.count - base.count) / ((dayAgo.at - base.at) / DAY));
+    if (gain < Math.max(SPIKE_MIN, SPIKE_FACTOR * normal)) continue;
+    if (await env.STUDIO.get(`spike-${s.key}`)) continue;
+    await env.STUDIO.put(`spike-${s.key}`, '1', { expirationTtl: 86400 });
+    const usual = normal < 1 ? 'normally less than 1 a day' : `normally ~${fmt(Math.round(normal))} a day`;
+    lines.push(`📈 ${s.short}: +${fmt(gain)} in the last 24 hours (${usual}). Something's working, check your last post.`);
+  }
 
   // Broken accounts: a TikTok login that is gone is reported at once; anything else only after it failed for a
   // few hours (one failed check is usually the platform having a hiccup).
