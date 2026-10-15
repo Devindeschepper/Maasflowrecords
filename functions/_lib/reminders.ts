@@ -8,22 +8,14 @@ import { notifyWhatsApp } from './whatsapp';
  */
 export const REMINDERS: { date: string; text: string }[] = [
   {
-    // Gandi registration was ~22 Sep 2026; a transfer is only allowed 60 days after registering.
-    date: '2026-11-23',
+    // One month before the domain expires at Gandi (22 Sep 2027).
+    date: '2027-08-22',
     text: [
-      '🌐 Your domain maasflowrecords.com can now move from Gandi to Cloudflare (about €10 a year, renews by itself).',
+      '🌐 Your domain maasflowrecords.com expires at Gandi in 1 month (22 Sep 2027). Move it to Cloudflare now (about €10 a year, renews by itself):',
       '1. Gandi: turn off the transfer lock and get the auth code',
       '2. Cloudflare: Domain Registration → Transfer Domains',
       'Check first that your info@ email keeps working after the move.',
     ].join('\n'),
-  },
-  {
-    date: '2027-08-23',
-    text: '⏰ maasflowrecords.com expires at Gandi in 30 days (22 Sep 2027). Move it to Cloudflare now, or renew it at Gandi. Already on Cloudflare? Then ignore this.',
-  },
-  {
-    date: '2027-09-15',
-    text: '⚠️ maasflowrecords.com expires at Gandi in 7 days (22 Sep 2027)! Renew or move it to Cloudflare now, or the website goes offline. Already on Cloudflare? Then ignore this.',
   },
 ];
 
