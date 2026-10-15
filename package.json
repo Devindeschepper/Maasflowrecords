@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && node scripts/optimize-images.mjs && node scripts/press-kit.mjs",
+    "build": "astro build && node scripts/optimize-images.mjs && node scripts/press-kit.mjs && node scripts/site-links.mjs",
     "preview": "wrangler dev",
     "check": "astro check",
     "typecheck:functions": "tsc -p functions/tsconfig.json"
