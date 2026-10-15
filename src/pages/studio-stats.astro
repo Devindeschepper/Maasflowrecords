@@ -48,6 +48,10 @@ import PageHero from '../components/PageHero.astro';
             <div class="tile"><span class="mono muted">All time</span><strong data-s="all"></strong><span data-s="all-meta"></span></div>
           </div>
           <ul class="stock-list" data-s="stock"></ul>
+          <div class="countries" data-s="countries-box" hidden>
+            <span class="mono muted">Orders by country</span>
+            <ol data-s="countries"></ol>
+          </div>
         </section>
 
         <section class="followers" data-followers hidden>
@@ -101,6 +105,7 @@ import PageHero from '../components/PageHero.astro';
       month: { orders: number; revenue: number; best: { name: string; qty: number } | null };
       all: { orders: number; revenue: number };
       stock: { id: string; name: string; stock: number; sold: number; left: number; low: boolean }[];
+      countries?: { name: string; orders: number }[];
     } | null;
     followers?: { key: string; label: string; platform: string; count: number | null; week: number | null; month: number | null; monthSince: string | null; at: string | null; error?: string }[];
   };
@@ -180,6 +185,12 @@ import PageHero from '../components/PageHero.astro';
       q('best-meta').textContent = sh.month.best ? sh.month.best.name : 'No sales yet this month';
       q('all').textContent = money(sh.all.revenue);
       q('all-meta').textContent = plural(sh.all.orders, 'order');
+      const countries = sh.countries ?? [];
+      q('countries-box').hidden = empty || !countries.length;
+      const maxC = Math.max(1, ...countries.map((c) => c.orders));
+      q('countries').innerHTML = countries
+        .map((c) => `<li><span>${esc(c.name)}</span><span class="c-bar"><span style="width:${Math.max(6, (c.orders / maxC) * 100)}%"></span></span><b>${c.orders}</b></li>`)
+        .join('');
       q('stock').innerHTML = sh.stock
         .map((p) => `<li class="${p.left === 0 ? 'out' : p.low ? 'low' : ''}"><span>${esc(p.name)}</span><b>${p.left === 0 ? 'Sold out' : `${p.left} left`}</b>${p.low && p.left > 0 ? '<em>Almost sold out</em>' : ''}</li>`)
         .join('');
@@ -390,6 +401,15 @@ import PageHero from '../components/PageHero.astro';
   .shop-status.test { color: #e0b44c; }
   .shop-closed { margin: 0; font-size: 0.9rem; }
   .shop-closed[hidden], [data-s='tiles'][hidden], .stock-list[hidden] { display: none; }
+  .countries { margin-top: 0.75rem; padding: 0.9rem 1rem; border: 1px solid var(--line); background: var(--surface); display: grid; gap: 0.6rem; }
+  .countries[hidden] { display: none; }
+  .countries > .mono { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; }
+  .countries ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.45rem; }
+  .countries :global(li) { display: grid; grid-template-columns: minmax(0, 9rem) 1fr auto; align-items: center; gap: 0.75rem; font-size: 0.9rem; }
+  .countries :global(li span:first-child) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .countries :global(.c-bar) { height: 6px; background: #1c1b1a; border-radius: 3px; overflow: hidden; }
+  .countries :global(.c-bar span) { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+  .countries :global(li b) { font-family: var(--font-mono); font-weight: 400; }
   .stock-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
   .stock-list :global(li) { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.75rem; padding: 0.7rem 1rem; border: 1px solid var(--line); background: var(--surface); border-left: 3px solid var(--ok, #7fbf7f); }
   .stock-list :global(li span) { flex: 1; min-width: 0; }
