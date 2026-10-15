@@ -13,6 +13,7 @@ import { onRequestPost as stripeWebhook } from '../functions/api/webhooks/stripe
 import { onRequestPost as cryptoWebhook } from '../functions/api/webhooks/crypto';
 import { onRequestGet as studioStatus, onRequestPost as studioSet, onKnock, onStats } from '../functions/api/studio';
 import { onConnect as tiktokConnect, onCallback as tiktokCallback } from '../functions/api/tiktok';
+import { onShop, onShipped, onExport as shopExport } from '../functions/api/shop';
 import { studioNudge, weeklySummary } from '../functions/_lib/studio';
 import { refreshInstagramTokens } from '../functions/_lib/followers';
 import { hourlyFollowers } from '../functions/_lib/alerts';
@@ -22,6 +23,8 @@ import { releaseAnniversaries, type ReleaseDate } from '../functions/_lib/annive
 import { monthlyLinkCheck, type SiteLink } from '../functions/_lib/linkcheck';
 import { dueReminders } from '../functions/_lib/reminders';
 import { monthlyBackup } from '../functions/_lib/backup';
+import { salesSummary } from '../functions/_lib/sales';
+import { notifyWhatsApp } from '../functions/_lib/whatsapp';
 
 /** Must match the Sunday entry in wrangler.toml [triggers]. */
 const WEEKLY_CRON = '0 18 * * SUN';
@@ -65,6 +68,15 @@ export default {
       if (request.method !== 'GET') return jsonResponse(405, { ok: false, error: 'Method not allowed.' });
       return (onStats as unknown as Handler)({ request, env });
     }
+    // Private shop page (/shop-admin/), same password as the stats page.
+    if (route === '/api/shop' || route === '/api/shop/export') {
+      if (request.method !== 'GET') return jsonResponse(405, { ok: false, error: 'Method not allowed.' });
+      return ((route === '/api/shop' ? onShop : shopExport) as unknown as Handler)({ request, env });
+    }
+    if (route === '/api/shop/shipped') {
+      if (request.method !== 'POST') return jsonResponse(405, { ok: false, error: 'Method not allowed.' });
+      return (onShipped as unknown as Handler)({ request, env });
+    }
     // TikTok login for the follower count on /studio-stats/.
     if (route === '/api/tiktok/connect' || route === '/api/tiktok/callback') {
       if (request.method !== 'GET') return jsonResponse(405, { ok: false, error: 'Method not allowed.' });
@@ -83,7 +95,7 @@ export default {
   },
 
   // Crons (wrangler.toml [triggers]): hourly follower check (+ WhatsApp milestone/problem alerts, the
-  // 18:00 studio nudge, the 31 December Wrapped and 10:00 release anniversaries and dated reminders); Sunday evening WhatsApp
+  // 18:00 studio nudge, the 31 December Wrapped and 10:00 release anniversaries, dated reminders and the busy-hour sales summary); Sunday evening WhatsApp
   // summary and Instagram token renewal; monthly WhatsApp report, link check and backup email on the 1st.
   async scheduled(controller: ScheduledController, env: WorkerEnv, ctx: ExecutionContext): Promise<void> {
     if (controller.cron === WEEKLY_CRON) {
@@ -93,8 +105,12 @@ export default {
       ctx.waitUntil(Promise.all([monthlyReport(env), monthlyLinkCheck(env, links), monthlyBackup(env)]));
     } else {
       const now = Date.now();
+      const busySales = async () => {
+        const text = await salesSummary(env).catch(() => '');
+        if (text) await notifyWhatsApp(env, text);
+      };
       const releases = async () => (await (await env.ASSETS.fetch('https://assets.local/release-dates.json')).json()) as ReleaseDate[];
-      ctx.waitUntil(Promise.all([hourlyFollowers(env, now), studioNudge(env, now), wrappedMessage(env, now), releaseAnniversaries(env, now, releases), dueReminders(env, now)]));
+      ctx.waitUntil(Promise.all([hourlyFollowers(env, now), studioNudge(env, now), wrappedMessage(env, now), releaseAnniversaries(env, now, releases), dueReminders(env, now), busySales()]));
     }
   },
 } satisfies ExportedHandler<WorkerEnv>;

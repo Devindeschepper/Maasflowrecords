@@ -1,0 +1,298 @@
+---
+// Private shop page for VIN: what to do (orders to ship, stock running out), sales, stock and countries.
+// Same password as /studio-stats/ (remembered in this browser). Not linked publicly and not indexed.
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Shop orders" description="Private shop page." noindex noFooter>
+  <section class="section">
+    <div class="container">
+      <form class="unlock" data-unlock hidden>
+        <span class="door-sign" aria-hidden="true">Shop</span>
+        <p class="kicker mono">Private</p>
+        <h1>Shop</h1>
+        <p class="muted">Orders, sales and stock.</p>
+        <label class="sr-only" for="shop-token">Password</label>
+        <input id="shop-token" type="password" autocomplete="current-password" placeholder="Password" required />
+        <button class="btn btn-primary" type="submit">Open shop</button>
+        <p class="error" data-error hidden></p>
+      </form>
+
+      <div class="panel" data-panel hidden>
+        <div class="top">
+          <a class="back mono" href="/studio-stats/">← Studio stats</a>
+          <h1>Shop <span class="status mono" data-status></span></h1>
+        </div>
+
+        <h2 class="h3 sec">To do</h2>
+        <ul class="todo" data-todo></ul>
+
+        <section data-ship-box>
+          <div class="sec-row">
+            <h2 class="h3 sec">Orders to ship <span class="count mono" data-ship-count></span></h2>
+            <button class="btn btn-ghost small" type="button" data-export>Packing list (Excel)</button>
+          </div>
+          <ol class="orders" data-to-ship></ol>
+        </section>
+
+        <h2 class="h3 sec">Sales</h2>
+        <div class="tiles">
+          <div class="tile"><span class="mono muted">This month</span><strong data-k="month"></strong><span data-k="month-meta"></span></div>
+          <div class="tile"><span class="mono muted">Best seller</span><strong data-k="best"></strong><span data-k="best-meta"></span></div>
+          <div class="tile"><span class="mono muted">All time</span><strong data-k="all"></strong><span data-k="all-meta"></span></div>
+        </div>
+
+        <h2 class="h3 sec">Stock</h2>
+        <ul class="stock" data-stock></ul>
+
+        <section data-countries-box hidden>
+          <h2 class="h3 sec">Orders by country</h2>
+          <ol class="countries" data-countries></ol>
+        </section>
+
+        <details class="shipped" data-shipped-box hidden>
+          <summary class="mono">Recently shipped</summary>
+          <ol class="orders" data-shipped-list></ol>
+        </details>
+
+        <button class="btn btn-ghost lock" type="button" data-lock>Forget password on this device</button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  type Order = {
+    orderId: string; at: number; via: string; total: number; shippingZone: string; shippedAt: number | null;
+    items: { name: string; qty: number; size?: string }[];
+    customer: { name: string; email: string; address: string; postalCode: string; city: string; country: string; notes: string } | null;
+  };
+  type Data = {
+    ok: boolean; error?: string;
+    stats: {
+      open: boolean; test: boolean;
+      month: { orders: number; revenue: number; best: { name: string; qty: number } | null };
+      all: { orders: number; revenue: number };
+      stock: { id: string; name: string; stock: number; sold: number; left: number; low: boolean }[];
+      countries: { name: string; orders: number }[];
+    } | null;
+    toShip: Order[]; shipped: Order[];
+  };
+
+  // Same key as /studio-stats/, so unlocking one page unlocks both.
+  const KEY = 'mfr-studio-token';
+  const store = {
+    get: () => { try { return localStorage.getItem(KEY) ?? ''; } catch { return ''; } },
+    set: (v: string) => { try { localStorage.setItem(KEY, v); } catch { /* private mode */ } },
+    clear: () => { try { localStorage.removeItem(KEY); } catch { /* private mode */ } },
+  };
+  const form = document.querySelector<HTMLFormElement>('[data-unlock]')!;
+  const input = document.querySelector<HTMLInputElement>('#shop-token')!;
+  const error = document.querySelector<HTMLElement>('[data-error]')!;
+  const panel = document.querySelector<HTMLElement>('[data-panel]')!;
+  const $ = <T extends HTMLElement = HTMLElement>(sel: string) => panel.querySelector<T>(sel)!;
+
+  const esc = (t: unknown) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const money = (c: number) => `€${(c / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
+  const date = (t: number) => new Date(t).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const headers = () => ({ Authorization: `Bearer ${store.get()}`, Accept: 'application/json' });
+
+  function orderCard(o: Order, shipped: boolean): string {
+    const c = o.customer;
+    const address = c ? [c.name, c.address, `${c.postalCode} ${c.city}`.trim(), c.country].filter(Boolean).join('\n') : 'Address: see the order email';
+    return `<li class="order">
+      <div class="o-head"><b class="mono">${esc(o.orderId)}</b><span class="muted">${esc(date(o.at))} · ${esc(money(o.total))}</span></div>
+      <ul class="o-items">${o.items.map((l) => `<li>${l.qty} × ${esc(l.name)}${l.size ? ` (${esc(l.size)})` : ''}</li>`).join('')}</ul>
+      <pre class="o-addr">${esc(address)}</pre>
+      ${c?.notes ? `<p class="o-notes">Note: ${esc(c.notes)}</p>` : ''}
+      <div class="o-actions">
+        ${c?.email ? `<a class="btn btn-ghost small" href="mailto:${esc(c.email)}?subject=${encodeURIComponent(`Your Maas Flow Records order ${o.orderId}`)}">Email</a>` : ''}
+        <button class="btn ${shipped ? 'btn-ghost' : 'btn-primary'} small" type="button" data-ship="${esc(o.orderId)}" data-mark="${shipped ? '0' : '1'}">${shipped ? 'Undo' : 'Shipped ✓'}</button>
+      </div>
+    </li>`;
+  }
+
+  function render(d: Data) {
+    const s = d.stats;
+    const status = $('[data-status]');
+    status.textContent = !s?.open ? 'Closed' : s.test ? 'Test mode' : 'Online';
+    status.className = `status mono ${!s?.open ? 'off' : s.test ? 'test' : 'on'}`;
+
+    // To do: what needs VIN's attention right now, most important first.
+    const todo: string[] = [];
+    if (d.toShip.length) todo.push(`📦 <b>${plural(d.toShip.length, 'order')} to ship.</b> Pack them, then tap “Shipped ✓”.`);
+    for (const p of s?.stock ?? []) {
+      if (p.left === 0) todo.push(`❌ <b>${esc(p.name)} is sold out.</b> Got more? Put the new number in the admin panel (Shop (CDs) → Stock).`);
+      else if (p.low) todo.push(`⚠️ <b>Only ${p.left} × ${esc(p.name)} left.</b> Order more, or post “last copies”.`);
+    }
+    if (s?.open && s.test) todo.push('🟡 <b>Test mode is on:</b> real payments don’t work. When you’re ready: admin panel → Site → Settings → turn off “Test mode”.');
+    if (!s?.open) todo.push('⚪ <b>The shop is closed</b> (coming soon). To sell: admin panel → Site → Settings → “Shop is open”.');
+    if (!todo.length) todo.push('✅ <b>Nothing to do.</b> All orders are shipped and the stock is fine.');
+    $('[data-todo]').innerHTML = todo.map((t) => `<li>${t}</li>`).join('');
+
+    // Orders to ship, oldest first (packing order).
+    $('[data-ship-count]').textContent = d.toShip.length ? String(d.toShip.length) : '';
+    $('[data-to-ship]').innerHTML = d.toShip.length ? d.toShip.map((o) => orderCard(o, false)).join('') : '<li class="empty muted">No orders waiting.</li>';
+    $<HTMLButtonElement>('[data-export]').hidden = !d.toShip.length;
+
+    if (s) {
+      $('[data-k="month"]').textContent = money(s.month.revenue);
+      $('[data-k="month-meta"]').textContent = plural(s.month.orders, 'order');
+      $('[data-k="best"]').textContent = s.month.best ? `${s.month.best.qty}×` : '—';
+      $('[data-k="best-meta"]').textContent = s.month.best ? s.month.best.name : 'No sales yet this month';
+      $('[data-k="all"]').textContent = money(s.all.revenue);
+      $('[data-k="all-meta"]').textContent = plural(s.all.orders, 'order');
+      $('[data-stock]').innerHTML = s.stock
+        .map((p) => `<li class="${p.left === 0 ? 'out' : p.low ? 'low' : ''}"><span>${esc(p.name)}</span><b>${p.left === 0 ? 'Sold out' : `${p.left} left`}</b><small class="muted">${p.sold} sold of ${p.stock}</small></li>`)
+        .join('') || '<li class="muted">No products yet.</li>';
+      const max = Math.max(1, ...s.countries.map((c) => c.orders));
+      $('[data-countries-box]').hidden = !s.countries.length;
+      $('[data-countries]').innerHTML = s.countries
+        .map((c) => `<li><span>${esc(c.name)}</span><span class="bar"><span style="width:${Math.max(6, (c.orders / max) * 100)}%"></span></span><b>${c.orders}</b></li>`)
+        .join('');
+    }
+
+    $('[data-shipped-box]').hidden = !d.shipped.length;
+    $('[data-shipped-list]').innerHTML = d.shipped.map((o) => orderCard(o, true)).join('');
+    panel.querySelectorAll<HTMLButtonElement>('[data-ship]').forEach((b) => b.addEventListener('click', ship));
+  }
+
+  async function load(token: string) {
+    error.hidden = true;
+    store.set(token);
+    try {
+      const res = await fetch('/api/shop', { headers: headers() });
+      const data = (await res.json()) as Data;
+      if (!data.ok) throw new Error(data.error ?? 'Could not load the shop.');
+      render(data);
+      form.hidden = true;
+      panel.hidden = false;
+    } catch (err) {
+      store.clear();
+      panel.hidden = true;
+      form.hidden = false;
+      error.textContent = err instanceof Error ? err.message : 'Could not load the shop.';
+      error.hidden = false;
+    }
+  }
+
+  async function ship(e: Event) {
+    const b = e.currentTarget as HTMLButtonElement;
+    b.disabled = true;
+    try {
+      const res = await fetch('/api/shop/shipped', {
+        method: 'POST',
+        headers: { ...headers(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: b.dataset.ship, shipped: b.dataset.mark === '1' }),
+      });
+      const data = (await res.json()) as { ok: boolean; error?: string };
+      if (!data.ok) throw new Error(data.error);
+      await load(store.get());
+    } catch {
+      b.disabled = false;
+      b.textContent = 'Try again';
+    }
+  }
+
+  // Packing list: every order to ship with its address, as an Excel file.
+  $('[data-export]').addEventListener('click', async (e) => {
+    const b = e.currentTarget as HTMLButtonElement;
+    b.disabled = true;
+    try {
+      const res = await fetch('/api/shop/export', { headers: headers() });
+      const data = (await res.json()) as { ok: boolean; filename: string; content: string };
+      if (!data.ok) throw new Error();
+      const bytes = Uint8Array.from(atob(data.content), (c) => c.charCodeAt(0));
+      const url = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      const a = Object.assign(document.createElement('a'), { href: url, download: data.filename });
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } finally {
+      b.disabled = false;
+    }
+  });
+
+  form.addEventListener('submit', (e) => { e.preventDefault(); load(input.value.trim()); });
+  $('[data-lock]').addEventListener('click', () => { store.clear(); location.reload(); });
+  const saved = store.get();
+  if (saved) load(saved);
+  else form.hidden = false;
+</script>
+
+<style>
+  .unlock {
+    max-width: 400px; margin: clamp(1rem, 6vh, 4rem) auto; display: grid; gap: 0.75rem; justify-items: center; text-align: center;
+    padding: 2.25rem 1.75rem 2rem; border: 1px solid var(--line); border-top: 3px solid var(--accent);
+    background: linear-gradient(180deg, rgba(228, 67, 45, 0.08), transparent 45%), var(--surface);
+  }
+  .unlock[hidden], .panel[hidden], .error[hidden], [hidden] { display: none !important; }
+  .door-sign {
+    font-family: var(--font-display); font-size: 0.8rem; letter-spacing: 0.16em; text-transform: uppercase;
+    padding: 0.35rem 0.75rem 0.3rem; border-radius: 3px; color: #fff4ef; background: var(--accent); border: 1px solid #ff7a63;
+    box-shadow: 0 0 12px rgba(228, 67, 45, 0.7); margin-bottom: 0.5rem;
+  }
+  .unlock .kicker { margin: 0; color: var(--accent); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; }
+  .unlock h1 { margin: 0; font-size: clamp(2.4rem, 9vw, 3.2rem); line-height: 1; }
+  .unlock .muted { margin: 0 0 0.75rem; }
+  .unlock input, .unlock .btn { width: 100%; }
+  .unlock input { text-align: center; }
+  .error { color: var(--accent); margin: 0; font-size: 0.9rem; }
+
+  .top { display: grid; gap: 0.4rem; margin-bottom: 0.5rem; }
+  .back { font-size: 0.75rem; letter-spacing: 0.08em; color: var(--muted, #9b978f); text-decoration: none; }
+  .back:hover { color: var(--accent); }
+  .top h1 { margin: 0; font-size: clamp(2.4rem, 9vw, 3.4rem); display: flex; align-items: center; gap: 0.9rem; }
+  .status { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted, #9b978f); }
+  .status::before { content: ''; width: 0.6rem; height: 0.6rem; border-radius: 50%; background: currentColor; }
+  .status.on { color: var(--ok, #7fbf7f); }
+  .status.on::before { box-shadow: 0 0 8px currentColor; }
+  .status.test { color: #e0b44c; }
+  .sec { margin: 2rem 0 0.75rem; font-size: clamp(1.35rem, 3vw, 1.6rem); }
+  .sec-row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+  .count { font-size: 0.8rem; color: #fff; background: var(--accent); border-radius: 999px; padding: 0.1rem 0.55rem; vertical-align: middle; }
+  .btn.small { padding: 0.5rem 0.8rem; font-size: 0.75rem; }
+
+  .todo { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+  .todo :global(li) { padding: 0.85rem 1rem; border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--surface); line-height: 1.45; }
+
+  .orders { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+  .orders :global(.order) { display: grid; gap: 0.5rem; padding: 1rem; border: 1px solid var(--line); background: var(--surface); }
+  .orders :global(.o-head) { display: flex; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; font-size: 0.85rem; }
+  .orders :global(.o-items) { margin: 0; padding-left: 1.1rem; font-size: 1rem; }
+  .orders :global(.o-addr) { margin: 0; font-family: inherit; white-space: pre-wrap; font-size: 0.95rem; padding: 0.6rem 0.75rem; background: rgba(0, 0, 0, 0.25); border: 1px dashed var(--line); user-select: all; }
+  .orders :global(.o-notes) { margin: 0; font-size: 0.85rem; color: #e0b44c; }
+  .orders :global(.o-actions) { display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap; }
+  .orders :global(.empty) { padding: 0.5rem 0; }
+
+  .tiles { display: grid; gap: 0.5rem; grid-template-columns: repeat(3, 1fr); }
+  .tile { display: grid; gap: 0.3rem; padding: 1rem; border: 1px solid var(--line); background: var(--surface); }
+  .tile .mono { font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; }
+  .tile strong { font-family: var(--font-display); font-size: 2rem; font-weight: 400; line-height: 1; }
+  .tile span:last-child { font-size: 0.8rem; color: var(--muted, #9b978f); }
+
+  .stock { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+  .stock :global(li) { display: grid; grid-template-columns: 1fr auto; gap: 0.15rem 0.75rem; padding: 0.75rem 1rem; border: 1px solid var(--line); border-left: 3px solid var(--ok, #7fbf7f); background: var(--surface); }
+  .stock :global(li b) { font-family: var(--font-mono); font-weight: 400; }
+  .stock :global(li small) { grid-column: 1 / -1; font-size: 0.75rem; }
+  .stock :global(li.low), .stock :global(li.out) { border-left-color: var(--accent); }
+  .stock :global(li.out b) { color: var(--accent); }
+
+  .countries { list-style: none; margin: 0; padding: 1rem; display: grid; gap: 0.45rem; border: 1px solid var(--line); background: var(--surface); }
+  .countries :global(li) { display: grid; grid-template-columns: minmax(0, 9rem) 1fr auto; align-items: center; gap: 0.75rem; font-size: 0.9rem; }
+  .countries :global(.bar) { height: 6px; background: #1c1b1a; border-radius: 3px; overflow: hidden; }
+  .countries :global(.bar span) { display: block; height: 100%; background: var(--accent); }
+  .countries :global(li b) { font-family: var(--font-mono); font-weight: 400; }
+
+  .shipped { margin-top: 2rem; }
+  .shipped summary { cursor: pointer; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted, #9b978f); margin-bottom: 0.75rem; }
+  .lock { margin-top: 2.5rem; }
+
+  @media (max-width: 600px) {
+    .tiles { gap: 0.4rem; }
+    .tile { padding: 0.75rem 0.6rem; }
+    .tile .mono { font-size: 0.55rem; letter-spacing: 0.08em; }
+    .tile strong { font-size: 1.35rem; }
+    .tile span:last-child { font-size: 0.68rem; }
+  }
+</style>
