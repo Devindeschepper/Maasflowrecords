@@ -16,9 +16,12 @@ import { onConnect as tiktokConnect, onCallback as tiktokCallback } from '../fun
 import { weeklySummary } from '../functions/_lib/studio';
 import { refreshInstagramTokens } from '../functions/_lib/followers';
 import { hourlyFollowers } from '../functions/_lib/alerts';
+import { monthlyReport } from '../functions/_lib/report';
 
 /** Must match the Sunday entry in wrangler.toml [triggers]. */
 const WEEKLY_CRON = '0 18 * * SUN';
+/** Must match the monthly entry in wrangler.toml [triggers]: the 1st at 08:00 UTC (9:00/10:00 Luxembourg). */
+const MONTHLY_CRON = '0 8 1 * *';
 
 interface WorkerEnv extends Env {
   ASSETS: Fetcher;
@@ -75,10 +78,12 @@ export default {
   },
 
   // Crons (wrangler.toml [triggers]): hourly follower check (+ WhatsApp milestone/problem alerts); Sunday evening WhatsApp
-  // summary and Instagram token renewal.
+  // summary and Instagram token renewal; monthly WhatsApp report on the 1st.
   async scheduled(controller: ScheduledController, env: WorkerEnv, ctx: ExecutionContext): Promise<void> {
     if (controller.cron === WEEKLY_CRON) {
       ctx.waitUntil(Promise.all([refreshInstagramTokens(env), weeklySummary(env, Date.now())]));
+    } else if (controller.cron === MONTHLY_CRON) {
+      ctx.waitUntil(monthlyReport(env));
     } else {
       ctx.waitUntil(hourlyFollowers(env));
     }

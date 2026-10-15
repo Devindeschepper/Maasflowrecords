@@ -17,19 +17,21 @@ import { tiktokConfigured, tiktokFollowers } from './tiktok';
 interface Source {
   key: string;
   label: string;
+  /** For WhatsApp messages. */
+  short: string;
   platform: 'instagram' | 'youtube' | 'tiktok';
   /** YouTube: channel id (UC…) or handle (@…). Instagram: which token. TikTok: which connected account. */
   ref: string;
 }
 
 export const SOURCES: Source[] = [
-  { key: 'ig-vin', label: 'Instagram · @vintheartist', platform: 'instagram', ref: 'VIN' },
-  { key: 'ig-mfr', label: 'Instagram · @maasflowrecords', platform: 'instagram', ref: 'MFR' },
-  { key: 'yt-vin', label: 'YouTube · VIN', platform: 'youtube', ref: 'UC8dDWNLNjAxwDzcRoadqSvg' },
-  { key: 'yt-mfr', label: 'YouTube · Maas Flow Records', platform: 'youtube', ref: '@MaasFlowRecords' },
-  { key: 'yt-beats', label: 'YouTube · VIN Beats', platform: 'youtube', ref: '@VINBeats1' },
-  { key: 'tt-vin', label: 'TikTok · VIN', platform: 'tiktok', ref: 'VIN' },
-  { key: 'tt-mfr', label: 'TikTok · Maas Flow Records', platform: 'tiktok', ref: 'MFR' },
+  { key: 'ig-vin', label: 'Instagram · @vintheartist', short: 'Instagram VIN', platform: 'instagram', ref: 'VIN' },
+  { key: 'ig-mfr', label: 'Instagram · @maasflowrecords', short: 'Instagram MFR', platform: 'instagram', ref: 'MFR' },
+  { key: 'yt-vin', label: 'YouTube · VIN', short: 'YouTube VIN', platform: 'youtube', ref: 'UC8dDWNLNjAxwDzcRoadqSvg' },
+  { key: 'yt-mfr', label: 'YouTube · Maas Flow Records', short: 'YouTube MFR', platform: 'youtube', ref: '@MaasFlowRecords' },
+  { key: 'yt-beats', label: 'YouTube · VIN Beats', short: 'YouTube VIN Beats', platform: 'youtube', ref: '@VINBeats1' },
+  { key: 'tt-vin', label: 'TikTok · VIN', short: 'TikTok VIN', platform: 'tiktok', ref: 'VIN' },
+  { key: 'tt-mfr', label: 'TikTok · Maas Flow Records', short: 'TikTok MFR', platform: 'tiktok', ref: 'MFR' },
 ];
 
 const DAY = 24 * 3600 * 1000;

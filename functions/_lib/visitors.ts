@@ -86,3 +86,25 @@ export async function visitorStats(env: Env, now = Date.now()): Promise<Visitors
     return { visits: 0, views: 0, prevVisits: 0, prevViews: 0, days: [], pages: [], error: err instanceof Error ? err.message : String(err) };
   }
 }
+
+/** Visits per date range (inclusive YYYY-MM-DD, each at most a month), one query. Throws on failure. */
+export async function visitsInRanges(env: Env, ranges: [string, string][]): Promise<number[]> {
+  const acc = env.CF_ACCOUNT_ID!.trim();
+  const site = env.CF_WEB_ANALYTICS_SITE!.trim();
+  if (!/^[a-f0-9]{32}$/i.test(acc) || !/^[a-z0-9-]{8,64}$/i.test(site)) throw new Error('Account id or site tag looks wrong');
+  const date = /^\d{4}-\d\d-\d\d$/;
+  const parts = ranges.map(([from, to], i) => {
+    if (!date.test(from) || !date.test(to)) throw new Error('Bad date');
+    return `r${i}: rumPageloadEventsAdaptiveGroups(limit: 1, filter: { siteTag: "${site}", date_geq: "${from}", date_leq: "${to}" }) { sum { visits } }`;
+  });
+  const res = await fetch('https://api.cloudflare.com/client/v4/graphql', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.CF_ANALYTICS_TOKEN!.trim()}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: `{ viewer { accounts(filter: { accountTag: "${acc}" }) { ${parts.join('\n')} } } }` }),
+    signal: AbortSignal.timeout(8000),
+  });
+  const body = (await res.json()) as { data?: { viewer?: { accounts?: Record<string, { sum: { visits: number } }[]>[] } }; errors?: { message: string }[] | null };
+  if (!res.ok || body.errors?.length) throw new Error(body.errors?.[0]?.message ?? `HTTP ${res.status}`);
+  const a = body.data?.viewer?.accounts?.[0] ?? {};
+  return ranges.map((_, i) => a[`r${i}`]?.[0]?.sum.visits ?? 0);
+}

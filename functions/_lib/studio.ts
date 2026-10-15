@@ -111,6 +111,23 @@ export function weekStart(t: number): number {
 
 export const WEEK_MS = 7 * 24 * 3600 * 1000;
 
+/** Luxembourg wall-clock time minus UTC at instant `t` (ms; +1h in winter, +2h in summer). */
+function luxOffset(t: number): number {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Luxembourg', hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' })
+      .formatToParts(t)
+      .map((x) => [x.type, Number(x.value)]),
+  );
+  return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - Math.floor(t / 1000) * 1000;
+}
+
+/** The 1st of the month containing `t`, 00:00 Luxembourg time, as epoch ms (right across summer/winter time). */
+export function monthStart(t: number): number {
+  const local = new Date(t + luxOffset(t));
+  const wall = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), 1);
+  return wall - luxOffset(wall - luxOffset(wall));
+}
+
 /** Sunday-evening WhatsApp summary of the week (cron in wrangler.toml). */
 export async function weeklySummary(env: Env, now: number): Promise<void> {
   const d = await db(env);
