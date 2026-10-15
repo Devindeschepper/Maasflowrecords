@@ -19,6 +19,7 @@ import { hourlyFollowers } from '../functions/_lib/alerts';
 import { monthlyReport } from '../functions/_lib/report';
 import { wrappedMessage } from '../functions/_lib/wrapped';
 import { releaseAnniversaries, type ReleaseDate } from '../functions/_lib/anniversary';
+import { monthlyLinkCheck, type SiteLink } from '../functions/_lib/linkcheck';
 
 /** Must match the Sunday entry in wrangler.toml [triggers]. */
 const WEEKLY_CRON = '0 18 * * SUN';
@@ -81,12 +82,13 @@ export default {
 
   // Crons (wrangler.toml [triggers]): hourly follower check (+ WhatsApp milestone/problem alerts, the
   // 18:00 studio nudge, the 31 December Wrapped and 10:00 release anniversaries); Sunday evening WhatsApp
-  // summary and Instagram token renewal; monthly WhatsApp report on the 1st.
+  // summary and Instagram token renewal; monthly WhatsApp report and link check on the 1st.
   async scheduled(controller: ScheduledController, env: WorkerEnv, ctx: ExecutionContext): Promise<void> {
     if (controller.cron === WEEKLY_CRON) {
       ctx.waitUntil(Promise.all([refreshInstagramTokens(env), weeklySummary(env, Date.now())]));
     } else if (controller.cron === MONTHLY_CRON) {
-      ctx.waitUntil(monthlyReport(env));
+      const links = async () => (await (await env.ASSETS.fetch('https://assets.local/site-links.json')).json()) as SiteLink[];
+      ctx.waitUntil(Promise.all([monthlyReport(env), monthlyLinkCheck(env, links)]));
     } else {
       const now = Date.now();
       const releases = async () => (await (await env.ASSETS.fetch('https://assets.local/release-dates.json')).json()) as ReleaseDate[];
