@@ -14,7 +14,7 @@ export interface Wrapped {
   year: number;
   /** Set when the studio tracking started during the year ("since 12 Oct"). */
   since: string | null;
-  studio: { ms: number; sessions: number; knocks: number; days: number; streak: number } | null;
+  studio: { ms: number; sessions: number; days: number; streak: number } | null;
   longest: { ms: number; date: string } | null;
   bestMonth: { name: string; ms: number } | null;
   followers: { total: number; change: number } | null;
@@ -70,7 +70,7 @@ export async function wrappedStats(env: Env, year: number, now: number): Promise
         run = i && k === sorted[i - 1] + 1 ? run + 1 : 1;
         streak = Math.max(streak, run);
       });
-      w.studio = { ms: sum.ms, sessions: sum.sessions, knocks: sum.knocks, days: days.size, streak };
+      w.studio = { ms: sum.ms, sessions: sum.sessions, days: days.size, streak };
       for (let m = 0; m < 12; m++) {
         const ms = summarize(results, monthStart(Date.UTC(year, m, 1, 12)), monthStart(Date.UTC(year, m + 1, 1, 12))).ms;
         if (ms > 0 && (!w.bestMonth || ms > w.bestMonth.ms)) {
@@ -120,7 +120,6 @@ export function wrappedText(w: Wrapped): string {
     if (w.longest) lines.push(`⏱ Longest session: ${fmtDuration(w.longest.ms)} (${w.longest.date})`);
     if (w.bestMonth) lines.push(`📅 Best month: ${w.bestMonth.name} (${fmtDuration(w.bestMonth.ms)})`);
     if (w.studio.streak > 1) lines.push(`🔥 Longest streak: ${w.studio.streak} days in a row`);
-    if (w.studio.knocks) lines.push(`🚪 Knocks: ${fmt(w.studio.knocks)}`);
   }
   if (w.followers) lines.push(`👥 Followers: ${fmt(w.followers.total)} (${signed(w.followers.change)} this year)`);
   if (w.visits !== null) lines.push(`🌐 Website: ${fmt(w.visits)} visits`);
