@@ -58,7 +58,6 @@ export async function shopStats(env: Env, now: number, monthStart: number): Prom
     .prepare('SELECT at, total_cents, lines FROM sales WHERE test = ?1 ORDER BY at')
     .bind(shopTestMode ? 1 : 0)
     .all<{ at: number; total_cents: number; lines: string }>();
-  if (!shopOpen && !results.length) return null;
   const sales = results.map((r) => ({ ...r, lines: JSON.parse(r.lines || '[]') as Line[] }));
 
   const month = sales.filter((s) => s.at >= monthStart);

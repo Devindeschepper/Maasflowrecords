@@ -40,8 +40,9 @@ import PageHero from '../components/PageHero.astro';
 
 
         <section class="shop-stats" data-shop hidden>
-          <h2 class="h3 sec">Shop <span class="mono muted" data-s="note"></span></h2>
-          <div class="tiles">
+          <h2 class="h3 sec">Shop <span class="shop-status mono" data-s="note"></span></h2>
+          <p class="shop-closed muted" data-s="closed" hidden>The shop is closed (coming soon). Sales and stock show here once it opens.</p>
+          <div class="tiles" data-s="tiles">
             <div class="tile"><span class="mono muted">This month</span><strong data-s="month"></strong><span data-s="month-meta"></span></div>
             <div class="tile"><span class="mono muted">Best seller</span><strong data-s="best"></strong><span data-s="best-meta"></span></div>
             <div class="tile"><span class="mono muted">All time</span><strong data-s="all"></strong><span data-s="all-meta"></span></div>
@@ -166,7 +167,13 @@ import PageHero from '../components/PageHero.astro';
     if (sh) {
       const q = (k: string) => shBox.querySelector<HTMLElement>(`[data-s="${k}"]`)!;
       const money = (c: number) => `€${(c / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      q('note').textContent = sh.test ? 'test mode' : sh.open ? '' : 'closed';
+      // Online / test mode / closed, like a status light.
+      q('note').textContent = !sh.open ? 'Closed' : sh.test ? 'Test mode' : 'Online';
+      q('note').className = `shop-status mono ${!sh.open ? 'off' : sh.test ? 'test' : 'on'}`;
+      const empty = !sh.open && !sh.all.orders;
+      q('closed').hidden = !empty;
+      q('tiles').hidden = empty;
+      q('stock').hidden = empty;
       q('month').textContent = money(sh.month.revenue);
       q('month-meta').textContent = plural(sh.month.orders, 'order');
       q('best').textContent = sh.month.best ? `${sh.month.best.qty}×` : '—';
@@ -376,6 +383,13 @@ import PageHero from '../components/PageHero.astro';
   .shop-stats .h3 { display: flex; align-items: baseline; gap: 0.75rem; }
   .shop-stats .h3 .mono { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; }
   .shop-stats .tiles { margin-bottom: 0.75rem; }
+  .shop-status { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted, #9b978f); }
+  .shop-status::before { content: ''; width: 0.55rem; height: 0.55rem; border-radius: 50%; background: currentColor; }
+  .shop-status.on { color: var(--ok, #7fbf7f); }
+  .shop-status.on::before { box-shadow: 0 0 8px currentColor; }
+  .shop-status.test { color: #e0b44c; }
+  .shop-closed { margin: 0; font-size: 0.9rem; }
+  .shop-closed[hidden], [data-s='tiles'][hidden], .stock-list[hidden] { display: none; }
   .stock-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
   .stock-list :global(li) { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.75rem; padding: 0.7rem 1rem; border: 1px solid var(--line); background: var(--surface); border-left: 3px solid var(--ok, #7fbf7f); }
   .stock-list :global(li span) { flex: 1; min-width: 0; }
