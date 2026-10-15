@@ -34,9 +34,9 @@ export const SOURCES: Source[] = [
 
 const DAY = 24 * 3600 * 1000;
 /** An account counts as missed when its newest snapshot is older than this (the cron runs every hour). */
-const STALE = 3 * 3600 * 1000;
+export const STALE = 3 * 3600 * 1000;
 
-async function ensureTable(d: D1Database) {
+export async function ensureTable(d: D1Database) {
   await d.batch([
     d.prepare('CREATE TABLE IF NOT EXISTS follower_snapshots (source TEXT NOT NULL, at INTEGER NOT NULL, count INTEGER NOT NULL)'),
     d.prepare('CREATE INDEX IF NOT EXISTS follower_snapshots_src ON follower_snapshots (source, at)'),
@@ -87,7 +87,7 @@ export async function refreshInstagramTokens(env: Env): Promise<void> {
   }
 }
 
-function configured(env: Env, s: Source): boolean {
+export function configured(env: Env, s: Source): boolean {
   if (s.platform === 'youtube') return !!env.YOUTUBE_API_KEY?.trim();
   if (s.platform === 'tiktok') return tiktokConfigured(env);
   return !!(s.ref === 'VIN' ? env.INSTAGRAM_TOKEN_VIN : env.INSTAGRAM_TOKEN_MFR)?.trim();
