@@ -39,7 +39,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
   const email = new URL(request.url).searchParams.get('e') ?? '';
   const orderId = body.order_id ?? '?';
-  const paid = `${body.actually_paid ?? body.pay_amount ?? '?'} ${String(body.pay_currency ?? '').toUpperCase()} (${body.price_amount ?? '?'} ${String(body.price_currency ?? '').toUpperCase()})`;
+  // Euro amount first (what VIN sold it for), then what the customer actually sent in crypto.
+  const priceCur = String(body.price_currency ?? '').toUpperCase();
+  const price = typeof body.price_amount === 'number' && priceCur === 'EUR' ? `€${body.price_amount.toFixed(2)}` : `${body.price_amount ?? '?'} ${priceCur}`;
+  const paid = `${price} (${body.actually_paid ?? body.pay_amount ?? '?'} ${String(body.pay_currency ?? '').toUpperCase()})`;
 
   try {
     if (body.payment_status === 'finished') {

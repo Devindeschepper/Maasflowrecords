@@ -31,10 +31,23 @@ export interface PaidOrder {
 }
 
 /** Emails a confirmed payment to the label and a confirmation to the customer. */
+/** WhatsApp for a paid order: what was sold and for how much. */
+export function soldText(o: PaidOrder): string {
+  const items = o.items.replace(/^Maas Flow Records - /, '').split(/\n|, /).map((l) => l.trim()).filter(Boolean);
+  return [
+    `🔴 Maas Flow Records${test ? ' [TEST]' : ''}`,
+    `💰 Sold! ${o.paid}`,
+    ...items.map((l) => `• ${l}`),
+    `Paid via ${o.via.replace(/ \(.*\)$/, '')} · order ${o.orderId}`,
+    'Pack and ship it 📦 (details in your email)',
+  ].join('\n');
+}
+
 export async function mailPaidOrder(env: Env, o: PaidOrder): Promise<void> {
   await sendMail(env, {
     subject: `${test}[PAID] Order ${o.orderId} - ${o.paid}`,
     replyTo: o.customer.email,
+    whatsApp: soldText(o),
     fields: [
       ['Status', 'PAID - ready to ship'],
       ['Order', o.orderId],

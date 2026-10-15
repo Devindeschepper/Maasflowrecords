@@ -17,6 +17,8 @@ export interface Mail {
   to?: string;
   /** Optional paragraphs shown above the table (plain text, escaped). */
   intro?: string[];
+  /** WhatsApp text for this label email instead of the default subject + sender summary. */
+  whatsApp?: string;
 }
 
 /**
@@ -59,7 +61,7 @@ export async function sendMail(env: Env, mail: Mail): Promise<void> {
     throw new Error('Email delivery failed.');
   }
   // Emails to the label (no explicit `to`) also ping the label's WhatsApp; emails to customers don't.
-  if (!mail.to) await notifyWhatsApp(env, whatsAppSummary(mail.subject, mail.fields));
+  if (!mail.to) await notifyWhatsApp(env, mail.whatsApp ?? whatsAppSummary(mail.subject, mail.fields));
 }
 
 /**
