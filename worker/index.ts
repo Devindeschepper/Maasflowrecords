@@ -13,10 +13,11 @@ import { onRequestPost as stripeWebhook } from '../functions/api/webhooks/stripe
 import { onRequestPost as cryptoWebhook } from '../functions/api/webhooks/crypto';
 import { onRequestGet as studioStatus, onRequestPost as studioSet, onKnock, onStats } from '../functions/api/studio';
 import { onConnect as tiktokConnect, onCallback as tiktokCallback } from '../functions/api/tiktok';
-import { weeklySummary } from '../functions/_lib/studio';
+import { studioNudge, weeklySummary } from '../functions/_lib/studio';
 import { refreshInstagramTokens } from '../functions/_lib/followers';
 import { hourlyFollowers } from '../functions/_lib/alerts';
 import { monthlyReport } from '../functions/_lib/report';
+import { wrappedMessage } from '../functions/_lib/wrapped';
 
 /** Must match the Sunday entry in wrangler.toml [triggers]. */
 const WEEKLY_CRON = '0 18 * * SUN';
@@ -77,7 +78,8 @@ export default {
     return env.ASSETS.fetch(request);
   },
 
-  // Crons (wrangler.toml [triggers]): hourly follower check (+ WhatsApp milestone/problem alerts); Sunday evening WhatsApp
+  // Crons (wrangler.toml [triggers]): hourly follower check (+ WhatsApp milestone/problem alerts, the
+  // 18:00 studio nudge and the 31 December Wrapped); Sunday evening WhatsApp
   // summary and Instagram token renewal; monthly WhatsApp report on the 1st.
   async scheduled(controller: ScheduledController, env: WorkerEnv, ctx: ExecutionContext): Promise<void> {
     if (controller.cron === WEEKLY_CRON) {
@@ -85,7 +87,8 @@ export default {
     } else if (controller.cron === MONTHLY_CRON) {
       ctx.waitUntil(monthlyReport(env));
     } else {
-      ctx.waitUntil(hourlyFollowers(env));
+      const now = Date.now();
+      ctx.waitUntil(Promise.all([hourlyFollowers(env, now), studioNudge(env, now), wrappedMessage(env, now)]));
     }
   },
 } satisfies ExportedHandler<WorkerEnv>;

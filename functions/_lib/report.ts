@@ -1,7 +1,7 @@
 import type { Env } from './env';
-import { configured, ensureTable, SOURCES } from './followers';
+import { followerTotals } from './followers';
 import { contactDates } from './newsletter';
-import { db, monthStart } from './studio';
+import { monthStart } from './studio';
 import { visitorsConfigured, visitsInRanges } from './visitors';
 import { notifyWhatsApp } from './whatsapp';
 
@@ -10,8 +10,8 @@ import { notifyWhatsApp } from './whatsapp';
  * change over the month that just ended, website visits compared with the month before, and newsletter
  * subscribers. Each part is left out when it isn't set up or can't be read.
  */
-const fmt = (n: number) => n.toLocaleString('en-US');
-const signed = (n: number) => (n > 0 ? `+${fmt(n)}` : n < 0 ? `−${fmt(-n)}` : '±0');
+export const fmt = (n: number) => n.toLocaleString('en-US');
+export const signed = (n: number) => (n > 0 ? `+${fmt(n)}` : n < 0 ? `−${fmt(-n)}` : '±0');
 const TZ = 'Europe/Luxembourg';
 const localDate = (t: number) => new Date(t).toLocaleDateString('en-CA', { timeZone: TZ }); // YYYY-MM-DD
 const monthName = (t: number) => new Date(t).toLocaleString('en-US', { month: 'long', timeZone: TZ });
@@ -24,24 +24,9 @@ export async function monthlyReportText(env: Env, now: number): Promise<string> 
 
   // Followers: the last count of the month against the last count before it started (or the first count ever
   // for accounts connected during the month).
-  const d = await db(env);
-  if (d) {
-    await ensureTable(d);
-    const rows: string[] = [];
-    let total = 0;
-    let totalChange = 0;
-    for (const s of SOURCES.filter((src) => configured(env, src))) {
-      const at = (q: string, t: number) => d.prepare(q).bind(s.key, t).first<{ count: number }>();
-      const last = await at('SELECT count FROM follower_snapshots WHERE source = ?1 AND at < ?2 ORDER BY at DESC LIMIT 1', end);
-      if (!last) continue;
-      const first =
-        (await at('SELECT count FROM follower_snapshots WHERE source = ?1 AND at < ?2 ORDER BY at DESC LIMIT 1', start)) ??
-        (await at('SELECT count FROM follower_snapshots WHERE source = ?1 AND at >= ?2 ORDER BY at ASC LIMIT 1', start))!;
-      total += last.count;
-      totalChange += last.count - first.count;
-      rows.push(`${s.short}: ${fmt(last.count)} (${signed(last.count - first.count)})`);
-    }
-    if (rows.length) lines.push('', `👥 Followers: ${fmt(total)} (${signed(totalChange)})`, ...rows);
+  const fol = await followerTotals(env, start, end);
+  if (fol) {
+    lines.push('', `👥 Followers: ${fmt(fol.total)} (${signed(fol.change)})`, ...fol.rows.map((r) => `${r.short}: ${fmt(r.count)} (${signed(r.change)})`));
   }
 
   if (visitorsConfigured(env)) {

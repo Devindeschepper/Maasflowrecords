@@ -24,6 +24,13 @@ import PageHero from '../components/PageHero.astro';
 
       <div class="stats" data-stats hidden>
 
+        <section class="wrapped" data-wrapped hidden>
+          <p class="w-kicker mono">Maas Flow Records</p>
+          <h2 class="w-title">VIN Wrapped <span data-w="year"></span></h2>
+          <p class="w-since mono muted" data-w="since" hidden></p>
+          <ul class="w-grid" data-w="items"></ul>
+        </section>
+
         <h2 class="h3 sec">Studio</h2>
         <div class="tiles">
           <div class="tile"><span class="mono muted">This week</span><strong data-k="week.hours"></strong><span data-k="week.meta"></span></div>
@@ -72,6 +79,12 @@ import PageHero from '../components/PageHero.astro';
     ok: boolean; error?: string; live: boolean; week: Sum; month: Sum; all: Sum;
     visitors?: { visits: number; views: number; prevVisits: number; prevViews: number; days: { date: string; visits: number; views: number }[]; pages: { path: string; views: number }[]; error?: string } | null;
     newsletter?: { total: number; month: number; week: number; error?: string } | null;
+    wrapped?: {
+      year: number; since: string | null;
+      studio: { ms: number; sessions: number; knocks: number; days: number; streak: number } | null;
+      longest: { ms: number; date: string } | null; bestMonth: { name: string; ms: number } | null;
+      followers: { total: number; change: number } | null; visits: number | null; newsletter: { total: number; added: number } | null;
+    } | null;
     followers?: { key: string; label: string; platform: string; count: number | null; week: number | null; month: number | null; monthSince: string | null; at: string | null; error?: string }[];
   };
 
@@ -102,13 +115,41 @@ import PageHero from '../components/PageHero.astro';
       set(`${name}.meta`, `${plural(sum.sessions, 'session')} · ${plural(sum.knocks, 'knock')}`);
     }
 
+    const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+
+    // VIN Wrapped: the year in numbers (December and January, or /studio-stats/?wrapped to preview).
+    const w = s.wrapped;
+    const wBox = box.querySelector<HTMLElement>('[data-wrapped]')!;
+    wBox.hidden = !w;
+    if (w) {
+      const fmtN = (n: number) => n.toLocaleString('en-US');
+      const signed = (n: number) => (n > 0 ? `+${fmtN(n)}` : n < 0 ? `−${fmtN(-n)}` : '±0');
+      const items: [string, string, string][] = [];
+      if (w.studio) {
+        items.push(['In the studio', dur(w.studio.ms), `${plural(w.studio.sessions, 'session')} · ${plural(w.studio.days, 'day')}`]);
+        if (w.longest) items.push(['Longest session', dur(w.longest.ms), w.longest.date]);
+        if (w.bestMonth) items.push(['Best month', w.bestMonth.name, dur(w.bestMonth.ms)]);
+        if (w.studio.streak > 1) items.push(['Longest streak', `${w.studio.streak} days`, 'in a row']);
+        if (w.studio.knocks) items.push(['Knocks', fmtN(w.studio.knocks), 'on the studio door']);
+      }
+      if (w.followers) items.push(['Followers', fmtN(w.followers.total), `${signed(w.followers.change)} this year`]);
+      if (w.visits !== null) items.push(['Website', fmtN(w.visits), 'visits']);
+      if (w.newsletter) items.push(['Newsletter', fmtN(w.newsletter.total), `${signed(w.newsletter.added)} this year`]);
+      const q = (k: string) => wBox.querySelector<HTMLElement>(`[data-w="${k}"]`)!;
+      q('year').textContent = String(w.year);
+      q('since').hidden = !w.since;
+      q('since').textContent = w.since ? `Studio tracked since ${w.since}` : '';
+      q('items').innerHTML = items
+        .map(([label, value, meta], i) => `<li${i === 0 ? ' class="w-main"' : ''}><span class="mono muted">${esc(label)}</span><strong>${esc(value)}</strong><span>${esc(meta)}</span></li>`)
+        .join('');
+    }
+
     // Followers: latest count per account and the change over the last 7 days.
     const fol = s.followers ?? [];
     const fBox = box.querySelector<HTMLElement>('[data-followers]')!;
     fBox.hidden = fol.length === 0;
     // Our own messages are readable; network/HTTP errors get a generic text (details in the tooltip).
     const friendly = (e?: string) => (!e ? 'Not available yet' : /^HTTP|internal error|fetch|timed? ?out|abort/i.test(e) ? "Couldn't load right now" : e);
-    const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
     const change = (n: number, label: string) =>
       `<span class="f-week ${n > 0 ? 'up' : n < 0 ? 'down' : ''}">${n > 0 ? '▲' : n < 0 ? '▼' : '•'} ${Math.abs(n).toLocaleString('en-US')} <span class="f-when">${label}</span></span>`;
     const sinceLabel = (iso: string | null) => (iso ? `since ${new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : 'last month');
@@ -203,7 +244,7 @@ import PageHero from '../components/PageHero.astro';
   async function load(token: string) {
     error.hidden = true;
     try {
-      const res = await fetch('/api/studio/stats', { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } });
+      const res = await fetch(`/api/studio/stats${new URLSearchParams(location.search).has('wrapped') ? '?wrapped=1' : ''}`, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } });
       const data = (await res.json()) as Stats;
       if (!data.ok) throw new Error(data.error ?? 'Could not load the stats.');
       store.set(token);
@@ -279,6 +320,24 @@ import PageHero from '../components/PageHero.astro';
   .unlock .btn { width: 100%; }
   .error { color: var(--accent); margin: 0; font-size: 0.9rem; }
   .lock { margin-top: 2.5rem; }
+  /* VIN Wrapped: a poster-like card, made to be screenshotted for a story. */
+  .wrapped {
+    margin: 0 0 2.5rem; padding: clamp(1.25rem, 4vw, 2.25rem); border: 1px solid var(--line); border-top: 3px solid var(--accent);
+    background: radial-gradient(120% 80% at 100% 0%, rgba(228, 67, 45, 0.22), transparent 60%), var(--surface);
+  }
+  .wrapped[hidden] { display: none; }
+  .w-kicker { margin: 0; color: var(--accent); font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; }
+  .w-title { margin: 0.2rem 0 0; font-size: clamp(2.2rem, 8vw, 3.6rem); line-height: 1; }
+  .w-since { margin: 0.4rem 0 0; font-size: 0.7rem; }
+  .w-since[hidden] { display: none; }
+  .w-grid { list-style: none; margin: 1.25rem 0 0; padding: 0; display: grid; gap: 0.6rem; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+  .w-grid :global(li) { display: grid; gap: 0.25rem; padding: 0.9rem 1rem; border: 1px solid var(--line); background: rgba(0, 0, 0, 0.25); }
+  .w-grid :global(li.w-main) { grid-column: 1 / -1; border-left: 3px solid var(--accent); }
+  .w-grid :global(li .mono) { font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; }
+  .w-grid :global(strong) { font-family: var(--font-display); font-weight: 400; font-size: 1.9rem; line-height: 1; }
+  .w-grid :global(li.w-main strong) { font-size: clamp(2.6rem, 10vw, 3.6rem); }
+  .w-grid :global(li span:last-child) { font-size: 0.8rem; color: var(--muted, #9b978f); }
+  @media (max-width: 600px) { .w-grid { grid-template-columns: 1fr 1fr; gap: 0.4rem; } .w-grid :global(strong) { font-size: 1.45rem; } .wrapped { margin-bottom: 0; } }
   .followers { margin-bottom: 2.5rem; }
   .followers .h3 { margin: 0 0 0.75rem; }
   .f-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
