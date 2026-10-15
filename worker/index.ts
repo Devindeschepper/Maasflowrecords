@@ -14,7 +14,8 @@ import { onRequestPost as cryptoWebhook } from '../functions/api/webhooks/crypto
 import { onRequestGet as studioStatus, onRequestPost as studioSet, onKnock, onStats } from '../functions/api/studio';
 import { onConnect as tiktokConnect, onCallback as tiktokCallback } from '../functions/api/tiktok';
 import { weeklySummary } from '../functions/_lib/studio';
-import { refreshInstagramTokens, snapshotFollowers } from '../functions/_lib/followers';
+import { refreshInstagramTokens } from '../functions/_lib/followers';
+import { hourlyFollowers } from '../functions/_lib/alerts';
 
 /** Must match the Sunday entry in wrangler.toml [triggers]. */
 const WEEKLY_CRON = '0 18 * * SUN';
@@ -73,13 +74,13 @@ export default {
     return env.ASSETS.fetch(request);
   },
 
-  // Crons (wrangler.toml [triggers]): hourly follower check; Sunday evening WhatsApp
+  // Crons (wrangler.toml [triggers]): hourly follower check (+ WhatsApp milestone/problem alerts); Sunday evening WhatsApp
   // summary and Instagram token renewal.
   async scheduled(controller: ScheduledController, env: WorkerEnv, ctx: ExecutionContext): Promise<void> {
     if (controller.cron === WEEKLY_CRON) {
       ctx.waitUntil(Promise.all([refreshInstagramTokens(env), weeklySummary(env, Date.now())]));
     } else {
-      ctx.waitUntil(snapshotFollowers(env));
+      ctx.waitUntil(hourlyFollowers(env));
     }
   },
 } satisfies ExportedHandler<WorkerEnv>;
