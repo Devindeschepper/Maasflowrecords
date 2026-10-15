@@ -81,7 +81,7 @@ import PageHero from '../components/PageHero.astro';
     newsletter?: { total: number; month: number; week: number; error?: string } | null;
     wrapped?: {
       year: number; since: string | null;
-      studio: { ms: number; sessions: number; knocks: number; days: number; streak: number } | null;
+      studio: { ms: number; sessions: number; days: number; streak: number } | null;
       longest: { ms: number; date: string } | null; bestMonth: { name: string; ms: number } | null;
       followers: { total: number; change: number } | null; visits: number | null; newsletter: { total: number; added: number } | null;
     } | null;
@@ -130,7 +130,6 @@ import PageHero from '../components/PageHero.astro';
         if (w.longest) items.push(['Longest session', dur(w.longest.ms), w.longest.date]);
         if (w.bestMonth) items.push(['Best month', w.bestMonth.name, dur(w.bestMonth.ms)]);
         if (w.studio.streak > 1) items.push(['Longest streak', `${w.studio.streak} days`, 'in a row']);
-        if (w.studio.knocks) items.push(['Knocks', fmtN(w.studio.knocks), 'on the studio door']);
       }
       if (w.followers) items.push(['Followers', fmtN(w.followers.total), `${signed(w.followers.change)} this year`]);
       if (w.visits !== null) items.push(['Website', fmtN(w.visits), 'visits']);
