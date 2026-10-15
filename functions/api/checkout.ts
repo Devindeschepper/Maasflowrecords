@@ -7,7 +7,7 @@ import type { Order, OrderLine, PaymentMethod } from '../_lib/payments/types';
 import { products, orderableZones, MAX_QTY_PER_ITEM } from '../../src/data/products';
 import { priceForZone, vatIn, vatNote } from '../../src/data/vat';
 import { shopOpen, paymentMethods } from '../../src/data/site';
-import { rememberOrder } from '../_lib/sales';
+import { rememberOrder, stockLeft } from '../_lib/sales';
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   // Checkout is JS-only (the cart lives in the browser), so always answer with JSON.
@@ -39,13 +39,18 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   }
   if (!Array.isArray(raw) || raw.length === 0 || raw.length > 50) return json(400, { ok: false, error: 'Your cart is empty.' });
 
+  // Real stock left (admin stock minus sales), so a limited item can't be paid for twice over.
+  const left = await stockLeft(env, Date.now()).catch(() => null);
   const lines: OrderLine[] = [];
   for (const item of raw as { id?: unknown; size?: unknown; qty?: unknown }[]) {
     const p = products.find((x) => x.id === item?.id);
     const qty = Number(item?.qty);
     if (!p) return json(400, { ok: false, error: 'An item in your cart is no longer available.' });
     if (!Number.isInteger(qty) || qty < 1 || qty > MAX_QTY_PER_ITEM) return json(400, { ok: false, error: 'Invalid quantity.' });
-    if (p.stock < qty) return json(409, { ok: false, error: `Sorry, "${p.name}" is sold out or has limited stock.` });
+    const available = left?.get(p.id)?.left ?? p.stock;
+    if (available < qty) {
+      return json(409, { ok: false, error: available > 0 ? `Sorry, only ${available} of "${p.name}" left.` : `Sorry, "${p.name}" is sold out.` });
+    }
     const size = typeof item.size === 'string' && item.size ? item.size : undefined;
     if (p.sizes ? !size || !p.sizes.includes(size) : size) return json(400, { ok: false, error: `Please choose a valid size for "${p.name}".` });
     lines.push({ id: p.id, name: p.name, size, qty, unitPrice: priceForZone(p.price, zone.inEU), preorder: !!p.preorder });

@@ -35,7 +35,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (!paid) return jsonResponse(200, { ok: true, ignored: event.type });
 
   const m = s.metadata ?? {};
-  await recordSale(env, { orderId: m.order_id ?? s.id, totalCents: s.amount_total ?? 0, via: 'Stripe' });
+  const quiet = await recordSale(env, { orderId: m.order_id ?? s.id, totalCents: s.amount_total ?? 0, via: 'Stripe' });
   try {
     await mailPaidOrder(env, {
       orderId: m.order_id ?? s.id,
@@ -47,6 +47,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       shippingZone: m.zone,
       customer: { name: m.name ?? s.customer_details?.name ?? undefined, email: s.customer_details?.email ?? undefined, address: m.address },
       notes: m.notes,
+      quiet,
     });
   } catch (err) {
     console.error(err);

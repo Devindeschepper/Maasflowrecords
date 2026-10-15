@@ -28,6 +28,8 @@ export interface PaidOrder {
   shippingZone?: string;
   customer: { name?: string; email?: string; address?: string };
   notes?: string;
+  /** Busy hour: no WhatsApp for this sale, it goes into the hourly summary. */
+  quiet?: boolean;
 }
 
 /** Emails a confirmed payment to the label and a confirmation to the customer. */
@@ -47,7 +49,7 @@ export async function mailPaidOrder(env: Env, o: PaidOrder): Promise<void> {
   await sendMail(env, {
     subject: `${test}[PAID] Order ${o.orderId} - ${o.paid}`,
     replyTo: o.customer.email,
-    whatsApp: soldText(o),
+    whatsApp: o.quiet ? '' : soldText(o),
     fields: [
       ['Status', 'PAID - ready to ship'],
       ['Order', o.orderId],
@@ -59,7 +61,7 @@ export async function mailPaidOrder(env: Env, o: PaidOrder): Promise<void> {
       ['Shipping zone', o.shippingZone ?? ''],
       ['Email', o.customer.email ?? ''],
       ['Notes', o.notes ?? ''],
-      ['Next step', 'Pack and ship the order, then lower the stock in the admin panel (Site → Shop).'],
+      ['Next step', 'Pack and ship the order. Stock left is counted automatically (see your stats page).'],
     ],
   });
 

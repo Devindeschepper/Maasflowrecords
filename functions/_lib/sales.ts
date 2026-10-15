@@ -16,11 +16,12 @@ const LOW = 5; // same as "Only X left" on the shop
 
 export async function ensureSalesTable(d: D1Database) {
   await d.prepare(
-    "CREATE TABLE IF NOT EXISTS sales (order_id TEXT PRIMARY KEY, at INTEGER NOT NULL, total_cents INTEGER NOT NULL, via TEXT NOT NULL, lines TEXT NOT NULL, test INTEGER NOT NULL DEFAULT 0, country TEXT NOT NULL DEFAULT '', details TEXT NOT NULL DEFAULT '{}')",
+    "CREATE TABLE IF NOT EXISTS sales (order_id TEXT PRIMARY KEY, at INTEGER NOT NULL, total_cents INTEGER NOT NULL, via TEXT NOT NULL, lines TEXT NOT NULL, test INTEGER NOT NULL DEFAULT 0, country TEXT NOT NULL DEFAULT '', details TEXT NOT NULL DEFAULT '{}', notified INTEGER NOT NULL DEFAULT 1)",
   ).run();
   // Tables made before these columns existed get them added (fails harmlessly when they're already there).
   await d.prepare("ALTER TABLE sales ADD COLUMN country TEXT NOT NULL DEFAULT ''").run().catch(() => {});
   await d.prepare("ALTER TABLE sales ADD COLUMN details TEXT NOT NULL DEFAULT '{}'").run().catch(() => {});
+  await d.prepare('ALTER TABLE sales ADD COLUMN notified INTEGER NOT NULL DEFAULT 1').run().catch(() => {});
 }
 
 /** The country as customers type it ("luxemburg", "NL", "Deutschland") → one name per country. */
@@ -68,23 +69,86 @@ export async function rememberOrder(env: Env, order: Order): Promise<void> {
   await env.STUDIO?.put(`order-${order.orderId}`, JSON.stringify({ lines, country: countryName(order.customer.country), details }), { expirationTtl: 7 * 86400 });
 }
 
-/** Called by the payment webhooks once an order is paid. Never throws: the order email matters more. */
-export async function recordSale(env: Env, sale: { orderId: string; totalCents: number; via: string }, now = Date.now()): Promise<void> {
+/** More sales than this within an hour = busy: one WhatsApp summary per hour instead of one per sale. */
+export const BUSY_PER_HOUR = 3;
+
+/**
+ * Called by the payment webhooks once an order is paid. Returns true when it's busy (more than BUSY_PER_HOUR
+ * sales in the last hour): the sale is then left for the hourly summary (salesSummary) instead of its own
+ * WhatsApp. Never throws: the order email matters more.
+ */
+export async function recordSale(env: Env, sale: { orderId: string; totalCents: number; via: string }, now = Date.now()): Promise<boolean> {
   try {
     const d = await db(env);
-    if (!d) return;
+    if (!d) return false;
     await ensureSalesTable(d);
     const saved = JSON.parse((await env.STUDIO?.get(`order-${sale.orderId}`)) ?? '{}') as { lines?: Line[]; country?: string; details?: SaleDetails };
-    await d
+    const inserted = await d
       .prepare('INSERT OR IGNORE INTO sales (order_id, at, total_cents, via, lines, test, country, details) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)')
       .bind(
         sale.orderId, now, Math.max(0, Math.round(sale.totalCents)), sale.via, JSON.stringify(saved.lines ?? []), shopTestMode ? 1 : 0,
         saved.country ?? '', JSON.stringify(saved.details ?? {}),
       )
       .run();
+    if (!inserted.meta.changes) return false; // a payment retry for a sale already counted
+    const recent = await d.prepare('SELECT COUNT(*) AS n FROM sales WHERE at > ?1').bind(now - 3600000).first<{ n: number }>();
+    if ((recent?.n ?? 0) <= BUSY_PER_HOUR) return false;
+    await d.prepare('UPDATE sales SET notified = 0 WHERE order_id = ?1').bind(sale.orderId).run();
+    return true;
   } catch (err) {
     console.error('Recording the sale failed', err);
+    return false;
   }
+}
+
+/** Hourly cron: one WhatsApp for all sales that were held back because it was busy. */
+export async function salesSummary(env: Env): Promise<string> {
+  const d = await db(env);
+  if (!d) return '';
+  await ensureSalesTable(d);
+  const { results } = await d
+    .prepare('SELECT order_id, total_cents, lines, test FROM sales WHERE notified = 0 ORDER BY at')
+    .all<{ order_id: string; total_cents: number; lines: string; test: number }>();
+  if (!results.length) return '';
+  await d.prepare(`UPDATE sales SET notified = 1 WHERE order_id IN (${results.map((_, i) => `?${i + 1}`).join(',')})`).bind(...results.map((r) => r.order_id)).run();
+  const qty = new Map<string, number>();
+  for (const r of results) for (const l of JSON.parse(r.lines || '[]') as Line[]) qty.set(l.name, (qty.get(l.name) ?? 0) + l.qty);
+  const total = results.reduce((n, r) => n + r.total_cents, 0);
+  return [
+    `🔴 Maas Flow Records${results.some((r) => r.test) ? ' [TEST]' : ''}`,
+    `💰 Busy! ${results.length} more sale${results.length === 1 ? '' : 's'} since the last message: €${(total / 100).toFixed(2)}`,
+    ...[...qty].sort((a, b) => b[1] - a[1]).map(([name, n]) => `• ${n}× ${name}`),
+    'Details in your email 📦',
+  ].join('\n');
+}
+
+/**
+ * Stock left per product: the stock set in the admin panel minus what was sold since that number last
+ * changed. Used by the stats page and by checkout (so nobody can pay for something that is sold out).
+ */
+export async function stockLeft(env: Env, now: number): Promise<Map<string, { stock: number; sold: number; left: number }>> {
+  const out = new Map<string, { stock: number; sold: number; left: number }>();
+  const d = await db(env);
+  if (!d) {
+    for (const p of products) out.set(p.id, { stock: p.stock, sold: 0, left: p.stock });
+    return out;
+  }
+  await ensureSalesTable(d);
+  const { results } = await d.prepare('SELECT at, lines FROM sales WHERE test = ?1').bind(shopTestMode ? 1 : 0).all<{ at: number; lines: string }>();
+  const sales = results.map((r) => ({ at: r.at, lines: JSON.parse(r.lines || '[]') as Line[] }));
+  for (const p of products) {
+    // Remember when this stock number was set, to count only the sales after it.
+    const key = `stock-base-${p.id}`;
+    let base = JSON.parse((await env.STUDIO?.get(key)) ?? 'null') as { stock: number; at: number } | null;
+    // First time: count every sale. After VIN changes the number in the admin panel: only sales after that.
+    if (!base || base.stock !== p.stock) {
+      base = { stock: p.stock, at: base ? now : 0 };
+      await env.STUDIO?.put(key, JSON.stringify(base));
+    }
+    const sold = sales.filter((s) => s.at >= base!.at).reduce((n, s) => n + s.lines.filter((l) => l.id === p.id).reduce((m, l) => m + l.qty, 0), 0);
+    out.set(p.id, { stock: p.stock, sold, left: Math.max(0, p.stock - sold) });
+  }
+  return out;
 }
 
 export interface ShopStats {
@@ -112,20 +176,11 @@ export async function shopStats(env: Env, now: number, monthStart: number): Prom
   for (const s of month) for (const l of s.lines) qtyByName.set(l.name, (qtyByName.get(l.name) ?? 0) + l.qty);
   const best = [...qtyByName].sort((a, b) => b[1] - a[1])[0];
 
-  const stock = [];
-  for (const p of products) {
-    // Remember when this stock number was set, to count only the sales after it.
-    const key = `stock-base-${p.id}`;
-    let base = JSON.parse((await env.STUDIO?.get(key)) ?? 'null') as { stock: number; at: number } | null;
-    // First time: count every sale. After VIN changes the number in the admin panel: only sales after that.
-    if (!base || base.stock !== p.stock) {
-      base = { stock: p.stock, at: base ? now : 0 };
-      await env.STUDIO?.put(key, JSON.stringify(base));
-    }
-    const sold = sales.filter((s) => s.at >= base!.at).reduce((n, s) => n + s.lines.filter((l) => l.id === p.id).reduce((m, l) => m + l.qty, 0), 0);
-    const left = Math.max(0, p.stock - sold);
-    stock.push({ id: p.id, name: p.name, stock: p.stock, sold, left, low: left <= LOW });
-  }
+  const left = await stockLeft(env, now);
+  const stock = products.map((p) => {
+    const st = left.get(p.id)!;
+    return { id: p.id, name: p.name, ...st, low: st.left <= LOW };
+  });
 
   const byCountry = new Map<string, number>();
   for (const s of sales) {

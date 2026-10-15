@@ -22,6 +22,8 @@ import { releaseAnniversaries, type ReleaseDate } from '../functions/_lib/annive
 import { monthlyLinkCheck, type SiteLink } from '../functions/_lib/linkcheck';
 import { dueReminders } from '../functions/_lib/reminders';
 import { monthlyBackup } from '../functions/_lib/backup';
+import { salesSummary } from '../functions/_lib/sales';
+import { notifyWhatsApp } from '../functions/_lib/whatsapp';
 
 /** Must match the Sunday entry in wrangler.toml [triggers]. */
 const WEEKLY_CRON = '0 18 * * SUN';
@@ -83,7 +85,7 @@ export default {
   },
 
   // Crons (wrangler.toml [triggers]): hourly follower check (+ WhatsApp milestone/problem alerts, the
-  // 18:00 studio nudge, the 31 December Wrapped and 10:00 release anniversaries and dated reminders); Sunday evening WhatsApp
+  // 18:00 studio nudge, the 31 December Wrapped and 10:00 release anniversaries, dated reminders and the busy-hour sales summary); Sunday evening WhatsApp
   // summary and Instagram token renewal; monthly WhatsApp report, link check and backup email on the 1st.
   async scheduled(controller: ScheduledController, env: WorkerEnv, ctx: ExecutionContext): Promise<void> {
     if (controller.cron === WEEKLY_CRON) {
@@ -93,8 +95,12 @@ export default {
       ctx.waitUntil(Promise.all([monthlyReport(env), monthlyLinkCheck(env, links), monthlyBackup(env)]));
     } else {
       const now = Date.now();
+      const busySales = async () => {
+        const text = await salesSummary(env).catch(() => '');
+        if (text) await notifyWhatsApp(env, text);
+      };
       const releases = async () => (await (await env.ASSETS.fetch('https://assets.local/release-dates.json')).json()) as ReleaseDate[];
-      ctx.waitUntil(Promise.all([hourlyFollowers(env, now), studioNudge(env, now), wrappedMessage(env, now), releaseAnniversaries(env, now, releases), dueReminders(env, now)]));
+      ctx.waitUntil(Promise.all([hourlyFollowers(env, now), studioNudge(env, now), wrappedMessage(env, now), releaseAnniversaries(env, now, releases), dueReminders(env, now), busySales()]));
     }
   },
 } satisfies ExportedHandler<WorkerEnv>;

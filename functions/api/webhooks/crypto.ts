@@ -47,9 +47,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
   try {
     if (body.payment_status === 'finished') {
-      if (priceCur === 'EUR' && typeof body.price_amount === 'number') {
-        await recordSale(env, { orderId, totalCents: body.price_amount * 100, via: 'Crypto' });
-      }
+      const quiet =
+        priceCur === 'EUR' && typeof body.price_amount === 'number'
+          ? await recordSale(env, { orderId, totalCents: body.price_amount * 100, via: 'Crypto' })
+          : false;
       await mailPaidOrder(env, {
         orderId,
         via: 'Crypto (NOWPayments)',
@@ -57,6 +58,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         items: body.order_description ?? '',
         paid,
         customer: { email: isEmail(email) ? email : undefined },
+        quiet,
       });
     } else if (body.payment_status === 'partially_paid') {
       await sendMail(env, {
