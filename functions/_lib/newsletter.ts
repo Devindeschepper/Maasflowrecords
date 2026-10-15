@@ -21,29 +21,34 @@ function parseDate(s: unknown): number {
   return Number.isFinite(t) ? t : 0;
 }
 
-/** Sign-up times (ms) of all subscribed contacts. Throws when Resend can't be read. */
-export async function contactDates(env: Env): Promise<number[]> {
+/** All subscribed contacts (email + sign-up time in ms). Throws when Resend can't be read. */
+export async function contactList(env: Env): Promise<{ email: string; at: number }[]> {
   const key = env.RESEND_API_KEY!.trim();
   const base = env.RESEND_AUDIENCE_ID
     ? `https://api.resend.com/audiences/${encodeURIComponent(env.RESEND_AUDIENCE_ID)}/contacts`
     : 'https://api.resend.com/contacts';
-  const dates: number[] = [];
+  const out: { email: string; at: number }[] = [];
   let after = '';
   const seen = new Set<string>(); // guards against counting a page twice if the API ignores `after`
   for (let page = 0; page < MAX_PAGES; page++) {
     const url = `${base}?limit=${PAGE}${after ? `&after=${encodeURIComponent(after)}` : ''}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(8000) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const body = (await res.json()) as { data?: { id: string; created_at?: string; unsubscribed?: boolean }[]; has_more?: boolean };
+    const body = (await res.json()) as { data?: { id: string; email?: string; created_at?: string; unsubscribed?: boolean }[]; has_more?: boolean };
     const list = (body.data ?? []).filter((c) => !seen.has(c.id));
     for (const c of list) {
       seen.add(c.id);
-      if (!c.unsubscribed) dates.push(parseDate(c.created_at));
+      if (!c.unsubscribed) out.push({ email: c.email ?? '', at: parseDate(c.created_at) });
     }
     if (!body.has_more || !list.length) break;
     after = list[list.length - 1].id;
   }
-  return dates;
+  return out;
+}
+
+/** Sign-up times (ms) of all subscribed contacts. Throws when Resend can't be read. */
+export async function contactDates(env: Env): Promise<number[]> {
+  return (await contactList(env)).map((c) => c.at);
 }
 
 export async function newsletterStats(env: Env, now: number, monthStart: number): Promise<Newsletter | null> {
