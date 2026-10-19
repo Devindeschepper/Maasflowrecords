@@ -210,13 +210,13 @@ collections:
                   - { name: twitch, label: 'Twitch', widget: string, required: false }
 
       - name: products
-        label: Shop (CDs)
+        label: Shop products
         file: src/content/products.json
         format: json
         fields:
           - name: products
-            label: CDs
-            label_singular: CD
+            label: Products
+            label_singular: Product
             widget: list
             summary: '{{fields.name}} — €{{fields.price}}'
             fields:
@@ -226,13 +226,14 @@ collections:
                 pattern: ['^[a-z0-9-]+$', 'Lowercase letters, numbers and - only']
                 hint: Unique, e.g. 2real4u-cd — don't change it once the shop is open.
               - { name: name, label: Name, widget: string }
-              - { name: category, label: Category, widget: hidden, default: CD }
+              - { name: category, label: Category, widget: select, default: CD, options: [CD, Vinyl, T-Shirt, Hoodie, Cap, Poster, Jewellery, Other] }
               - { name: description, label: Description, widget: text, required: false }
               - { name: price, label: Price (€), widget: number, value_type: float, min: 0, step: 0.01 }
               - { name: image, label: Photo, widget: image, media_folder: /public/images/shop, public_folder: /images/shop, hint: "Square, 1200×1200" }
               - { name: stock, label: In stock, widget: number, value_type: int, min: 0, default: 0, hint: "0 = sold out" }
               - { name: preorder, label: Pre-order, widget: boolean, default: false }
-              - { name: shippingClass, label: Package size, widget: hidden, default: small }
+              - { name: sizes, label: Sizes, widget: list, required: false, hint: 'Only for clothing or chains, e.g. S, M, L or 45 cm, 50 cm. Empty = one size.' }
+              - { name: shippingClass, label: Package size, widget: select, default: small, options: [{ label: 'Small (CD, chain, poster)', value: small }, { label: 'Standard (clothing, vinyl)', value: standard }] }
 
       - name: services
         label: Services

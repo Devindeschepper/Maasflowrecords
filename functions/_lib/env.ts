@@ -34,6 +34,11 @@ export interface Env {
   CF_ACCOUNT_ID?: string;
   CF_WEB_ANALYTICS_SITE?: string;
   CF_ANALYTICS_TOKEN?: string;
+  /**
+   * GitHub token (fine-grained, this repository only, Contents: read and write) so the private shop page can
+   * open/close the shop and add products: it saves the change in the repository and Cloudflare rebuilds the site.
+   */
+  GITHUB_TOKEN?: string;
   /** D1 database with studio sessions and knocks (binding in wrangler.toml). */
   DB?: D1Database;
 }

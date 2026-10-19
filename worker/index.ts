@@ -13,7 +13,7 @@ import { onRequestPost as stripeWebhook } from '../functions/api/webhooks/stripe
 import { onRequestPost as cryptoWebhook } from '../functions/api/webhooks/crypto';
 import { onRequestGet as studioStatus, onRequestPost as studioSet, onKnock, onStats } from '../functions/api/studio';
 import { onConnect as tiktokConnect, onCallback as tiktokCallback } from '../functions/api/tiktok';
-import { onShop, onShipped, onExport as shopExport } from '../functions/api/shop';
+import { onShop, onShipped, onExport as shopExport, onManage, onSettings as shopSettings, onProducts as shopProducts } from '../functions/api/shop';
 import { studioNudge, weeklySummary } from '../functions/_lib/studio';
 import { refreshInstagramTokens } from '../functions/_lib/followers';
 import { hourlyFollowers } from '../functions/_lib/alerts';
@@ -69,13 +69,12 @@ export default {
       return (onStats as unknown as Handler)({ request, env });
     }
     // Private shop page (/shop-admin/), same password as the stats page.
-    if (route === '/api/shop' || route === '/api/shop/export') {
-      if (request.method !== 'GET') return jsonResponse(405, { ok: false, error: 'Method not allowed.' });
-      return ((route === '/api/shop' ? onShop : shopExport) as unknown as Handler)({ request, env });
-    }
-    if (route === '/api/shop/shipped') {
-      if (request.method !== 'POST') return jsonResponse(405, { ok: false, error: 'Method not allowed.' });
-      return (onShipped as unknown as Handler)({ request, env });
+    const shopGet: Record<string, unknown> = { '/api/shop': onShop, '/api/shop/export': shopExport, '/api/shop/manage': onManage };
+    const shopPost: Record<string, unknown> = { '/api/shop/shipped': onShipped, '/api/shop/settings': shopSettings, '/api/shop/products': shopProducts };
+    if (route in shopGet || route in shopPost) {
+      const handler = request.method === 'GET' ? shopGet[route] : request.method === 'POST' ? shopPost[route] : undefined;
+      if (!handler) return jsonResponse(405, { ok: false, error: 'Method not allowed.' });
+      return (handler as Handler)({ request, env });
     }
     // TikTok login for the follower count on /studio-stats/.
     if (route === '/api/tiktok/connect' || route === '/api/tiktok/callback') {
