@@ -5,6 +5,7 @@ import { checkStatsPassword } from './studio';
 import { markShipped, shopOrders, shopStats, type ShopOrder } from '../_lib/sales';
 import { toBase64, xlsx } from '../_lib/xlsx';
 import { githubConfigured, readFile, updateJson, writeFile } from '../_lib/github';
+import { restockWaiting } from '../_lib/restock';
 
 /**
  * Private shop page (/shop-admin/), same password as /studio-stats/:
@@ -12,7 +13,7 @@ import { githubConfigured, readFile, updateJson, writeFile } from '../_lib/githu
  *   POST /api/shop/shipped  { orderId, shipped } ticks an order as shipped (or undoes it)
  *   GET  /api/shop/export   Excel of the orders to ship (packing list with addresses)
  *   GET  /api/shop/manage   shop switches and products (from the repository)
- *   POST /api/shop/settings open/close the shop, test mode on/off
+ *   POST /api/shop/settings open/close the shop, plan a timed drop, test mode on/off
  *   POST /api/shop/products add, edit or remove a product (with photo)
  */
 async function auth(request: Request, env: Env): Promise<Response | D1Database> {
@@ -67,7 +68,7 @@ type RawProduct = {
   id: string; name: string; category: string; description?: string; price: number; image: string;
   stock: number; preorder?: boolean; sizes?: string[]; shippingClass?: string;
 };
-type Settings = { shopOpen?: boolean; shopTestMode?: boolean; legalName?: string; legalAddress?: string } & Record<string, unknown>;
+type Settings = { shopOpen?: boolean; shopTestMode?: boolean; dropAt?: string; legalName?: string; legalAddress?: string } & Record<string, unknown>;
 
 const CATEGORIES = ['CD', 'Vinyl', 'T-Shirt', 'Hoodie', 'Cap', 'Poster', 'Jewellery', 'Other'];
 const SETTINGS = 'src/content/settings.json';
@@ -103,7 +104,9 @@ export const onManage: PagesFunction<Env> = async ({ request, env }) => {
     return jsonResponse(200, {
       ok: true, github: true, categories: CATEGORIES,
       shopOpen: settings.shopOpen === true, shopTestMode: settings.shopTestMode === true,
+      dropAt: settings.shopOpen !== true && settings.dropAt ? settings.dropAt : null,
       products: products.products,
+      waiting: await restockWaiting(env).catch(() => ({})),
     });
   } catch (err) {
     console.error('Shop manage failed', err);
@@ -111,24 +114,44 @@ export const onManage: PagesFunction<Env> = async ({ request, env }) => {
   }
 };
 
-/** POST /api/shop/settings { shopOpen?, shopTestMode? } */
+/**
+ * POST /api/shop/settings { shopOpen?, shopTestMode?, dropAt? }
+ * dropAt: an ISO date to open the shop by itself at that moment (null = cancel the drop). Opening or closing
+ * the shop by hand also cancels a planned drop.
+ */
 export const onSettings: PagesFunction<Env> = async ({ request, env }) => {
   if (!sameOrigin(request)) return jsonResponse(403, { ok: false, error: 'Forbidden.' });
   const a = await auth(request, env);
   if (a instanceof Response) return a;
   if (!githubConfigured(env)) return noGithub();
-  const body = (await request.json().catch(() => ({}))) as { shopOpen?: unknown; shopTestMode?: unknown };
+  const body = (await request.json().catch(() => ({}))) as { shopOpen?: unknown; shopTestMode?: unknown; dropAt?: unknown };
   try {
     const current = JSON.parse((await readFile(env, SETTINGS))!.text) as Settings;
     const open = typeof body.shopOpen === 'boolean' ? body.shopOpen : current.shopOpen === true;
     const test = typeof body.shopTestMode === 'boolean' ? body.shopTestMode : current.shopTestMode === true;
-    if (open) {
+    let drop = typeof body.shopOpen === 'boolean' || open ? null : (current.dropAt ?? null);
+    if (body.dropAt === null) drop = null;
+    else if (typeof body.dropAt === 'string') {
+      const t = Date.parse(body.dropAt);
+      const now = Date.now();
+      if (open) return jsonResponse(409, { ok: false, error: 'The shop is already open. Close it first to plan a drop.' });
+      if (!Number.isFinite(t) || t < now + 5 * 60_000) return jsonResponse(400, { ok: false, error: 'Pick a time at least 5 minutes from now.' });
+      if (t > now + 366 * 86400_000) return jsonResponse(400, { ok: false, error: 'Pick a time within the next year.' });
+      drop = new Date(t).toISOString();
+    }
+    if (open || drop) {
       const missing = await missingForOpening(env, test);
       if (missing.length) return jsonResponse(409, { ok: false, error: `Before the shop can open, it still needs: ${missing.join('; ')}.` });
     }
-    const what = typeof body.shopOpen === 'boolean' ? (open ? 'open the shop' : 'close the shop') : `test mode ${test ? 'on' : 'off'}`;
-    await updateJson<Settings>(env, SETTINGS, `Shop: ${what} (from the shop page)`, (s) => ({ ...s, shopOpen: open, shopTestMode: test }));
-    return jsonResponse(200, { ok: true, shopOpen: open, shopTestMode: test });
+    const what = typeof body.shopOpen === 'boolean' ? (open ? 'open the shop' : 'close the shop')
+      : body.dropAt !== undefined ? (drop ? `timed drop at ${drop}` : 'cancel the timed drop')
+      : `test mode ${test ? 'on' : 'off'}`;
+    await updateJson<Settings>(env, SETTINGS, `Shop: ${what} (from the shop page)`, (s) => {
+      const next: Settings = { ...s, shopOpen: open, shopTestMode: test, dropAt: drop ?? undefined };
+      if (!drop) delete next.dropAt;
+      return next;
+    });
+    return jsonResponse(200, { ok: true, shopOpen: open, shopTestMode: test, dropAt: drop });
   } catch (err) {
     console.error('Shop settings failed', err);
     return jsonResponse(502, { ok: false, error: err instanceof Error ? err.message : 'Could not save.' });

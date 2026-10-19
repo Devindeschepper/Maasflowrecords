@@ -45,6 +45,7 @@ const stockLabel = comingSoon ? 'Coming soon' : soldOut ? 'Sold out' : p.preorde
         <button class="btn btn-primary" type="submit" disabled={soldOut}>
           {soldOut ? 'Sold out' : p.preorder ? 'Pre-order' : 'Add to cart'}
         </button>
+        {soldOut && <a class="btn btn-ghost" href="#restock" data-restock={p.id}>Tell me when it's back</a>}
         <p class="added mono" role="status" aria-live="polite"></p>
       </form>
     )}

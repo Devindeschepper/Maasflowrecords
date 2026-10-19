@@ -2,7 +2,7 @@ import type { Env } from './env';
 import type { Order } from './payments/types';
 import { db } from './studio';
 import { products } from '../../src/data/products';
-import { shopOpen, shopTestMode } from '../../src/data/site';
+import { dropAt, shopOpen, shopTestMode } from '../../src/data/site';
 
 /**
  * Shop sales and stock for the private stats page.
@@ -154,6 +154,8 @@ export async function stockLeft(env: Env, now: number): Promise<Map<string, { st
 
 export interface ShopStats {
   open: boolean;
+  /** Timed drop on the live site (ISO), null = none. */
+  drop: string | null;
   test: boolean;
   month: { orders: number; revenue: number; best: { name: string; qty: number } | null };
   all: { orders: number; revenue: number };
@@ -192,6 +194,7 @@ export async function shopStats(env: Env, now: number, monthStart: number): Prom
   const sum = (list: typeof sales) => list.reduce((n, s) => n + s.total_cents, 0);
   return {
     open: shopOpen,
+    drop: dropAt || null,
     test: shopTestMode,
     month: { orders: month.length, revenue: sum(month), best: best ? { name: best[0], qty: best[1] } : null },
     all: { orders: sales.length, revenue: sum(sales) },

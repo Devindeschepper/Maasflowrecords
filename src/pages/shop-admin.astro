@@ -33,6 +33,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <div><b>Test mode</b><span class="muted" data-c-test-text></span></div>
             <button class="btn btn-ghost small" type="button" data-c-test></button>
           </div>
+          <div class="ctrl" data-c-drop-row>
+            <div><b>Timed drop</b><span class="muted" data-c-drop-text></span></div>
+            <div class="drop-set" data-c-drop-set>
+              <label class="sr-only" for="c-drop">Drop date and time</label>
+              <input id="c-drop" type="datetime-local" data-c-drop-input />
+              <button class="btn btn-primary small" type="button" data-c-drop>Plan drop</button>
+            </div>
+            <button class="btn btn-ghost small" type="button" data-c-drop-cancel hidden>Cancel drop</button>
+          </div>
           <p class="c-msg" data-c-msg hidden></p>
         </section>
         <p class="c-setup muted" data-c-setup hidden>To open the shop and add products from this page, one setup step is still needed (a GitHub key in Cloudflare). Ask Claude for the steps.</p>
@@ -113,7 +122,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   type Data = {
     ok: boolean; error?: string;
     stats: {
-      open: boolean; test: boolean;
+      open: boolean; drop: string | null; test: boolean;
       month: { orders: number; revenue: number; best: { name: string; qty: number } | null };
       all: { orders: number; revenue: number };
       stock: { id: string; name: string; stock: number; sold: number; left: number; low: boolean }[];
@@ -156,22 +165,27 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </li>`;
   }
 
+  let lastData: Data | null = null;
   function render(d: Data) {
+    lastData = d;
     const s = d.stats;
     liveOpen = s ? s.open : null;
+    const dropSoon = !!s?.drop && Date.parse(s.drop) > Date.now();
     const status = $('[data-status]');
-    status.textContent = !s?.open ? 'Closed' : s.test ? 'Test mode' : 'Online';
-    status.className = `status mono ${!s?.open ? 'off' : s.test ? 'test' : 'on'}`;
+    status.textContent = !s?.open ? 'Closed' : dropSoon ? 'Drop planned' : s.test ? 'Test mode' : 'Online';
+    status.className = `status mono ${!s?.open ? 'off' : s.test || dropSoon ? 'test' : 'on'}`;
 
     // To do: what needs VIN's attention right now, most important first.
     const todo: string[] = [];
     if (d.toShip.length) todo.push(`📦 <b>${plural(d.toShip.length, 'order')} to ship.</b> Pack them, then tap “Shipped ✓”.`);
     for (const p of s?.stock ?? []) {
-      if (p.left === 0) todo.push(`❌ <b>${esc(p.name)} is sold out.</b> Got more? Tap “Edit” on it under Products and put the new number.`);
+      const waiting = manage?.waiting?.[p.id] ?? 0;
+      if (p.left === 0) todo.push(`❌ <b>${esc(p.name)} is sold out.</b>${waiting ? ` ${plural(waiting, 'person')} want${waiting === 1 ? 's' : ''} an email when it’s back.` : ''} Got more? Tap “Edit” on it under Products and put the new number.`);
       else if (p.low) todo.push(`⚠️ <b>Only ${p.left} × ${esc(p.name)} left.</b> Order more, or post “last copies”.`);
     }
     if (s?.open && s.test) todo.push('🟡 <b>Test mode is on:</b> real payments don’t work. When you’re ready, tap “Turn test mode off” at the top.');
-    if (!s?.open) todo.push('⚪ <b>The shop is closed</b> (coming soon). When you’re ready to sell, tap “Open the shop” at the top.');
+    if (dropSoon) todo.push(`⏳ <b>Drop on ${esc(date(Date.parse(s!.drop!)))}.</b> The shop opens by itself then. Post the countdown on Instagram and TikTok.`);
+    if (!s?.open) todo.push('⚪ <b>The shop is closed</b> (coming soon). When you’re ready to sell, tap “Open the shop” or plan a timed drop at the top.');
     if (!todo.length) todo.push('✅ <b>Nothing to do.</b> All orders are shipped and the stock is fine.');
     $('[data-todo]').innerHTML = todo.map((t) => `<li>${t}</li>`).join('');
 
@@ -260,7 +274,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   // ---- Managing the shop: open/close, test mode, products (saved on GitHub, live after ~2 minutes) ----
   type RawProduct = { id: string; name: string; category: string; description?: string; price: number; image: string; stock: number; preorder?: boolean; sizes?: string[]; shippingClass?: string };
-  type Manage = { ok: boolean; error?: string; github: boolean; categories?: string[]; shopOpen?: boolean; shopTestMode?: boolean; products?: RawProduct[] };
+  type Manage = { ok: boolean; error?: string; github: boolean; categories?: string[]; shopOpen?: boolean; shopTestMode?: boolean; dropAt?: string | null; products?: RawProduct[]; waiting?: Record<string, number> };
   let manage: Manage | null = null;
   let editing: RawProduct | null = null;
   let liveOpen: boolean | null = null;
@@ -284,8 +298,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     if (!m?.github) return;
     // The live site only changes after the rebuild (~2 min): show that in the status next to the title.
     const status = $('[data-status]');
-    if (liveOpen !== null && m.shopOpen !== liveOpen) {
-      status.textContent = m.shopOpen ? 'Opening…' : 'Closing…';
+    const savedOpen = !!m.shopOpen || !!m.dropAt;
+    if (liveOpen !== null && savedOpen !== liveOpen) {
+      status.textContent = savedOpen ? 'Opening…' : 'Closing…';
       status.className = 'status mono test';
     }
     const open = $<HTMLButtonElement>('[data-c-open]');
@@ -294,9 +309,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     open.className = `btn small ${m.shopOpen ? 'btn-ghost' : 'btn-primary'}`;
     $('[data-c-test-text]').textContent = m.shopTestMode ? 'On: only test payments, no real money.' : 'Off: real payments.';
     $('[data-c-test]').textContent = m.shopTestMode ? 'Turn test mode off' : 'Turn test mode on';
+    // Timed drop: only while the shop is closed. The time is typed in this phone's time zone.
+    $('[data-c-drop-row]').hidden = !!m.shopOpen;
+    $('[data-c-drop-text]').textContent = m.dropAt
+      ? `The shop opens by itself on ${date(Date.parse(m.dropAt))}. Until then, people see a countdown.`
+      : 'Pick a day and time: the shop opens by itself, with a countdown before.';
+    $('[data-c-drop-set]').hidden = !!m.dropAt;
+    $('[data-c-drop-cancel]').hidden = !m.dropAt;
+    const waiting = (id: string) => m.waiting?.[id] ? ` · ${m.waiting[id]} waiting` : '';
     $('[data-pf-cat]').innerHTML = (m.categories ?? []).map((c) => `<option>${esc(c)}</option>`).join('');
     $('[data-plist]').innerHTML = (m.products ?? []).length
-      ? m.products!.map((p) => `<li><img src="${esc(p.image)}" alt="" loading="lazy" /><span><b>${esc(p.name)}</b><small class="muted">${esc(p.category)} · €${Number(p.price).toFixed(2)} · ${p.stock} in stock${p.preorder ? ' · pre-order' : ''}</small></span><button class="btn btn-ghost small" type="button" data-p-edit="${esc(p.id)}">Edit</button></li>`).join('')
+      ? m.products!.map((p) => `<li><img src="${esc(p.image)}" alt="" loading="lazy" /><span><b>${esc(p.name)}</b><small class="muted">${esc(p.category)} · €${Number(p.price).toFixed(2)} · ${p.stock} in stock${p.preorder ? ' · pre-order' : ''}${waiting(p.id)}</small></span><button class="btn btn-ghost small" type="button" data-p-edit="${esc(p.id)}">Edit</button></li>`).join('')
       : '<li class="muted">No products yet.</li>';
     panel.querySelectorAll<HTMLButtonElement>('[data-p-edit]').forEach((b) => b.addEventListener('click', () => openForm(m.products!.find((p) => p.id === b.dataset.pEdit) ?? null)));
   }
@@ -312,16 +335,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       $('[data-controls]').hidden = false;
       return;
     }
+    if (lastData) render(lastData); // the to-do list also shows who waits for sold-out products
     renderManage();
   }
 
-  async function toggle(btn: HTMLButtonElement, body: { shopOpen?: boolean; shopTestMode?: boolean }) {
+  async function toggle(btn: HTMLButtonElement, body: { shopOpen?: boolean; shopTestMode?: boolean; dropAt?: string | null }) {
     const msg = $('[data-c-msg]');
     btn.disabled = true;
     say(msg, 'Saving…');
     try {
-      const data = (await post('/api/shop/settings', body)) as unknown as { shopOpen: boolean; shopTestMode: boolean };
-      manage = { ...manage!, shopOpen: data.shopOpen, shopTestMode: data.shopTestMode };
+      const data = (await post('/api/shop/settings', body)) as unknown as { shopOpen: boolean; shopTestMode: boolean; dropAt: string | null };
+      manage = { ...manage!, shopOpen: data.shopOpen, shopTestMode: data.shopTestMode, dropAt: data.dropAt };
       renderManage();
       say(msg, LIVE_NOTE);
     } catch (err) {
@@ -336,6 +360,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     toggle(e.currentTarget as HTMLButtonElement, { shopOpen: opening });
   });
   $('[data-c-test]').addEventListener('click', (e) => toggle(e.currentTarget as HTMLButtonElement, { shopTestMode: !manage?.shopTestMode }));
+  $('[data-c-drop]').addEventListener('click', (e) => {
+    const value = $<HTMLInputElement>('[data-c-drop-input]').value;
+    if (!value) return say($('[data-c-msg]'), 'Pick a day and time first.', true);
+    const at = new Date(value); // datetime-local = this phone's time zone
+    if (!confirm(`Plan the drop for ${date(at.getTime())}? The shop opens by itself then${manage?.shopTestMode ? ' (in test mode)' : ''}.`)) return;
+    toggle(e.currentTarget as HTMLButtonElement, { dropAt: at.toISOString() });
+  });
+  $('[data-c-drop-cancel]').addEventListener('click', (e) => {
+    if (confirm('Cancel the drop? The shop goes back to “Coming soon”.')) toggle(e.currentTarget as HTMLButtonElement, { dropAt: null });
+  });
 
   function openForm(p: RawProduct | null) {
     editing = p;
@@ -452,6 +486,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .ctrl { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
   .ctrl > div { display: grid; gap: 0.1rem; }
   .ctrl span { font-size: 0.85rem; }
+  .ctrl[hidden], .drop-set[hidden] { display: none; }
+  .drop-set { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .drop-set input { min-height: 40px; color-scheme: dark; }
   .c-msg { margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--ok, #7fbf7f); }
   .c-msg.bad { color: var(--accent); }
   .c-setup { font-size: 0.85rem; margin: 1rem 0 0; }
