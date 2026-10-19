@@ -12,7 +12,9 @@ backend:
     uploadMedia: 'Admin: upload “{{path}}”'
     deleteMedia: 'Admin: delete “{{path}}”'
 
-app_title: Maas Flow Records — Admin
+app_title: Maas Flow Records
+logo:
+  src: /favicon.svg
 site_url: https://maasflowrecords.com
 media_folder: public/images/uploads
 public_folder: /images/uploads
@@ -22,6 +24,7 @@ collections:
   - name: releases
     label: Releases
     label_singular: Release
+    icon: album
     description: Singles, EPs and albums. Label releases appear on the Music page; releases from before the label only on the artist page.
     folder: src/content/releases
     extension: json
@@ -104,6 +107,7 @@ collections:
   - name: events
     label: Events
     label_singular: Event
+    icon: event
     description: Shows, release days, livestreams and label events. Past events move to “Past events” automatically.
     folder: src/content/events
     extension: json
@@ -151,6 +155,8 @@ collections:
   # ------------------------------------------------------- SINGLE FILES
   - name: site
     label: Site
+    icon: tune
+    description: Artists, shop products, services, shipping & VAT and settings.
     files:
       - name: artists
         label: Artists
