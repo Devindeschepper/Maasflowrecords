@@ -4,12 +4,16 @@ import { db } from '../_lib/studio';
 import { checkStatsPassword } from './studio';
 import { markShipped, shopOrders, shopStats, type ShopOrder } from '../_lib/sales';
 import { toBase64, xlsx } from '../_lib/xlsx';
+import { githubConfigured, readFile, updateJson, writeFile } from '../_lib/github';
 
 /**
  * Private shop page (/shop-admin/), same password as /studio-stats/:
  *   GET  /api/shop          sales, stock, countries and the orders to ship
  *   POST /api/shop/shipped  { orderId, shipped } ticks an order as shipped (or undoes it)
  *   GET  /api/shop/export   Excel of the orders to ship (packing list with addresses)
+ *   GET  /api/shop/manage   shop switches and products (from the repository)
+ *   POST /api/shop/settings open/close the shop, test mode on/off
+ *   POST /api/shop/products add, edit or remove a product (with photo)
  */
 async function auth(request: Request, env: Env): Promise<Response | D1Database> {
   const d = await db(env);
@@ -53,4 +57,146 @@ export const onExport: PagesFunction<Env> = async ({ request, env }) => {
   ];
   const file = xlsx([{ name: 'To ship', rows }]);
   return jsonResponse(200, { ok: true, filename: `orders-to-ship-${when(Date.now()).slice(0, 10)}.xlsx`, content: toBase64(file), count: toShip.length });
+};
+
+// ---- Managing the shop from the page: open/close, test mode, products ----------------------------------------
+// Changes are saved in the repository (src/content/*.json) through the GitHub API; Cloudflare then rebuilds the
+// site, so they are live after about 2 minutes. Needs the GITHUB_TOKEN secret.
+
+type RawProduct = {
+  id: string; name: string; category: string; description?: string; price: number; image: string;
+  stock: number; preorder?: boolean; sizes?: string[]; shippingClass?: string;
+};
+type Settings = { shopOpen?: boolean; shopTestMode?: boolean; legalName?: string; legalAddress?: string } & Record<string, unknown>;
+
+const CATEGORIES = ['CD', 'Vinyl', 'T-Shirt', 'Hoodie', 'Cap', 'Poster', 'Jewellery', 'Other'];
+const SETTINGS = 'src/content/settings.json';
+const PRODUCTS = 'src/content/products.json';
+const SHOP = 'src/content/shop.json';
+const PLACEHOLDER = '/images/shop/cd.svg';
+
+const noGithub = () =>
+  jsonResponse(503, { ok: false, error: 'Not set up yet: add the GITHUB_TOKEN secret in Cloudflare (see the instructions from Claude).' });
+
+/** What's still missing before the shop can open (empty = ready). */
+async function missingForOpening(env: Env, testMode: boolean): Promise<string[]> {
+  const missing: string[] = [];
+  const products = JSON.parse((await readFile(env, PRODUCTS))?.text ?? '{"products":[]}') as { products: RawProduct[] };
+  if (!products.products.some((p) => p.price > 0)) missing.push('at least one product with a price');
+  const shop = JSON.parse((await readFile(env, SHOP))?.text ?? '{}') as { shipping?: { price?: unknown }[] };
+  if (!(shop.shipping ?? []).some((z) => z.price !== '' && z.price !== null && z.price !== undefined)) missing.push('a shipping price (admin panel → Site → Shipping & VAT)');
+  if (!testMode) {
+    const settings = JSON.parse((await readFile(env, SETTINGS))?.text ?? '{}') as Settings;
+    if (!settings.legalName?.trim() || !settings.legalAddress?.trim()) missing.push('your legal name and address (admin panel → Site → Settings), required by EU law');
+  }
+  return missing;
+}
+
+/** GET /api/shop/manage: shop switches and the product list as they are saved right now. */
+export const onManage: PagesFunction<Env> = async ({ request, env }) => {
+  const a = await auth(request, env);
+  if (a instanceof Response) return a;
+  if (!githubConfigured(env)) return jsonResponse(200, { ok: true, github: false });
+  try {
+    const settings = JSON.parse((await readFile(env, SETTINGS))!.text) as Settings;
+    const products = JSON.parse((await readFile(env, PRODUCTS))!.text) as { products: RawProduct[] };
+    return jsonResponse(200, {
+      ok: true, github: true, categories: CATEGORIES,
+      shopOpen: settings.shopOpen === true, shopTestMode: settings.shopTestMode === true,
+      products: products.products,
+    });
+  } catch (err) {
+    console.error('Shop manage failed', err);
+    return jsonResponse(502, { ok: false, error: "Couldn't read the shop settings from GitHub. Check the GITHUB_TOKEN." });
+  }
+};
+
+/** POST /api/shop/settings { shopOpen?, shopTestMode? } */
+export const onSettings: PagesFunction<Env> = async ({ request, env }) => {
+  if (!sameOrigin(request)) return jsonResponse(403, { ok: false, error: 'Forbidden.' });
+  const a = await auth(request, env);
+  if (a instanceof Response) return a;
+  if (!githubConfigured(env)) return noGithub();
+  const body = (await request.json().catch(() => ({}))) as { shopOpen?: unknown; shopTestMode?: unknown };
+  try {
+    const current = JSON.parse((await readFile(env, SETTINGS))!.text) as Settings;
+    const open = typeof body.shopOpen === 'boolean' ? body.shopOpen : current.shopOpen === true;
+    const test = typeof body.shopTestMode === 'boolean' ? body.shopTestMode : current.shopTestMode === true;
+    if (open) {
+      const missing = await missingForOpening(env, test);
+      if (missing.length) return jsonResponse(409, { ok: false, error: `Before the shop can open, it still needs: ${missing.join('; ')}.` });
+    }
+    const what = typeof body.shopOpen === 'boolean' ? (open ? 'open the shop' : 'close the shop') : `test mode ${test ? 'on' : 'off'}`;
+    await updateJson<Settings>(env, SETTINGS, `Shop: ${what} (from the shop page)`, (s) => ({ ...s, shopOpen: open, shopTestMode: test }));
+    return jsonResponse(200, { ok: true, shopOpen: open, shopTestMode: test });
+  } catch (err) {
+    console.error('Shop settings failed', err);
+    return jsonResponse(502, { ok: false, error: err instanceof Error ? err.message : 'Could not save.' });
+  }
+};
+
+const slug = (s: string) =>
+  s.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'product';
+
+/** POST /api/shop/products { action: 'save', product, image? } or { action: 'remove', id } */
+export const onProducts: PagesFunction<Env> = async ({ request, env }) => {
+  if (!sameOrigin(request)) return jsonResponse(403, { ok: false, error: 'Forbidden.' });
+  const a = await auth(request, env);
+  if (a instanceof Response) return a;
+  if (!githubConfigured(env)) return noGithub();
+  const body = (await request.json().catch(() => ({}))) as {
+    action?: string; id?: string;
+    product?: Partial<RawProduct> & { isNew?: boolean };
+    image?: { type?: string; data?: string };
+  };
+  try {
+    if (body.action === 'remove') {
+      if (typeof body.id !== 'string') return jsonResponse(400, { ok: false, error: 'Unknown product.' });
+      await updateJson<{ products: RawProduct[] }>(env, PRODUCTS, `Shop: remove product ${body.id} (from the shop page)`, (d) => ({ ...d, products: d.products.filter((p) => p.id !== body.id) }));
+      return jsonResponse(200, { ok: true });
+    }
+
+    // Check every field; the shop and checkout read this file, so nothing odd may get in.
+    const p = body.product ?? {};
+    const name = String(p.name ?? '').trim().slice(0, 80);
+    const category = CATEGORIES.includes(String(p.category)) ? String(p.category) : '';
+    const price = Math.round(Number(p.price) * 100) / 100;
+    const stock = Math.floor(Number(p.stock));
+    if (!name) return jsonResponse(400, { ok: false, error: 'Give the product a name.' });
+    if (!category) return jsonResponse(400, { ok: false, error: 'Choose a category.' });
+    if (!Number.isFinite(price) || price <= 0 || price > 10000) return jsonResponse(400, { ok: false, error: 'Enter a price, for example 15 or 24.90.' });
+    if (!Number.isFinite(stock) || stock < 0 || stock > 100000) return jsonResponse(400, { ok: false, error: 'Enter how many you have (0 or more).' });
+    const sizes = (Array.isArray(p.sizes) ? p.sizes : []).map((x) => String(x).trim().slice(0, 20)).filter(Boolean).slice(0, 20);
+
+    let image: string | undefined;
+    if (body.image?.data) {
+      const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[String(body.image.type)];
+      if (!ext) return jsonResponse(400, { ok: false, error: 'The photo must be a JPG, PNG or WebP.' });
+      if (body.image.data.length > 5_600_000) return jsonResponse(400, { ok: false, error: 'The photo is too big (max 4 MB).' });
+      image = `/images/shop/${slug(name)}-${Date.now().toString(36)}.${ext}`;
+      await writeFile(env, `public${image}`, body.image.data, `Shop: photo for ${name} (from the shop page)`);
+    }
+
+    let savedId = '';
+    await updateJson<{ products: RawProduct[] }>(env, PRODUCTS, `Shop: ${p.isNew ? 'add' : 'update'} ${name} (from the shop page)`, (d) => {
+      const existing = p.isNew ? undefined : d.products.find((x) => x.id === p.id);
+      let id = existing?.id ?? slug(name);
+      if (!existing) for (let n = 2; d.products.some((x) => x.id === id); n++) id = `${slug(name)}-${n}`;
+      savedId = id;
+      const next: RawProduct = {
+        id, name, category,
+        description: String(p.description ?? '').trim().slice(0, 1000),
+        price, image: image ?? existing?.image ?? PLACEHOLDER, stock,
+        preorder: p.preorder === true,
+        sizes,
+        shippingClass: p.shippingClass === 'standard' ? 'standard' : 'small',
+      };
+      const products = existing ? d.products.map((x) => (x.id === id ? next : x)) : [...d.products, next];
+      return { ...d, products };
+    });
+    return jsonResponse(200, { ok: true, id: savedId });
+  } catch (err) {
+    console.error('Shop products failed', err);
+    return jsonResponse(502, { ok: false, error: err instanceof Error ? err.message : 'Could not save.' });
+  }
 };

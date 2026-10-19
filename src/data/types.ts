@@ -93,7 +93,8 @@ export interface LabelEvent {
   ticketLabel?: string;
 }
 
-export type ProductCategory = 'Vinyl' | 'CD' | 'T-Shirt' | 'Hoodie' | 'Cap' | 'Poster' | 'Other';
+export type ProductCategory = 'CD' | 'Vinyl' | 'T-Shirt' | 'Hoodie' | 'Cap' | 'Poster' | 'Jewellery' | 'Other';
+export const PRODUCT_CATEGORIES: ProductCategory[] = ['CD', 'Vinyl', 'T-Shirt', 'Hoodie', 'Cap', 'Poster', 'Jewellery', 'Other'];
 
 export interface Product {
   id: string;

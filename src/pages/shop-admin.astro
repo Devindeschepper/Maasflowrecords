@@ -20,9 +20,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
       <div class="panel" data-panel hidden>
         <div class="top">
-          <a class="back mono" href="/studio-stats/">← Studio stats</a>
+          <div class="links"><a class="back mono" href="/studio-stats/">← Studio stats</a><a class="back mono" href="/admin/">Edit website (admin) →</a></div>
           <h1>Shop <span class="status mono" data-status></span></h1>
         </div>
+
+        <section class="controls" data-controls hidden>
+          <div class="ctrl">
+            <div><b>Shop</b><span class="muted" data-c-open-text></span></div>
+            <button class="btn small" type="button" data-c-open></button>
+          </div>
+          <div class="ctrl">
+            <div><b>Test mode</b><span class="muted" data-c-test-text></span></div>
+            <button class="btn btn-ghost small" type="button" data-c-test></button>
+          </div>
+          <p class="c-msg" data-c-msg hidden></p>
+        </section>
+        <p class="c-setup muted" data-c-setup hidden>To open the shop and add products from this page, one setup step is still needed (a GitHub key in Cloudflare). Ask Claude for the steps.</p>
 
         <h2 class="h3 sec">To do</h2>
         <ul class="todo" data-todo></ul>
@@ -44,6 +57,36 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         <h2 class="h3 sec">Stock</h2>
         <ul class="stock" data-stock></ul>
+
+        <section data-products-box hidden>
+          <div class="sec-row">
+            <h2 class="h3 sec">Products</h2>
+            <button class="btn btn-primary small" type="button" data-p-add>+ Add product</button>
+          </div>
+          <ul class="plist" data-plist></ul>
+          <form class="pform" data-pform hidden>
+            <h3 data-pf-title>New product</h3>
+            <label>Name<input name="name" required maxlength="80" placeholder="e.g. MFR chain" /></label>
+            <div class="pf-row">
+              <label>Category<select name="category" data-pf-cat></select></label>
+              <label>Price (€)<input name="price" type="number" min="0.01" step="0.01" required placeholder="24.90" /></label>
+              <label>How many you have<input name="stock" type="number" min="0" step="1" required placeholder="20" /></label>
+            </div>
+            <label>Description<textarea name="description" rows="3" maxlength="1000" placeholder="Material, size, what makes it special…"></textarea></label>
+            <label>Sizes <span class="muted">(optional, separated by commas: S, M, L or 45 cm, 50 cm)</span><input name="sizes" maxlength="200" /></label>
+            <div class="pf-row one">
+              <label>Package size<select name="shippingClass"><option value="small">Small (CD, chain, poster)</option><option value="standard">Standard (clothing, vinyl)</option></select></label>
+              <label class="check"><input name="preorder" type="checkbox" /> Pre-order (not shipped yet)</label>
+            </div>
+            <label>Photo <span class="muted" data-pf-photo-note>(square works best)</span><input name="photo" type="file" accept="image/jpeg,image/png,image/webp" /></label>
+            <p class="c-msg" data-pf-msg hidden></p>
+            <div class="pf-actions">
+              <button class="btn btn-ghost small danger" type="button" data-pf-remove hidden>Remove</button>
+              <button class="btn btn-ghost small" type="button" data-pf-cancel>Cancel</button>
+              <button class="btn btn-primary small" type="submit">Save</button>
+            </div>
+          </form>
+        </section>
 
         <section data-countries-box hidden>
           <h2 class="h3 sec">Orders by country</h2>
@@ -115,6 +158,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   function render(d: Data) {
     const s = d.stats;
+    liveOpen = s ? s.open : null;
     const status = $('[data-status]');
     status.textContent = !s?.open ? 'Closed' : s.test ? 'Test mode' : 'Online';
     status.className = `status mono ${!s?.open ? 'off' : s.test ? 'test' : 'on'}`;
@@ -123,11 +167,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     const todo: string[] = [];
     if (d.toShip.length) todo.push(`📦 <b>${plural(d.toShip.length, 'order')} to ship.</b> Pack them, then tap “Shipped ✓”.`);
     for (const p of s?.stock ?? []) {
-      if (p.left === 0) todo.push(`❌ <b>${esc(p.name)} is sold out.</b> Got more? Put the new number in the admin panel (Shop (CDs) → Stock).`);
+      if (p.left === 0) todo.push(`❌ <b>${esc(p.name)} is sold out.</b> Got more? Tap “Edit” on it under Products and put the new number.`);
       else if (p.low) todo.push(`⚠️ <b>Only ${p.left} × ${esc(p.name)} left.</b> Order more, or post “last copies”.`);
     }
-    if (s?.open && s.test) todo.push('🟡 <b>Test mode is on:</b> real payments don’t work. When you’re ready: admin panel → Site → Settings → turn off “Test mode”.');
-    if (!s?.open) todo.push('⚪ <b>The shop is closed</b> (coming soon). To sell: admin panel → Site → Settings → “Shop is open”.');
+    if (s?.open && s.test) todo.push('🟡 <b>Test mode is on:</b> real payments don’t work. When you’re ready, tap “Turn test mode off” at the top.');
+    if (!s?.open) todo.push('⚪ <b>The shop is closed</b> (coming soon). When you’re ready to sell, tap “Open the shop” at the top.');
     if (!todo.length) todo.push('✅ <b>Nothing to do.</b> All orders are shipped and the stock is fine.');
     $('[data-todo]').innerHTML = todo.map((t) => `<li>${t}</li>`).join('');
 
@@ -168,6 +212,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       render(data);
       form.hidden = true;
       panel.hidden = false;
+      if (!manage) loadManage();
     } catch (err) {
       store.clear();
       panel.hidden = true;
@@ -213,6 +258,156 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
   });
 
+  // ---- Managing the shop: open/close, test mode, products (saved on GitHub, live after ~2 minutes) ----
+  type RawProduct = { id: string; name: string; category: string; description?: string; price: number; image: string; stock: number; preorder?: boolean; sizes?: string[]; shippingClass?: string };
+  type Manage = { ok: boolean; error?: string; github: boolean; categories?: string[]; shopOpen?: boolean; shopTestMode?: boolean; products?: RawProduct[] };
+  let manage: Manage | null = null;
+  let editing: RawProduct | null = null;
+  let liveOpen: boolean | null = null;
+  const pform = $<HTMLFormElement>('[data-pform]');
+  const LIVE_NOTE = 'Saved ✓ The website updates in about 2 minutes.';
+
+  const say = (el: HTMLElement, text: string, bad = false) => { el.textContent = text; el.classList.toggle('bad', bad); el.hidden = !text; };
+
+  async function post(path: string, body: unknown) {
+    const res = await fetch(path, { method: 'POST', headers: { ...headers(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const data = (await res.json().catch(() => ({ ok: false, error: 'Something went wrong.' }))) as { ok: boolean; error?: string };
+    if (!data.ok) throw new Error(data.error ?? 'Something went wrong.');
+    return data;
+  }
+
+  function renderManage() {
+    const m = manage;
+    $('[data-c-setup]').hidden = !m || m.github;
+    $('[data-controls]').hidden = !m?.github;
+    $('[data-products-box]').hidden = !m?.github;
+    if (!m?.github) return;
+    // The live site only changes after the rebuild (~2 min): show that in the status next to the title.
+    const status = $('[data-status]');
+    if (liveOpen !== null && m.shopOpen !== liveOpen) {
+      status.textContent = m.shopOpen ? 'Opening…' : 'Closing…';
+      status.className = 'status mono test';
+    }
+    const open = $<HTMLButtonElement>('[data-c-open]');
+    $('[data-c-open-text]').textContent = m.shopOpen ? 'Open: people can buy.' : 'Closed: the shop shows “Coming soon”.';
+    open.textContent = m.shopOpen ? 'Close the shop' : 'Open the shop';
+    open.className = `btn small ${m.shopOpen ? 'btn-ghost' : 'btn-primary'}`;
+    $('[data-c-test-text]').textContent = m.shopTestMode ? 'On: only test payments, no real money.' : 'Off: real payments.';
+    $('[data-c-test]').textContent = m.shopTestMode ? 'Turn test mode off' : 'Turn test mode on';
+    $('[data-pf-cat]').innerHTML = (m.categories ?? []).map((c) => `<option>${esc(c)}</option>`).join('');
+    $('[data-plist]').innerHTML = (m.products ?? []).length
+      ? m.products!.map((p) => `<li><img src="${esc(p.image)}" alt="" loading="lazy" /><span><b>${esc(p.name)}</b><small class="muted">${esc(p.category)} · €${Number(p.price).toFixed(2)} · ${p.stock} in stock${p.preorder ? ' · pre-order' : ''}</small></span><button class="btn btn-ghost small" type="button" data-p-edit="${esc(p.id)}">Edit</button></li>`).join('')
+      : '<li class="muted">No products yet.</li>';
+    panel.querySelectorAll<HTMLButtonElement>('[data-p-edit]').forEach((b) => b.addEventListener('click', () => openForm(m.products!.find((p) => p.id === b.dataset.pEdit) ?? null)));
+  }
+
+  async function loadManage() {
+    try {
+      const res = await fetch('/api/shop/manage', { headers: headers() });
+      manage = (await res.json()) as Manage;
+      if (!manage.ok) throw new Error(manage.error);
+    } catch (err) {
+      manage = { ok: false, github: true };
+      say($('[data-c-msg]'), err instanceof Error && err.message ? err.message : "Couldn't load the shop settings.", true);
+      $('[data-controls]').hidden = false;
+      return;
+    }
+    renderManage();
+  }
+
+  async function toggle(btn: HTMLButtonElement, body: { shopOpen?: boolean; shopTestMode?: boolean }) {
+    const msg = $('[data-c-msg]');
+    btn.disabled = true;
+    say(msg, 'Saving…');
+    try {
+      const data = (await post('/api/shop/settings', body)) as unknown as { shopOpen: boolean; shopTestMode: boolean };
+      manage = { ...manage!, shopOpen: data.shopOpen, shopTestMode: data.shopTestMode };
+      renderManage();
+      say(msg, LIVE_NOTE);
+    } catch (err) {
+      say(msg, err instanceof Error ? err.message : 'Could not save.', true);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+  $('[data-c-open]').addEventListener('click', (e) => {
+    const opening = !manage?.shopOpen;
+    if (opening && !confirm(manage?.shopTestMode ? 'Open the shop in test mode?' : 'Open the shop for real? People will be able to buy and pay.')) return;
+    toggle(e.currentTarget as HTMLButtonElement, { shopOpen: opening });
+  });
+  $('[data-c-test]').addEventListener('click', (e) => toggle(e.currentTarget as HTMLButtonElement, { shopTestMode: !manage?.shopTestMode }));
+
+  function openForm(p: RawProduct | null) {
+    editing = p;
+    pform.reset();
+    say($('[data-pf-msg]'), '');
+    $('[data-pf-title]').textContent = p ? `Edit: ${p.name}` : 'New product';
+    $('[data-pf-remove]').hidden = !p;
+    $('[data-pf-photo-note]').textContent = p ? '(leave empty to keep the current photo)' : '(square works best)';
+    if (p) {
+      const f = pform.elements as unknown as Record<string, HTMLInputElement>;
+      f.name.value = p.name; f.category.value = p.category; f.price.value = String(p.price); f.stock.value = String(p.stock);
+      f.description.value = p.description ?? ''; f.sizes.value = (p.sizes ?? []).join(', ');
+      f.shippingClass.value = p.shippingClass === 'standard' ? 'standard' : 'small'; f.preorder.checked = !!p.preorder;
+    }
+    pform.hidden = false;
+    pform.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  $('[data-p-add]').addEventListener('click', () => openForm(null));
+  $('[data-pf-cancel]').addEventListener('click', () => { pform.hidden = true; });
+
+  // Phone photos are big: make them at most 1600 px wide as a JPG before sending.
+  async function photoData(file: File): Promise<{ type: string; data: string }> {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    const canvas = Object.assign(document.createElement('canvas'), { width: Math.round(bmp.width * scale), height: Math.round(bmp.height * scale) });
+    canvas.getContext('2d')!.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob>((ok) => canvas.toBlob((b) => ok(b!), 'image/jpeg', 0.85));
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return { type: 'image/jpeg', data: btoa(bin) };
+  }
+
+  pform.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = pform.elements as unknown as Record<string, HTMLInputElement>;
+    const msg = $('[data-pf-msg]');
+    const save = pform.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    save.disabled = true;
+    say(msg, 'Saving…');
+    try {
+      const file = f.photo.files?.[0];
+      await post('/api/shop/products', {
+        action: 'save',
+        product: {
+          isNew: !editing, id: editing?.id, name: f.name.value, category: f.category.value, price: Number(f.price.value), stock: Number(f.stock.value),
+          description: f.description.value, sizes: f.sizes.value.split(',').map((x) => x.trim()).filter(Boolean),
+          shippingClass: f.shippingClass.value, preorder: f.preorder.checked,
+        },
+        image: file ? await photoData(file) : undefined,
+      });
+      pform.hidden = true;
+      say($('[data-c-msg]'), LIVE_NOTE);
+      await loadManage();
+    } catch (err) {
+      say(msg, err instanceof Error ? err.message : 'Could not save.', true);
+    } finally {
+      save.disabled = false;
+    }
+  });
+  $('[data-pf-remove]').addEventListener('click', async () => {
+    if (!editing || !confirm(`Remove “${editing.name}” from the shop?`)) return;
+    try {
+      await post('/api/shop/products', { action: 'remove', id: editing.id });
+      pform.hidden = true;
+      say($('[data-c-msg]'), LIVE_NOTE);
+      await loadManage();
+    } catch (err) {
+      say($('[data-pf-msg]'), err instanceof Error ? err.message : 'Could not remove.', true);
+    }
+  });
+
   form.addEventListener('submit', (e) => { e.preventDefault(); load(input.value.trim()); });
   $('[data-lock]').addEventListener('click', () => { store.clear(); location.reload(); });
   const saved = store.get();
@@ -253,6 +448,30 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .count { font-size: 0.8rem; color: #fff; background: var(--accent); border-radius: 999px; padding: 0.1rem 0.55rem; vertical-align: middle; }
   .btn.small { padding: 0.5rem 0.8rem; font-size: 0.75rem; }
 
+  .controls { display: grid; gap: 0.5rem; margin: 1rem 0 0.5rem; padding: 1rem; border: 1px solid var(--line); border-top: 3px solid var(--accent); background: var(--surface); }
+  .ctrl { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+  .ctrl > div { display: grid; gap: 0.1rem; }
+  .ctrl span { font-size: 0.85rem; }
+  .c-msg { margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--ok, #7fbf7f); }
+  .c-msg.bad { color: var(--accent); }
+  .c-setup { font-size: 0.85rem; margin: 1rem 0 0; }
+  .plist { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+  .plist :global(li) { display: grid; grid-template-columns: 48px 1fr auto; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem; border: 1px solid var(--line); background: var(--surface); }
+  .plist :global(img) { width: 48px; height: 48px; object-fit: cover; background: #1c1b1a; }
+  .plist :global(span) { display: grid; min-width: 0; }
+  .plist :global(small) { font-size: 0.75rem; }
+  .pform { display: grid; gap: 0.75rem; margin-top: 0.75rem; padding: 1rem; border: 1px solid var(--accent); background: var(--surface); }
+  .pform h3 { margin: 0; font-size: 1.2rem; }
+  .pform label { display: grid; gap: 0.3rem; font-size: 0.85rem; }
+  .pform input, .pform select, .pform textarea { width: 100%; }
+  .pform .check { display: flex; align-items: center; gap: 0.5rem; }
+  .pform .check input { width: auto; }
+  .pf-row { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); align-items: end; }
+  .pf-row.one { grid-template-columns: 1fr; }
+  .links { display: flex; justify-content: space-between; gap: 1rem; }
+  .count:empty { display: none; }
+  .pf-actions { display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap; }
+  .pf-actions .danger { margin-right: auto; color: var(--accent); border-color: var(--accent); }
   .todo { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
   .todo :global(li) { padding: 0.85rem 1rem; border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--surface); line-height: 1.45; }
 
