@@ -5,6 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
     <title>Maas Flow Records — Admin</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+    <script>
+      // Start in dark mode like the website (can still be changed in the admin's Settings).
+      try {
+        const prefs = JSON.parse(localStorage.getItem('sveltia-cms.prefs') || '{}') || {};
+        if (!prefs.theme) localStorage.setItem('sveltia-cms.prefs', JSON.stringify({ ...prefs, theme: 'dark' }));
+      } catch {}
+    </script>
+    <style>
+      /* Website colours and font: red accent (#e4432d), warm black, Inter. */
+      :root {
+        --sui-base-hue: 7 !important;
+        --sui-font-family-default: 'Inter', system-ui, sans-serif !important;
+      }
+      :root[data-theme='dark'] {
+        --sui-primary-accent-color: #e4432d !important;
+        --sui-primary-accent-color-light: #f0583f !important;
+        --sui-primary-accent-color-dark: #b9321f !important;
+        --sui-primary-accent-color-text: #ff7a63 !important;
+        --sui-background-color-1-hsl: 0 0% 4% !important;
+        --sui-background-color-2-hsl: 0 0% 7% !important;
+        --sui-background-color-3-hsl: 0 0% 11% !important;
+        --sui-background-color-4-hsl: 0 0% 16% !important;
+        --sui-background-color-5-hsl: 0 0% 26% !important;
+        --sui-border-color-1-hsl: 0 0% 40% !important;
+        --sui-border-color-2-hsl: 0 0% 24% !important;
+        --sui-border-color-3-hsl: 0 0% 17% !important;
+      }
+      :root[data-theme='light'] {
+        --sui-primary-accent-color: #c8331f !important;
+        --sui-primary-accent-color-light: #e4432d !important;
+        --sui-primary-accent-color-dark: #9e2716 !important;
+        --sui-primary-accent-color-text: #b42d1b !important;
+      }
+    </style>
   </head>
   <body>
     <!-- Sveltia CMS: edits the files in src/content/ on GitHub; Cloudflare then rebuilds the site. -->
