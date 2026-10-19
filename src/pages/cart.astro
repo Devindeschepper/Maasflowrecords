@@ -6,7 +6,7 @@ import ShopComingSoon from '../components/ShopComingSoon.astro';
 import TestModeBanner from '../components/TestModeBanner.astro';
 import { products, orderableZones, MAX_QTY_PER_ITEM } from '../data/products';
 import { vat } from '../data/vat';
-import { shopOpen, shopTestMode, paymentMethods } from '../data/site';
+import { shopOpen, dropAt, shopTestMode, paymentMethods } from '../data/site';
 
 const online = paymentMethods.card || paymentMethods.crypto;
 
@@ -20,8 +20,9 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
   <PageHero eyebrow="Shop" title="Cart" />
 
   {!shopOpen && <ShopComingSoon />}
-  {shopOpen && shopTestMode && <TestModeBanner />}
-  {shopOpen && (<>
+  {dropAt && <ShopComingSoon dropAt={dropAt} />}
+  {shopOpen && (<div data-drop-content hidden={dropAt ? true : undefined}>
+  {shopTestMode && <TestModeBanner />}
   <script type="application/json" id="catalogue" set:html={JSON.stringify({ catalogue, zones: orderableZones, vat, max: MAX_QTY_PER_ITEM }).replace(/</g, '\\u003c')} />
 
   <section class="section">
@@ -105,7 +106,7 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
       </div>
     </div>
   </section>
-  </>)}
+  </div>)}
 </BaseLayout>
 
 <script>

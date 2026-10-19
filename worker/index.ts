@@ -7,6 +7,7 @@ import { onRequestPost as contact } from '../functions/api/contact';
 import { onRequestPost as casting } from '../functions/api/casting';
 import { onRequestPost as checkout } from '../functions/api/checkout';
 import { onRequestPost as subscribe } from '../functions/api/subscribe';
+import { onRequestPost as restock } from '../functions/api/restock';
 import { onRequestPost as booking } from '../functions/api/booking';
 import { onRequestPost as services } from '../functions/api/services';
 import { onRequestPost as stripeWebhook } from '../functions/api/webhooks/stripe';
@@ -25,6 +26,8 @@ import { dueReminders } from '../functions/_lib/reminders';
 import { monthlyBackup } from '../functions/_lib/backup';
 import { salesSummary } from '../functions/_lib/sales';
 import { notifyWhatsApp } from '../functions/_lib/whatsapp';
+import { restockAlerts } from '../functions/_lib/restock';
+import { finishDrop } from '../functions/_lib/drop';
 
 /** Must match the Sunday entry in wrangler.toml [triggers]. */
 const WEEKLY_CRON = '0 18 * * SUN';
@@ -43,6 +46,7 @@ const routes: Record<string, Handler> = {
   '/api/casting': casting as unknown as Handler,
   '/api/checkout': checkout as unknown as Handler,
   '/api/subscribe': subscribe as unknown as Handler,
+  '/api/restock': restock as unknown as Handler,
   '/api/booking': booking as unknown as Handler,
   '/api/services': services as unknown as Handler,
   '/api/webhooks/stripe': stripeWebhook as unknown as Handler,
@@ -94,7 +98,7 @@ export default {
   },
 
   // Crons (wrangler.toml [triggers]): hourly follower check (+ WhatsApp milestone/problem alerts, the
-  // 18:00 studio nudge, the 31 December Wrapped and 10:00 release anniversaries, dated reminders and the busy-hour sales summary); Sunday evening WhatsApp
+  // 18:00 studio nudge, the 31 December Wrapped and 10:00 release anniversaries, dated reminders, the busy-hour sales summary, tidying up after a timed drop and back-in-stock emails); Sunday evening WhatsApp
   // summary and Instagram token renewal; monthly WhatsApp report, link check and backup email on the 1st.
   async scheduled(controller: ScheduledController, env: WorkerEnv, ctx: ExecutionContext): Promise<void> {
     if (controller.cron === WEEKLY_CRON) {
@@ -109,7 +113,7 @@ export default {
         if (text) await notifyWhatsApp(env, text);
       };
       const releases = async () => (await (await env.ASSETS.fetch('https://assets.local/release-dates.json')).json()) as ReleaseDate[];
-      ctx.waitUntil(Promise.all([hourlyFollowers(env, now), studioNudge(env, now), wrappedMessage(env, now), releaseAnniversaries(env, now, releases), dueReminders(env, now), busySales()]));
+      ctx.waitUntil(Promise.all([hourlyFollowers(env, now), studioNudge(env, now), wrappedMessage(env, now), releaseAnniversaries(env, now, releases), dueReminders(env, now), busySales(), finishDrop(env, now), restockAlerts(env, now)]));
     }
   },
 } satisfies ExportedHandler<WorkerEnv>;

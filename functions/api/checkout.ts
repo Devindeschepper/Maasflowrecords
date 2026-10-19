@@ -6,7 +6,7 @@ import type { Order, OrderLine, PaymentMethod } from '../_lib/payments/types';
 // The same catalogue the website is built from — prices can't be tampered with by the browser.
 import { products, orderableZones, MAX_QTY_PER_ITEM } from '../../src/data/products';
 import { priceForZone, vatIn, vatNote } from '../../src/data/vat';
-import { shopOpen, paymentMethods } from '../../src/data/site';
+import { shopOpen, dropStarted, paymentMethods } from '../../src/data/site';
 import { rememberOrder, stockLeft } from '../_lib/sales';
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
@@ -14,6 +14,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const json = jsonResponse;
 
   if (!shopOpen) return json(503, { ok: false, error: 'The shop is not open yet.' });
+  if (!dropStarted()) return json(503, { ok: false, error: 'The drop has not started yet. Come back when the countdown ends.' });
   if (!sameOrigin(request)) return json(403, { ok: false, error: 'Forbidden.' });
 
   let fd: FormData;

@@ -7,9 +7,11 @@ import { products, shippingZones, formatPrice } from '../data/products';
 import { vat, priceForZone } from '../data/vat';
 import ShopComingSoon from '../components/ShopComingSoon.astro';
 import TestModeBanner from '../components/TestModeBanner.astro';
-import { site, shopOpen, shopTestMode, paymentMethods } from '../data/site';
+import Turnstile from '../components/Turnstile.astro';
+import { site, shopOpen, dropAt, shopTestMode, paymentMethods } from '../data/site';
 
 const categories = [...new Set(products.map((p) => p.category))];
+const soldOut = products.filter((p) => p.stock <= 0);
 
 const jsonLd = !shopOpen ? [] : products.map((p) => ({
   '@context': 'https://schema.org',
@@ -29,11 +31,12 @@ const jsonLd = !shopOpen ? [] : products.map((p) => ({
 ---
 
 <BaseLayout title="Shop" description="Official Maas Flow Records store. The 2Real4U CD by VIN is coming soon - follow the label to know when the shop opens." jsonLd={jsonLd}>
-  <PageHero eyebrow="Official store" title="Shop" lead="CDs, straight from the label." />
+  <PageHero eyebrow="Official store" title="Shop" lead="Music and merch, straight from the label." />
 
   {!shopOpen && <ShopComingSoon />}
-  {shopOpen && shopTestMode && <TestModeBanner />}
-  {shopOpen && (<>
+  {dropAt && <ShopComingSoon dropAt={dropAt} />}
+  {shopOpen && (<div data-drop-content hidden={dropAt ? true : undefined}>
+  {shopTestMode && <TestModeBanner />}
 
   <section class="section">
     <div class="container">
@@ -52,6 +55,37 @@ const jsonLd = !shopOpen ? [] : products.map((p) => ({
       </div>
     </div>
   </section>
+
+  {soldOut.length > 0 && (
+    <section class="section" id="restock">
+      <div class="container restock">
+        <div>
+          <h2 class="h3">Sold out? Get an email when it's back</h2>
+          <p class="muted small">One email when it's in stock again, then your address is deleted. No newsletter.</p>
+        </div>
+        <form class="form" action="/api/restock" method="post" data-ajax data-success="Done! We'll email you as soon as it's back.">
+          <div class="field">
+            <label for="r-product">Product</label>
+            <select id="r-product" name="product" required>
+              {soldOut.map((p) => <option value={p.id}>{p.name}</option>)}
+            </select>
+          </div>
+          <div class="field">
+            <label for="r-email">Email</label>
+            <input id="r-email" name="email" type="email" required maxlength="200" autocomplete="email" placeholder="Your email" />
+          </div>
+          <div class="hp" aria-hidden="true">
+            <label for="r-website">Website</label>
+            <input id="r-website" name="website" tabindex="-1" autocomplete="off" />
+          </div>
+          <input type="hidden" name="_ts" value="" />
+          <Turnstile appearance="interaction-only" />
+          <button class="btn btn-primary" type="submit">Tell me</button>
+          <p class="form-status" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+  )}
 
   <section class="section" id="shipping">
     <div class="container info">
@@ -90,12 +124,23 @@ const jsonLd = !shopOpen ? [] : products.map((p) => ({
       </div>
     </div>
   </section>
-  </>)}
+  </div>)}
 </BaseLayout>
 
 <script>
   import { enhanceAddToCart } from '../scripts/shop';
+  import { enhanceForms } from '../scripts/forms';
   enhanceAddToCart();
+  enhanceForms();
+
+  // "Tell me when it's back" on a sold-out card: pick that product in the form below.
+  document.querySelectorAll<HTMLAnchorElement>('[data-restock]').forEach((a) =>
+    a.addEventListener('click', () => {
+      const select = document.querySelector<HTMLSelectElement>('#r-product');
+      if (select) select.value = a.dataset.restock!;
+      setTimeout(() => document.querySelector<HTMLInputElement>('#r-email')?.focus({ preventScroll: true }), 300);
+    }),
+  );
 
   const buttons = document.querySelectorAll<HTMLButtonElement>('.filter');
   const items = document.querySelectorAll<HTMLElement>('#product-grid > [data-cat]');
@@ -117,6 +162,9 @@ const jsonLd = !shopOpen ? [] : products.map((p) => ({
   #product-grid > div { display: flex; }
   #product-grid > div > :global(*) { flex: 1; }
   #product-grid > div[hidden] { display: none; }
+  .restock { display: grid; gap: 1.5rem; max-width: 900px; }
+  .restock .form { display: grid; gap: 0.75rem; }
+  @media (min-width: 900px) { .restock { grid-template-columns: 1fr 1.2fr; gap: 3rem; } }
   .info { display: grid; gap: 2.5rem; }
   .info > div { min-width: 0; }
   .h3 { font-size: clamp(1.35rem, 3vw, 1.75rem); }

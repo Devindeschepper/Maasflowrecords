@@ -27,10 +27,20 @@ export const legal = {
 export const labelSocials = cleanLinks(settings.labelSocials);
 
 /**
- * Shop switch (admin panel → Settings). false = the shop shows "Coming soon", the cart is
- * hidden and the checkout API refuses orders.
+ * Timed drop (set on /shop-admin/): the moment the shop opens by itself, as an ISO date. Until then the shop
+ * and cart pages show a countdown and the checkout API refuses orders; at that second the shop appears in the
+ * visitor's browser, without waiting for a rebuild. Empty = no drop planned (or the shop is already open).
  */
-export const shopOpen: boolean = settings.shopOpen === true;
+const dropMs = Date.parse(String((settings as { dropAt?: unknown }).dropAt ?? ''));
+export const dropAt: string = settings.shopOpen !== true && Number.isFinite(dropMs) ? new Date(dropMs).toISOString() : '';
+/** true once the drop time has passed (or when there is no drop). */
+export const dropStarted = (now = Date.now()) => !dropAt || now >= Date.parse(dropAt);
+
+/**
+ * Shop switch (admin panel → Settings). false = the shop shows "Coming soon", the cart is
+ * hidden and the checkout API refuses orders. A planned drop counts as open (behind its countdown).
+ */
+export const shopOpen: boolean = settings.shopOpen === true || dropAt !== '';
 
 /**
  * Test mode (admin panel → Settings): shows a "test shop" banner, only accepts Stripe TEST keys
