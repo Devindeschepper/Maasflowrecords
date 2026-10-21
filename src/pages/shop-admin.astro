@@ -93,7 +93,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               <div class="sz-chips" data-sz-group="chains" aria-label="Chain lengths">
                 {['40 cm', '45 cm', '50 cm', '55 cm', '60 cm'].map((v) => <button type="button" class="sz" data-sz={v} aria-pressed="false">{v}</button>)}
               </div>
-              <label>Other sizes <span class="muted">(optional, separated by commas)</span><input name="sizes" maxlength="200" placeholder="e.g. 3XL or 70 cm" /></label>
+              <label>Your sizes <span class="muted">(you can also type others, e.g. 3XL or 70 cm, separated by commas)</span><input name="sizes" maxlength="200" placeholder="One size" /></label>
             </div>
             <div class="pf-row one">
               <label>Package size<select name="shippingClass"><option value="small">Small (CD, chain, poster)</option><option value="standard">Standard (clothing, vinyl)</option></select></label>
