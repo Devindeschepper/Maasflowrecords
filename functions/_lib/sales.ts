@@ -2,6 +2,8 @@ import type { Env } from './env';
 import type { Order } from './payments/types';
 import { db } from './studio';
 import { countUse } from './discounts';
+import { sendMail } from './mail';
+import { customerTexts, itemsForCustomer } from './payments/customer-texts';
 import { products } from '../../src/data/products';
 import { dropAt, shopOpen, shopTestMode } from '../../src/data/site';
 
@@ -24,6 +26,8 @@ export async function ensureSalesTable(d: D1Database) {
   await d.prepare("ALTER TABLE sales ADD COLUMN details TEXT NOT NULL DEFAULT '{}'").run().catch(() => {});
   await d.prepare('ALTER TABLE sales ADD COLUMN notified INTEGER NOT NULL DEFAULT 1').run().catch(() => {});
   await d.prepare('ALTER TABLE sales ADD COLUMN shipped_at INTEGER').run().catch(() => {});
+  // 1 once the "your order is on the way" email went out (so Undo + Shipped again doesn't send it twice).
+  await d.prepare('ALTER TABLE sales ADD COLUMN ship_mailed INTEGER NOT NULL DEFAULT 0').run().catch(() => {});
 }
 
 /** The country as customers type it ("luxemburg", "NL", "Deutschland") → one name per country. */
@@ -272,11 +276,43 @@ export async function shopOrders(env: Env): Promise<{ toShip: ShopOrder[]; shipp
   return { toShip: toShip.results.map(map), shipped: shipped.results.map(map) };
 }
 
-/** Ticks an order as shipped (or back to "to ship"). Returns false when the order doesn't exist. */
-export async function markShipped(env: Env, orderId: string, shipped: boolean, now = Date.now()): Promise<boolean> {
+/**
+ * Ticks an order as shipped (or back to "to ship"). The first time an order is marked shipped, the customer
+ * gets a "your order is on the way" email in their language (with the tracking number when given).
+ * Returns null when the order doesn't exist, otherwise whether that email was sent now.
+ */
+export async function markShipped(env: Env, orderId: string, shipped: boolean, tracking = '', now = Date.now()): Promise<{ mailed: boolean } | null> {
   const d = await db(env);
-  if (!d) return false;
+  if (!d) return null;
   await ensureSalesTable(d);
   const res = await d.prepare('UPDATE sales SET shipped_at = ?1 WHERE order_id = ?2').bind(shipped ? now : null, orderId).run();
-  return (res.meta.changes ?? 0) > 0;
+  if (!(res.meta.changes ?? 0)) return null;
+  if (!shipped) return { mailed: false };
+  const row = await d.prepare('SELECT lines, details, ship_mailed FROM sales WHERE order_id = ?1').bind(orderId).first<{ lines: string; details: string; ship_mailed: number }>();
+  const det = JSON.parse(row?.details || '{}') as SaleDetails;
+  const c = det.customer;
+  if (!row || row.ship_mailed || !c?.email) return { mailed: false };
+  const lang = det.lang ?? 'en';
+  const t = customerTexts(lang);
+  const items = (JSON.parse(row.lines || '[]') as Line[]).map((l) => `${l.qty} × ${l.name}${l.size ? ` (size ${l.size})` : ''}`).join('\n');
+  try {
+    await sendMail(env, {
+      to: c.email,
+      replyTo: env.CONTACT_TO_EMAIL ?? 'info@maasflowrecords.com',
+      subject: `${shopTestMode ? '[TEST] ' : ''}${t.shippedSubject(orderId)}`,
+      fields: [
+        [t.thanksLabel, t.shippedText(c.name)],
+        [t.order, orderId],
+        [t.items, itemsForCustomer(items, lang)],
+        [t.tracking, tracking],
+        [t.shipTo, [c.name, c.address, `${c.postalCode} ${c.city}`.trim(), c.country].filter(Boolean).join('\n')],
+        [t.questions, t.questionsText],
+      ],
+    });
+    await d.prepare('UPDATE sales SET ship_mailed = 1 WHERE order_id = ?1').bind(orderId).run();
+    return { mailed: true };
+  } catch (err) {
+    console.error('Shipped email failed', err);
+    return { mailed: false };
+  }
 }
