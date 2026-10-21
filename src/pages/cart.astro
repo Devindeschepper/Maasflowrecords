@@ -79,13 +79,6 @@ const catalogue = products.map(({ id, name, price, image, stock, sizeStock, preo
         <form class="form" id="checkout-form" action="/api/checkout" method="post">
           <input type="hidden" name="lang" value={lang} />
           {zones.length === 0 && <p class="notice">{t.noShipping}</p>}
-          <div class="field">
-            <label for="o-country">{t.shipTo} <span class="req">*</span></label>
-            <select id="o-country" name="country" required autocomplete="country" data-pick-country={t.pickCountry}>
-              <option value="">{t.chooseCountry}</option>
-              {countries.map((c) => <option value={c.code} disabled={!c.ok}>{c.ok ? c.name : `${c.name} (${t.notYet})`}</option>)}
-            </select>
-          </div>
 
           <div class="field">
             <label for="o-code">{t.code}</label>
@@ -112,6 +105,13 @@ const catalogue = products.map(({ id, name, price, image, stock, sizeStock, preo
             <div class="form-row">
               <div class="field"><label for="o-zip">{t.zip} <span class="req">*</span></label><input id="o-zip" name="postalCode" required maxlength="20" autocomplete="postal-code" /></div>
               <div class="field"><label for="o-city">{t.city} <span class="req">*</span></label><input id="o-city" name="city" required maxlength="100" autocomplete="address-level2" /></div>
+            </div>
+            <div class="field">
+              <label for="o-country">{t.country} <span class="req">*</span></label>
+              <select id="o-country" name="country" required autocomplete="country" data-pick-country={t.pickCountry}>
+                <option value="">{t.chooseCountry}</option>
+                {countries.map((c) => <option value={c.code} disabled={!c.ok}>{c.ok ? c.name : `${c.name} (${t.notYet})`}</option>)}
+              </select>
             </div>
             <div class="field"><label for="o-notes">{t.notes}</label><textarea id="o-notes" name="notes" class="short" maxlength="1000" rows="3"></textarea></div>
           </fieldset>
