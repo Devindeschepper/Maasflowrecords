@@ -8,6 +8,7 @@ import { products, orderableZones, MAX_QTY_PER_ITEM } from '../../src/data/produ
 import { priceForZone, vatIn, vatNote } from '../../src/data/vat';
 import { shopOpen, dropStarted, paymentMethods } from '../../src/data/site';
 import { rememberOrder, stockLeft } from '../_lib/sales';
+import { checkCode, discounted } from '../_lib/discounts';
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   // Checkout is JS-only (the cart lives in the browser), so always answer with JSON.
@@ -57,6 +58,21 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     lines.push({ id: p.id, name: p.name, size, qty, unitPrice: priceForZone(p.price, zone.inEU), preorder: !!p.preorder });
   }
 
+  // ---- discount code (products only, not shipping) ----
+  let discount: Order['discount'];
+  const codeInput = str(fd, 'discount', 40);
+  if (codeInput) {
+    const found = await checkCode(env, codeInput);
+    if (!found.ok) return json(400, { ok: false, error: found.error });
+    const { code, percent } = found.code;
+    const before = lines.reduce((s, l) => s + l.unitPrice * l.qty, 0);
+    for (const l of lines) {
+      l.unitPrice = discounted(l.unitPrice, percent);
+      l.discount = `-${percent}% ${code}`;
+    }
+    discount = { code, percent, saved: before - lines.reduce((s, l) => s + l.unitPrice * l.qty, 0) };
+  }
+
   const subtotal = lines.reduce((s, l) => s + l.unitPrice * l.qty, 0);
   const shipping = priceForZone(zone.price!, zone.inEU);
 
@@ -101,6 +117,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     vatNote: vatNote(zone.inEU),
     currency: 'EUR',
     shippingZone: zone.label,
+    ...(discount ? { discount } : {}),
     customer,
   };
 

@@ -52,7 +52,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <section data-ship-box>
           <div class="sec-row">
             <h2 class="h3 sec">Orders to ship <span class="count mono" data-ship-count></span></h2>
-            <button class="btn btn-ghost small" type="button" data-export>Packing list (Excel)</button>
+            <div class="sec-btns">
+              <button class="btn btn-primary small" type="button" data-labels-all>Print labels</button>
+              <button class="btn btn-ghost small" type="button" data-export>Packing list (Excel)</button>
+            </div>
           </div>
           <ol class="orders" data-to-ship></ol>
         </section>
@@ -97,6 +100,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </form>
         </section>
 
+        <section>
+          <h2 class="h3 sec">Discount codes</h2>
+          <ul class="codes" data-codes></ul>
+          <form class="pform" data-cform>
+            <div class="pf-row">
+              <label>Code<input name="code" required maxlength="20" pattern="[A-Za-z0-9_\-]{3,20}" placeholder="MAAS10" autocapitalize="characters" /></label>
+              <label>Discount (%)<input name="percent" type="number" min="1" max="90" step="1" required placeholder="10" /></label>
+            </div>
+            <div class="pf-row">
+              <label>How many orders <span class="muted">(empty = unlimited)</span><input name="maxUses" type="number" min="1" step="1" /></label>
+              <label>Last day <span class="muted">(optional)</span><input name="endsAt" type="date" /></label>
+            </div>
+            <p class="c-msg" data-cf-msg hidden></p>
+            <div class="pf-actions"><button class="btn btn-primary small" type="submit">Add code</button></div>
+          </form>
+        </section>
+
         <section data-countries-box hidden>
           <h2 class="h3 sec">Orders by country</h2>
           <ol class="countries" data-countries></ol>
@@ -109,6 +129,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         <button class="btn btn-ghost lock" type="button" data-lock>Forget password on this device</button>
       </div>
+      <!-- Package labels: filled when "Print labels" is tapped, only visible on paper. -->
+      <div class="labels" data-print-labels></div>
     </div>
   </section>
 </BaseLayout>
@@ -129,7 +151,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       countries: { name: string; orders: number }[];
     } | null;
     toShip: Order[]; shipped: Order[];
+    discounts: Discount[];
+    sender: { name: string; address: string };
   };
+  type Discount = { code: string; percent: number; maxUses: number | null; uses: number; endsAt: number | null };
 
   // Same key as /studio-stats/, so unlocking one page unlocks both.
   const KEY = 'mfr-studio-token';
@@ -159,6 +184,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <pre class="o-addr">${esc(address)}</pre>
       ${c?.notes ? `<p class="o-notes">Note: ${esc(c.notes)}</p>` : ''}
       <div class="o-actions">
+        ${!shipped && c ? `<button class="btn btn-ghost small" type="button" data-label="${esc(o.orderId)}">Label</button>` : ''}
         ${c?.email ? `<a class="btn btn-ghost small" href="mailto:${esc(c.email)}?subject=${encodeURIComponent(`Your Maas Flow Records order ${o.orderId}`)}">Email</a>` : ''}
         <button class="btn ${shipped ? 'btn-ghost' : 'btn-primary'} small" type="button" data-ship="${esc(o.orderId)}" data-mark="${shipped ? '0' : '1'}">${shipped ? 'Undo' : 'Shipped ✓'}</button>
       </div>
@@ -211,9 +237,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         .join('');
     }
 
+    $<HTMLButtonElement>('[data-labels-all]').hidden = !d.toShip.some((o) => o.customer);
+    renderCodes(d.discounts ?? []);
+
     $('[data-shipped-box]').hidden = !d.shipped.length;
     $('[data-shipped-list]').innerHTML = d.shipped.map((o) => orderCard(o, true)).join('');
     panel.querySelectorAll<HTMLButtonElement>('[data-ship]').forEach((b) => b.addEventListener('click', ship));
+    panel.querySelectorAll<HTMLButtonElement>('[data-label]').forEach((b) =>
+      b.addEventListener('click', () => printLabels(d.toShip.filter((o) => o.orderId === b.dataset.label))),
+    );
   }
 
   async function load(token: string) {
@@ -253,6 +285,77 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       b.textContent = 'Try again';
     }
   }
+
+  // ---- Package labels: one per order (3 on an A4 page, cut along the dashed lines), printed from the phone or PC.
+  function printLabels(orders: Order[]) {
+    const from = lastData?.sender;
+    const box = document.querySelector<HTMLElement>('[data-print-labels]')!;
+    box.innerHTML = orders
+      .filter((o) => o.customer)
+      .map((o) => {
+        const c = o.customer!;
+        const to = [c.name, c.address, `${c.postalCode} ${c.city}`.trim(), c.country.toUpperCase()].filter(Boolean);
+        return `<article class="label">
+          <p class="l-from"><b>From:</b> ${esc(from?.name ?? 'Maas Flow Records')}${from?.address ? `, ${esc(from.address)}` : ''}</p>
+          <div class="l-to"><span>To:</span>${to.map((l) => `<p>${esc(l)}</p>`).join('')}</div>
+          <p class="l-order">${esc(o.orderId)} · ${o.items.map((l) => `${l.qty}× ${esc(l.name)}${l.size ? ` (${esc(l.size)})` : ''}`).join(', ')}</p>
+        </article>`;
+      })
+      .join('');
+    if (!box.innerHTML) return;
+    // Only the labels go on paper: they move to the top of the page and everything else is left out.
+    document.body.append(box);
+    document.documentElement.classList.add('print-labels');
+    addEventListener('afterprint', () => document.documentElement.classList.remove('print-labels'), { once: true });
+    window.print();
+  }
+  $('[data-labels-all]').addEventListener('click', () => printLabels(lastData?.toShip ?? []));
+
+  // ---- Discount codes (saved in the database: they work right away, no rebuild).
+  const cform = $<HTMLFormElement>('[data-cform]');
+  function renderCodes(codes: Discount[]) {
+    const day = (t: number) => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    $('[data-codes]').innerHTML = codes.length
+      ? codes.map((c) => {
+          const done = (c.maxUses !== null && c.uses >= c.maxUses) || (c.endsAt !== null && c.endsAt < Date.now());
+          return `<li class="${done ? 'done' : ''}"><span><b class="mono">${esc(c.code)}</b> −${c.percent}%<small class="muted">Used ${c.uses}${c.maxUses !== null ? ` of ${c.maxUses}` : ''} time${c.uses === 1 && c.maxUses === null ? '' : 's'}${c.endsAt !== null ? ` · until ${esc(day(c.endsAt))}` : ''}${done ? ' · finished' : ''}</small></span><button class="btn btn-ghost small" type="button" data-code-del="${esc(c.code)}">Delete</button></li>`;
+        }).join('')
+      : '<li class="muted">No codes yet. Make one below, e.g. MAAS10 for 10% off.</li>';
+    panel.querySelectorAll<HTMLButtonElement>('[data-code-del]').forEach((b) => b.addEventListener('click', async () => {
+      if (!confirm(`Delete the code ${b.dataset.codeDel}? It stops working right away.`)) return;
+      b.disabled = true;
+      try {
+        const data = (await post('/api/shop/discounts', { action: 'remove', code: b.dataset.codeDel })) as unknown as { discounts: Discount[] };
+        renderCodes(data.discounts);
+      } catch (err) {
+        b.disabled = false;
+        say($('[data-cf-msg]'), err instanceof Error ? err.message : 'Could not delete.', true);
+      }
+    }));
+  }
+  cform.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(cform);
+    const btn = cform.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    const ends = String(f.get('endsAt') ?? '');
+    btn.disabled = true;
+    try {
+      const data = (await post('/api/shop/discounts', {
+        action: 'save',
+        code: String(f.get('code') ?? ''),
+        percent: Number(f.get('percent')),
+        maxUses: String(f.get('maxUses') ?? '') || null,
+        endsAt: ends ? new Date(`${ends}T23:59:59`).toISOString() : null, // until the end of that day, this phone's time
+      })) as unknown as { discounts: Discount[] };
+      renderCodes(data.discounts);
+      cform.reset();
+      say($('[data-cf-msg]'), 'Saved ✓ The code works right away.');
+    } catch (err) {
+      say($('[data-cf-msg]'), err instanceof Error ? err.message : 'Could not save.', true);
+    } finally {
+      btn.disabled = false;
+    }
+  });
 
   // Packing list: every order to ship with its address, as an Excel file.
   $('[data-export]').addEventListener('click', async (e) => {
@@ -492,6 +595,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .c-msg { margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--ok, #7fbf7f); }
   .c-msg.bad { color: var(--accent); }
   .c-setup { font-size: 0.85rem; margin: 1rem 0 0; }
+  .sec-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .sec-btns [hidden] { display: none; }
+  .codes { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+  .codes :global(li) { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem; border: 1px solid var(--line); background: var(--surface); }
+  .codes :global(li.done) { opacity: 0.55; }
+  .codes :global(span) { display: grid; gap: 0.15rem; }
+  .codes :global(small) { font-size: 0.75rem; }
+  .labels { display: none; }
+  @media print {
+    :global(html.print-labels), :global(html.print-labels body) { background: #fff !important; }
+    :global(html.print-labels body > *:not(.labels)) { display: none !important; }
+    :global(html.print-labels) .labels { display: block; width: 100%; color: #000; font-family: Arial, Helvetica, sans-serif; }
+    .labels :global(.label) { box-sizing: border-box; height: 92mm; padding: 7mm 9mm; border: 1px dashed #888; display: flex; flex-direction: column; break-inside: avoid; page-break-inside: avoid; }
+    .labels :global(.l-from) { margin: 0; font-size: 9pt; }
+    .labels :global(.l-to) { margin: auto 0 auto 30%; font-size: 15pt; line-height: 1.3; }
+    .labels :global(.l-to span) { display: block; font-size: 9pt; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1.5mm; }
+    .labels :global(.l-to p) { margin: 0; font-weight: 700; }
+    .labels :global(.l-order) { margin: 0; font-size: 8pt; color: #333; }
+  }
+  @page { size: A4; margin: 10mm; }
   .plist { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
   .plist :global(li) { display: grid; grid-template-columns: 48px 1fr auto; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem; border: 1px solid var(--line); background: var(--surface); }
   .plist :global(img) { width: 48px; height: 48px; object-fit: cover; background: #1c1b1a; }
@@ -500,7 +623,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .pform { display: grid; gap: 0.75rem; margin-top: 0.75rem; padding: 1rem; border: 1px solid var(--accent); background: var(--surface); }
   .pform h3 { margin: 0; font-size: 1.2rem; }
   .pform label { display: grid; gap: 0.3rem; font-size: 0.85rem; }
-  .pform input, .pform select, .pform textarea { width: 100%; }
+  .pform input, .pform select, .pform textarea { width: 100%; min-width: 0; }
+  .pform label { min-width: 0; }
   .pform .check { display: flex; align-items: center; gap: 0.5rem; }
   .pform .check input { width: auto; }
   .pf-row { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); align-items: end; }

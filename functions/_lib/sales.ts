@@ -1,6 +1,7 @@
 import type { Env } from './env';
 import type { Order } from './payments/types';
 import { db } from './studio';
+import { countUse } from './discounts';
 import { products } from '../../src/data/products';
 import { dropAt, shopOpen, shopTestMode } from '../../src/data/site';
 
@@ -54,6 +55,7 @@ export interface SaleDetails {
   vat?: number;
   vatNote?: string;
   shippingZone?: string;
+  discount?: { code: string; percent: number; saved: number };
   customer?: { name: string; email: string; address: string; postalCode: string; city: string; country: string; notes: string };
 }
 
@@ -65,6 +67,7 @@ export async function rememberOrder(env: Env, order: Order): Promise<void> {
     vat: order.vat,
     vatNote: order.vatNote,
     shippingZone: order.shippingZone,
+    ...(order.discount ? { discount: order.discount } : {}),
     customer: order.customer,
   };
   await env.STUDIO?.put(`order-${order.orderId}`, JSON.stringify({ lines, country: countryName(order.customer.country), details }), { expirationTtl: 7 * 86400 });
@@ -92,6 +95,7 @@ export async function recordSale(env: Env, sale: { orderId: string; totalCents: 
       )
       .run();
     if (!inserted.meta.changes) return false; // a payment retry for a sale already counted
+    if (saved.details?.discount?.code) await countUse(env, saved.details.discount.code);
     const recent = await d.prepare('SELECT COUNT(*) AS n FROM sales WHERE at > ?1').bind(now - 3600000).first<{ n: number }>();
     if ((recent?.n ?? 0) <= BUSY_PER_HOUR) return false;
     await d.prepare('UPDATE sales SET notified = 0 WHERE order_id = ?1').bind(sale.orderId).run();

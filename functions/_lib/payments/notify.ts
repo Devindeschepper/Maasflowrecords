@@ -9,7 +9,7 @@ export const eur = (cents: number) => `€${(cents / 100).toFixed(2)}`;
 
 export const itemsText = (lines: OrderLine[]) =>
   lines
-    .map((l) => `${l.qty} × ${l.name}${l.size ? ` (${l.size})` : ''} - ${eur(l.unitPrice * l.qty)}${l.preorder ? ' [PRE-ORDER]' : ''}`)
+    .map((l) => `${l.qty} × ${l.name}${l.size ? ` (${l.size})` : ''} - ${eur(l.unitPrice * l.qty)}${l.discount ? ` (${l.discount})` : ''}${l.preorder ? ' [PRE-ORDER]' : ''}`)
     .join('\n');
 
 /** "Incl. 17% VAT: €2.47" */

@@ -8,13 +8,14 @@ import { onRequestPost as casting } from '../functions/api/casting';
 import { onRequestPost as checkout } from '../functions/api/checkout';
 import { onRequestPost as subscribe } from '../functions/api/subscribe';
 import { onRequestPost as restock } from '../functions/api/restock';
+import { onRequestPost as discount } from '../functions/api/discount';
 import { onRequestPost as booking } from '../functions/api/booking';
 import { onRequestPost as services } from '../functions/api/services';
 import { onRequestPost as stripeWebhook } from '../functions/api/webhooks/stripe';
 import { onRequestPost as cryptoWebhook } from '../functions/api/webhooks/crypto';
 import { onRequestGet as studioStatus, onRequestPost as studioSet, onKnock, onStats } from '../functions/api/studio';
 import { onConnect as tiktokConnect, onCallback as tiktokCallback } from '../functions/api/tiktok';
-import { onShop, onShipped, onExport as shopExport, onManage, onSettings as shopSettings, onProducts as shopProducts } from '../functions/api/shop';
+import { onShop, onShipped, onExport as shopExport, onManage, onSettings as shopSettings, onProducts as shopProducts, onDiscounts as shopDiscounts } from '../functions/api/shop';
 import { studioNudge, weeklySummary } from '../functions/_lib/studio';
 import { refreshInstagramTokens } from '../functions/_lib/followers';
 import { hourlyFollowers } from '../functions/_lib/alerts';
@@ -47,6 +48,7 @@ const routes: Record<string, Handler> = {
   '/api/checkout': checkout as unknown as Handler,
   '/api/subscribe': subscribe as unknown as Handler,
   '/api/restock': restock as unknown as Handler,
+  '/api/discount': discount as unknown as Handler,
   '/api/booking': booking as unknown as Handler,
   '/api/services': services as unknown as Handler,
   '/api/webhooks/stripe': stripeWebhook as unknown as Handler,
@@ -74,7 +76,7 @@ export default {
     }
     // Private shop page (/shop-admin/), same password as the stats page.
     const shopGet: Record<string, unknown> = { '/api/shop': onShop, '/api/shop/export': shopExport, '/api/shop/manage': onManage };
-    const shopPost: Record<string, unknown> = { '/api/shop/shipped': onShipped, '/api/shop/settings': shopSettings, '/api/shop/products': shopProducts };
+    const shopPost: Record<string, unknown> = { '/api/shop/shipped': onShipped, '/api/shop/settings': shopSettings, '/api/shop/products': shopProducts, '/api/shop/discounts': shopDiscounts };
     if (route in shopGet || route in shopPost) {
       const handler = request.method === 'GET' ? shopGet[route] : request.method === 'POST' ? shopPost[route] : undefined;
       if (!handler) return jsonResponse(405, { ok: false, error: 'Method not allowed.' });
