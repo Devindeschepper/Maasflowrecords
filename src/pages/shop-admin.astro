@@ -82,10 +82,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <div class="pf-row">
               <label>Category<select name="category" data-pf-cat></select></label>
               <label>Price (€)<input name="price" type="number" min="0.01" step="0.01" required placeholder="24.90" /></label>
-              <label>How many you have<input name="stock" type="number" min="0" step="1" required placeholder="20" /></label>
+              <label data-stock-field>How many you have<input name="stock" type="number" min="0" step="1" required placeholder="20" /></label>
             </div>
             <label>Description<textarea name="description" rows="3" maxlength="1000" placeholder="Material, size, what makes it special…"></textarea></label>
-            <label>Sizes <span class="muted">(optional, separated by commas: S, M, L or 45 cm, 50 cm)</span><input name="sizes" maxlength="200" /></label>
+            <div class="sizes-box">
+              <span class="sz-title">Sizes <span class="muted">(tap the ones you have · none = one size)</span></span>
+              <div class="sz-chips" data-sz-group="clothes" aria-label="Clothing sizes">
+                {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((v) => <button type="button" class="sz" data-sz={v} aria-pressed="false">{v}</button>)}
+              </div>
+              <div class="sz-chips" data-sz-group="chains" aria-label="Chain lengths">
+                {['40 cm', '45 cm', '50 cm', '55 cm', '60 cm'].map((v) => <button type="button" class="sz" data-sz={v} aria-pressed="false">{v}</button>)}
+              </div>
+              <div class="sz-stock" data-sz-stock hidden>
+                <span class="sz-title">How many you have per size</span>
+                <div class="sz-grid" data-sz-grid></div>
+              </div>
+              <label>Your sizes <span class="muted">(you can also type others, e.g. 3XL or 70 cm, separated by commas)</span><input name="sizes" maxlength="200" placeholder="One size" /></label>
+            </div>
             <div class="pf-row one">
               <label>Package size<select name="shippingClass"><option value="small">Small (CD, chain, poster)</option><option value="standard">Standard (clothing, vinyl)</option></select></label>
               <label class="check"><input name="preorder" type="checkbox" /> Pre-order (not shipped yet)</label>
@@ -147,7 +160,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       open: boolean; drop: string | null; test: boolean;
       month: { orders: number; revenue: number; best: { name: string; qty: number } | null };
       all: { orders: number; revenue: number };
-      stock: { id: string; name: string; stock: number; sold: number; left: number; low: boolean }[];
+      stock: { id: string; name: string; stock: number; sold: number; left: number; low: boolean; sizes?: Record<string, { stock: number; sold: number; left: number }> }[];
       countries: { name: string; orders: number }[];
     } | null;
     toShip: Order[]; shipped: Order[];
@@ -208,6 +221,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const waiting = manage?.waiting?.[p.id] ?? 0;
       if (p.left === 0) todo.push(`❌ <b>${esc(p.name)} is sold out.</b>${waiting ? ` ${plural(waiting, 'person')} want${waiting === 1 ? 's' : ''} an email when it’s back.` : ''} Got more? Tap “Edit” on it under Products and put the new number.`);
       else if (p.low) todo.push(`⚠️ <b>Only ${p.left} × ${esc(p.name)} left.</b> Order more, or post “last copies”.`);
+      // Stock per size: a size that ran out while others are still there.
+      const outSizes = p.left > 0 ? Object.entries(p.sizes ?? {}).filter(([, x]) => x.left === 0).map(([size]) => size) : [];
+      if (outSizes.length) todo.push(`❌ <b>${esc(p.name)}: size ${esc(outSizes.join(', '))} sold out.</b> Got more? Tap “Edit” on it under Products.`);
     }
     if (s?.open && s.test) todo.push('🟡 <b>Test mode is on:</b> real payments don’t work. When you’re ready, tap “Turn test mode off” at the top.');
     if (dropSoon) todo.push(`⏳ <b>Drop on ${esc(date(Date.parse(s!.drop!)))}.</b> The shop opens by itself then. Post the countdown on Instagram and TikTok.`);
@@ -228,7 +244,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       $('[data-k="all"]').textContent = money(s.all.revenue);
       $('[data-k="all-meta"]').textContent = plural(s.all.orders, 'order');
       $('[data-stock]').innerHTML = s.stock
-        .map((p) => `<li class="${p.left === 0 ? 'out' : p.low ? 'low' : ''}"><span>${esc(p.name)}</span><b>${p.left === 0 ? 'Sold out' : `${p.left} left`}</b><small class="muted">${p.sold} sold of ${p.stock}</small></li>`)
+        .map((p) => `<li class="${p.left === 0 ? 'out' : p.low ? 'low' : ''}"><span>${esc(p.name)}</span><b>${p.left === 0 ? 'Sold out' : `${p.left} left`}</b><small class="muted">${p.sold} sold of ${p.stock}${p.sizes ? ` · ${Object.entries(p.sizes).map(([size, x]) => `${esc(size)}: ${x.left}`).join(' · ')}` : ''}</small></li>`)
         .join('') || '<li class="muted">No products yet.</li>';
       const max = Math.max(1, ...s.countries.map((c) => c.orders));
       $('[data-countries-box]').hidden = !s.countries.length;
@@ -376,7 +392,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   });
 
   // ---- Managing the shop: open/close, test mode, products (saved on GitHub, live after ~2 minutes) ----
-  type RawProduct = { id: string; name: string; category: string; description?: string; price: number; image: string; stock: number; preorder?: boolean; sizes?: string[]; shippingClass?: string };
+  type RawProduct = { id: string; name: string; category: string; description?: string; price: number; image: string; stock: number; preorder?: boolean; sizes?: (string | { size: string; stock: number })[]; shippingClass?: string };
   type Manage = { ok: boolean; error?: string; github: boolean; categories?: string[]; shopOpen?: boolean; shopTestMode?: boolean; dropAt?: string | null; products?: RawProduct[]; waiting?: Record<string, number> };
   let manage: Manage | null = null;
   let editing: RawProduct | null = null;
@@ -420,9 +436,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     $('[data-c-drop-set]').hidden = !!m.dropAt;
     $('[data-c-drop-cancel]').hidden = !m.dropAt;
     const waiting = (id: string) => m.waiting?.[id] ? ` · ${m.waiting[id]} waiting` : '';
+    const stockText = (p: RawProduct) => {
+      const per = (p.sizes ?? []).filter((x): x is { size: string; stock: number } => typeof x === 'object');
+      return per.length ? per.map((x) => `${esc(x.size)}: ${x.stock}`).join(' · ') : `${p.stock} in stock`;
+    };
     $('[data-pf-cat]').innerHTML = (m.categories ?? []).map((c) => `<option>${esc(c)}</option>`).join('');
     $('[data-plist]').innerHTML = (m.products ?? []).length
-      ? m.products!.map((p) => `<li><img src="${esc(p.image)}" alt="" loading="lazy" /><span><b>${esc(p.name)}</b><small class="muted">${esc(p.category)} · €${Number(p.price).toFixed(2)} · ${p.stock} in stock${p.preorder ? ' · pre-order' : ''}${waiting(p.id)}</small></span><button class="btn btn-ghost small" type="button" data-p-edit="${esc(p.id)}">Edit</button></li>`).join('')
+      ? m.products!.map((p) => `<li><img src="${esc(p.image)}" alt="" loading="lazy" /><span><b>${esc(p.name)}</b><small class="muted">${esc(p.category)} · €${Number(p.price).toFixed(2)} · ${stockText(p)}${p.preorder ? ' · pre-order' : ''}${waiting(p.id)}</small></span><button class="btn btn-ghost small" type="button" data-p-edit="${esc(p.id)}">Edit</button></li>`).join('')
       : '<li class="muted">No products yet.</li>';
     panel.querySelectorAll<HTMLButtonElement>('[data-p-edit]').forEach((b) => b.addEventListener('click', () => openForm(m.products!.find((p) => p.id === b.dataset.pEdit) ?? null)));
   }
@@ -474,9 +494,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     if (confirm('Cancel the drop? The shop goes back to “Coming soon”.')) toggle(e.currentTarget as HTMLButtonElement, { dropAt: null });
   });
 
+  // Numbers typed per size (kept while sizes are switched on and off).
+  let sizeCounts: Record<string, string> = {};
   function openForm(p: RawProduct | null) {
     editing = p;
     pform.reset();
+    sizeCounts = {};
     say($('[data-pf-msg]'), '');
     $('[data-pf-title]').textContent = p ? `Edit: ${p.name}` : 'New product';
     $('[data-pf-remove]').hidden = !p;
@@ -484,12 +507,54 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     if (p) {
       const f = pform.elements as unknown as Record<string, HTMLInputElement>;
       f.name.value = p.name; f.category.value = p.category; f.price.value = String(p.price); f.stock.value = String(p.stock);
-      f.description.value = p.description ?? ''; f.sizes.value = (p.sizes ?? []).join(', ');
+      const sizes = (p.sizes ?? []).map((x) => (typeof x === 'string' ? { size: x, stock: undefined } : x));
+      f.description.value = p.description ?? ''; f.sizes.value = sizes.map((x) => x.size).join(', ');
+      for (const x of sizes) if (x.stock !== undefined) sizeCounts[x.size] = String(x.stock);
       f.shippingClass.value = p.shippingClass === 'standard' ? 'standard' : 'small'; f.preorder.checked = !!p.preorder;
     }
+    syncSizes();
     pform.hidden = false;
     pform.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+
+  // Size buttons: clothing sizes for shirts and hoodies, lengths for chains (both for "Other"). They add or
+  // remove the size in the "sizes" field, which is what gets saved.
+  const sizesInput = pform.querySelector<HTMLInputElement>('[name="sizes"]')!;
+  const catSelect = pform.querySelector<HTMLSelectElement>('[name="category"]')!;
+  const ORDER = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '40 cm', '45 cm', '50 cm', '55 cm', '60 cm'];
+  const readSizes = () => sizesInput.value.split(',').map((x) => x.trim()).filter(Boolean);
+  function syncSizes() {
+    const cat = catSelect.value;
+    const groups: Record<string, boolean> = { clothes: ['T-Shirt', 'Hoodie', 'Other'].includes(cat), chains: ['Jewellery', 'Other'].includes(cat) };
+    const have = readSizes();
+    pform.querySelectorAll<HTMLElement>('[data-sz-group]').forEach((g) => {
+      // A group stays visible when one of its sizes is already chosen.
+      g.hidden = !groups[g.dataset.szGroup!] && ![...g.querySelectorAll<HTMLElement>('[data-sz]')].some((b) => have.includes(b.dataset.sz!));
+    });
+    pform.querySelectorAll<HTMLButtonElement>('[data-sz]').forEach((b) => b.setAttribute('aria-pressed', String(have.includes(b.dataset.sz!))));
+    // With sizes: one number per size instead of one for the whole product (a CD has no sizes and keeps one).
+    const stockField = pform.querySelector<HTMLElement>('[data-stock-field]')!;
+    const stockInput = stockField.querySelector('input')!;
+    stockField.hidden = have.length > 0;
+    stockInput.required = have.length === 0;
+    $('[data-sz-stock]').hidden = have.length === 0;
+    $('[data-sz-grid]').innerHTML = have
+      .map((size) => `<label><span>${esc(size)}</span><input type="number" min="0" step="1" required inputmode="numeric" data-size-count="${esc(size)}" value="${esc(sizeCounts[size] ?? '')}" placeholder="0" /></label>`)
+      .join('');
+    pform.querySelectorAll<HTMLInputElement>('[data-size-count]').forEach((i) => i.addEventListener('input', () => { sizeCounts[i.dataset.sizeCount!] = i.value; }));
+  }
+  pform.querySelectorAll<HTMLButtonElement>('[data-sz]').forEach((b) =>
+    b.addEventListener('click', () => {
+      const v = b.dataset.sz!;
+      const have = readSizes();
+      const next = have.includes(v) ? have.filter((x) => x !== v) : [...have, v];
+      const rank = (x: string) => (ORDER.includes(x) ? ORDER.indexOf(x) : 100);
+      sizesInput.value = next.sort((a, b2) => rank(a) - rank(b2)).join(', ');
+      syncSizes();
+    }),
+  );
+  sizesInput.addEventListener('input', syncSizes);
+  catSelect.addEventListener('change', syncSizes);
   $('[data-p-add]').addEventListener('click', () => openForm(null));
   $('[data-pf-cancel]').addEventListener('click', () => { pform.hidden = true; });
 
@@ -519,7 +584,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         action: 'save',
         product: {
           isNew: !editing, id: editing?.id, name: f.name.value, category: f.category.value, price: Number(f.price.value), stock: Number(f.stock.value),
-          description: f.description.value, sizes: f.sizes.value.split(',').map((x) => x.trim()).filter(Boolean),
+          description: f.description.value,
+          sizes: readSizes().map((size) => ({ size, stock: Number(sizeCounts[size] ?? 0) })),
           shippingClass: f.shippingClass.value, preorder: f.preorder.checked,
         },
         image: file ? await photoData(file) : undefined,
@@ -629,6 +695,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .pform .check input { width: auto; }
   .pf-row { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); align-items: end; }
   .pf-row.one { grid-template-columns: 1fr; }
+  .sizes-box { display: grid; gap: 0.5rem; }
+  .sz-title { font-size: 0.85rem; }
+  .sz-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .sz-chips[hidden] { display: none; }
+  .sz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 0.5rem; }
+  .sz-grid :global(label) { display: grid; gap: 0.25rem; font: 600 0.8rem var(--font-mono); }
+  .sz-grid :global(input) { width: 100%; }
+  .sz { min-width: 48px; min-height: 40px; padding: 0.3rem 0.7rem; background: none; color: var(--text); border: 1px solid var(--line); font: 600 0.8rem/1 var(--font-mono); cursor: pointer; }
+  .sz[aria-pressed='true'] { background: var(--text); color: var(--bg); border-color: var(--text); }
   .links { display: flex; justify-content: space-between; gap: 1rem; }
   .count:empty { display: none; }
   .pf-actions { display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap; }

@@ -46,8 +46,8 @@ const t = pick(lang, {
 });
 
 // Only what the browser needs to display the cart. The server re-prices everything.
-const catalogue = products.map(({ id, name, price, image, stock, preorder, shippingClass }) => ({
-  id, name, price, image, stock, preorder, shippingClass,
+const catalogue = products.map(({ id, name, price, image, stock, sizeStock, preorder, shippingClass }) => ({
+  id, name, price, image, stock, sizeStock, preorder, shippingClass,
 }));
 ---
 
@@ -165,7 +165,9 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
 
   function initCart(catalogueEl: HTMLElement) {
 
-  type Item = { id: string; name: string; price: number; image: string; stock: number; preorder?: boolean; shippingClass: 'small' | 'standard' };
+  type Item = { id: string; name: string; price: number; image: string; stock: number; sizeStock?: Record<string, number>; preorder?: boolean; shippingClass: 'small' | 'standard' };
+  // How many of this item (and size) can be ordered.
+  const inStock = (item: Item, size?: string) => (item.sizeStock && size ? item.sizeStock[size] ?? 0 : item.stock);
   type Zone = { id: string; label: string; price: number; estimate: string; inEU: boolean };
   const { catalogue, zones, vat, max } = JSON.parse(catalogueEl.textContent!) as {
     catalogue: Item[]; zones: Zone[]; vat: { mode: 'included' | 'exempt'; rate: number }; max: number;
@@ -195,7 +197,7 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
   function lines() {
     return getCart()
       .map((l) => ({ ...l, item: catalogue.find((p) => p.id === l.id) }))
-      .filter((l): l is typeof l & { item: Item } => !!l.item && l.item.stock > 0);
+      .filter((l): l is typeof l & { item: Item } => !!l.item && inStock(l.item, l.size) > 0);
   }
 
   function render() {
@@ -216,7 +218,7 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
 
       const qty = el('div', 'qty');
       const label = `${l.item.name}${l.size ? ` (${l.size})` : ''}`;
-      const cap = Math.min(max, l.item.stock);
+      const cap = Math.min(max, inStock(l.item, l.size));
       const minus = el('button', 'qbtn', '−') as HTMLButtonElement;
       minus.type = 'button'; minus.setAttribute('aria-label', tx.decrease(label));
       minus.onclick = () => setQty(l.id, l.size, l.qty - 1, cap);

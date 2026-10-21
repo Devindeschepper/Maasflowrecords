@@ -56,7 +56,21 @@ export interface SaleDetails {
   vatNote?: string;
   shippingZone?: string;
   discount?: { code: string; percent: number; saved: number };
+  /** Language the customer shopped in. */
+  lang?: 'en' | 'fr' | 'de';
   customer?: { name: string; email: string; address: string; postalCode: string; city: string; country: string; notes: string };
+}
+
+/** The item lines of an order as text (with sizes), from what checkout remembered; '' when unknown. */
+export async function orderItemsText(env: Env, orderId: string): Promise<string> {
+  const saved = JSON.parse((await env.STUDIO?.get(`order-${orderId}`).catch(() => null)) ?? '{}') as { lines?: Line[] };
+  return (saved.lines ?? []).map((l) => `${l.qty} × ${l.name}${l.size ? ` (size ${l.size})` : ''} - €${((l.unitPrice * l.qty) / 100).toFixed(2)}`).join('\n');
+}
+
+/** The language an order was placed in (remembered at checkout for a week). */
+export async function orderLang(env: Env, orderId: string): Promise<'en' | 'fr' | 'de'> {
+  const saved = JSON.parse((await env.STUDIO?.get(`order-${orderId}`).catch(() => null)) ?? '{}') as { details?: SaleDetails };
+  return saved.details?.lang ?? 'en';
 }
 
 export async function rememberOrder(env: Env, order: Order): Promise<void> {
@@ -68,6 +82,7 @@ export async function rememberOrder(env: Env, order: Order): Promise<void> {
     vatNote: order.vatNote,
     shippingZone: order.shippingZone,
     ...(order.discount ? { discount: order.discount } : {}),
+    lang: order.lang ?? 'en',
     customer: order.customer,
   };
   await env.STUDIO?.put(`order-${order.orderId}`, JSON.stringify({ lines, country: countryName(order.customer.country), details }), { expirationTtl: 7 * 86400 });
@@ -127,31 +142,44 @@ export async function salesSummary(env: Env): Promise<string> {
   ].join('\n');
 }
 
+export type StockLine = { stock: number; sold: number; left: number };
+export type ProductStock = StockLine & { sizes?: Record<string, StockLine> };
+
 /**
- * Stock left per product: the stock set in the admin panel minus what was sold since that number last
- * changed. Used by the stats page and by checkout (so nobody can pay for something that is sold out).
+ * Stock left per product (and per size, for products with stock per size): the stock set in the admin
+ * panel minus what was sold since that number last changed. Used by the stats page and by checkout
+ * (so nobody can pay for something that is sold out).
  */
-export async function stockLeft(env: Env, now: number): Promise<Map<string, { stock: number; sold: number; left: number }>> {
-  const out = new Map<string, { stock: number; sold: number; left: number }>();
+export async function stockLeft(env: Env, now: number): Promise<Map<string, ProductStock>> {
+  const out = new Map<string, ProductStock>();
   const d = await db(env);
-  if (!d) {
-    for (const p of products) out.set(p.id, { stock: p.stock, sold: 0, left: p.stock });
-    return out;
+  const sales: { at: number; lines: Line[] }[] = [];
+  if (d) {
+    await ensureSalesTable(d);
+    const { results } = await d.prepare('SELECT at, lines FROM sales WHERE test = ?1').bind(shopTestMode ? 1 : 0).all<{ at: number; lines: string }>();
+    for (const r of results) sales.push({ at: r.at, lines: JSON.parse(r.lines || '[]') as Line[] });
   }
-  await ensureSalesTable(d);
-  const { results } = await d.prepare('SELECT at, lines FROM sales WHERE test = ?1').bind(shopTestMode ? 1 : 0).all<{ at: number; lines: string }>();
-  const sales = results.map((r) => ({ at: r.at, lines: JSON.parse(r.lines || '[]') as Line[] }));
-  for (const p of products) {
-    // Remember when this stock number was set, to count only the sales after it.
-    const key = `stock-base-${p.id}`;
+  // Remember when this stock number was set, to count only the sales after it.
+  // First time: count every sale. After VIN changes the number: only sales after that.
+  const count = async (key: string, stock: number, match: (l: Line) => boolean): Promise<StockLine> => {
+    if (!d) return { stock, sold: 0, left: stock };
     let base = JSON.parse((await env.STUDIO?.get(key)) ?? 'null') as { stock: number; at: number } | null;
-    // First time: count every sale. After VIN changes the number in the admin panel: only sales after that.
-    if (!base || base.stock !== p.stock) {
-      base = { stock: p.stock, at: base ? now : 0 };
+    if (!base || base.stock !== stock) {
+      base = { stock, at: base ? now : 0 };
       await env.STUDIO?.put(key, JSON.stringify(base));
     }
-    const sold = sales.filter((s) => s.at >= base!.at).reduce((n, s) => n + s.lines.filter((l) => l.id === p.id).reduce((m, l) => m + l.qty, 0), 0);
-    out.set(p.id, { stock: p.stock, sold, left: Math.max(0, p.stock - sold) });
+    const sold = sales.filter((s) => s.at >= base!.at).reduce((n, s) => n + s.lines.filter(match).reduce((m, l) => m + l.qty, 0), 0);
+    return { stock, sold, left: Math.max(0, stock - sold) };
+  };
+  for (const p of products) {
+    if (p.sizeStock) {
+      const sizes: Record<string, StockLine> = {};
+      for (const [size, n] of Object.entries(p.sizeStock)) sizes[size] = await count(`stock-base-${p.id}::${size}`, n, (l) => l.id === p.id && l.size === size);
+      const all = Object.values(sizes);
+      out.set(p.id, { stock: p.stock, sold: all.reduce((a, x) => a + x.sold, 0), left: all.reduce((a, x) => a + x.left, 0), sizes });
+    } else {
+      out.set(p.id, await count(`stock-base-${p.id}`, p.stock, (l) => l.id === p.id));
+    }
   }
   return out;
 }
@@ -163,7 +191,7 @@ export interface ShopStats {
   test: boolean;
   month: { orders: number; revenue: number; best: { name: string; qty: number } | null };
   all: { orders: number; revenue: number };
-  stock: { id: string; name: string; stock: number; sold: number; left: number; low: boolean }[];
+  stock: { id: string; name: string; stock: number; sold: number; left: number; low: boolean; sizes?: Record<string, StockLine> }[];
   /** All-time orders per country, most first. */
   countries: { name: string; orders: number }[];
 }

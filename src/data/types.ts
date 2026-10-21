@@ -108,6 +108,8 @@ export interface Product {
   stock: number;
   preorder?: boolean;
   sizes?: string[];
+  /** Stock per size (only when the product has sizes): { M: 3, L: 0 }. `stock` is then the total. */
+  sizeStock?: Record<string, number>;
   /** Weight class used for shipping. */
   shippingClass: 'small' | 'standard';
 }

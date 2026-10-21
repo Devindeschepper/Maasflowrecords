@@ -2,7 +2,7 @@ import { LOCALES, type Lang } from '../i18n';
 import type { Product, ProductCategory, ShippingZone } from './types';
 import data from '../content/products.json';
 import shop from '../content/shop.json';
-import { list, opt } from './clean';
+import { opt } from './clean';
 
 /**
  * Shop catalogue — edited in the admin panel (/admin → Shop products) or src/content/products.json.
@@ -13,21 +13,43 @@ import { list, opt } from './clean';
  */
 type RawProduct = (typeof data.products)[number] & Record<string, unknown>;
 
+const count = (v: unknown) => Math.max(0, Math.floor(Number(v) || 0));
+
+/**
+ * Sizes are saved as [{ size: 'M', stock: 3 }, …] (stock per size). Older files have plain names ['M', 'L'];
+ * those keep the one stock number of the product.
+ */
+function readSizes(raw: unknown): { sizes?: string[]; sizeStock?: Record<string, number> } {
+  const entries = (Array.isArray(raw) ? raw : [])
+    .map((x) => (typeof x === 'string' ? { size: x.trim(), stock: null } : {
+      size: String((x as { size?: unknown })?.size ?? '').trim(),
+      stock: (x as { stock?: unknown })?.stock === undefined || (x as { stock?: unknown }).stock === '' || (x as { stock?: unknown }).stock === null ? null : count((x as { stock: unknown }).stock),
+    }))
+    .filter((e) => e.size);
+  if (!entries.length) return {};
+  const sizes = [...new Set(entries.map((e) => e.size))];
+  if (entries.some((e) => e.stock === null)) return { sizes };
+  return { sizes, sizeStock: Object.fromEntries(sizes.map((s) => [s, entries.find((e) => e.size === s)!.stock!])) };
+}
+
 export const products: Product[] = (data.products as RawProduct[])
-  .map(
-    (p): Product => ({
+  .map((p): Product => {
+    const { sizes, sizeStock } = readSizes(p.sizes);
+    return {
       id: p.id,
       name: p.name,
       category: p.category as ProductCategory,
       description: p.description ?? '',
       price: Math.round(Number(p.price) * 100),
       image: p.image,
-      stock: Math.max(0, Math.floor(Number(p.stock) || 0)),
+      // With stock per size, the product's stock is the total of all sizes.
+      stock: sizeStock ? Object.values(sizeStock).reduce((a, b) => a + b, 0) : count(p.stock),
       preorder: p.preorder === true,
-      sizes: list(p.sizes).length ? list(p.sizes) : undefined,
+      sizes,
+      ...(sizeStock ? { sizeStock } : {}),
       shippingClass: p.shippingClass === 'standard' ? 'standard' : 'small',
-    }),
-  )
+    };
+  })
   .filter((p) => opt(p.id) && opt(p.name));
 
 /** Shipping from Luxembourg — edited in the admin panel (Site → Shipping & VAT). Prices in € there, cents here. */

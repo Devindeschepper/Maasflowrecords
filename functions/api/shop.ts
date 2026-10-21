@@ -96,7 +96,7 @@ export const onDiscounts: PagesFunction<Env> = async ({ request, env }) => {
 
 type RawProduct = {
   id: string; name: string; category: string; description?: string; price: number; image: string;
-  stock: number; preorder?: boolean; sizes?: string[]; shippingClass?: string;
+  stock: number; preorder?: boolean; sizes?: (string | { size: string; stock: number })[]; shippingClass?: string;
 };
 type Settings = { shopOpen?: boolean; shopTestMode?: boolean; dropAt?: string; legalName?: string; legalAddress?: string } & Record<string, unknown>;
 
@@ -214,12 +214,20 @@ export const onProducts: PagesFunction<Env> = async ({ request, env }) => {
     const name = String(p.name ?? '').trim().slice(0, 80);
     const category = CATEGORIES.includes(String(p.category)) ? String(p.category) : '';
     const price = Math.round(Number(p.price) * 100) / 100;
-    const stock = Math.floor(Number(p.stock));
     if (!name) return jsonResponse(400, { ok: false, error: 'Give the product a name.' });
     if (!category) return jsonResponse(400, { ok: false, error: 'Choose a category.' });
     if (!Number.isFinite(price) || price <= 0 || price > 10000) return jsonResponse(400, { ok: false, error: 'Enter a price, for example 15 or 24.90.' });
+    // Sizes come with their own stock: [{ size: 'M', stock: 3 }]. Without sizes the product has one stock number.
+    const sizes: { size: string; stock: number }[] = [];
+    for (const x of (Array.isArray(p.sizes) ? p.sizes : []).slice(0, 20)) {
+      const size = String(typeof x === 'string' ? x : x?.size ?? '').trim().slice(0, 20);
+      const n = Math.floor(Number(typeof x === 'string' ? NaN : x?.stock));
+      if (!size || sizes.some((s) => s.size === size)) continue;
+      if (!Number.isFinite(n) || n < 0 || n > 100000) return jsonResponse(400, { ok: false, error: `Enter how many you have in size ${size} (0 or more).` });
+      sizes.push({ size, stock: n });
+    }
+    const stock = sizes.length ? sizes.reduce((a, s) => a + s.stock, 0) : Math.floor(Number(p.stock));
     if (!Number.isFinite(stock) || stock < 0 || stock > 100000) return jsonResponse(400, { ok: false, error: 'Enter how many you have (0 or more).' });
-    const sizes = (Array.isArray(p.sizes) ? p.sizes : []).map((x) => String(x).trim().slice(0, 20)).filter(Boolean).slice(0, 20);
 
     let image: string | undefined;
     if (body.image?.data) {

@@ -9,6 +9,7 @@ import { priceForZone, vatIn, vatNote } from '../../src/data/vat';
 import { shopOpen, dropStarted, paymentMethods } from '../../src/data/site';
 import { rememberOrder, stockLeft } from '../_lib/sales';
 import { checkCode, discounted } from '../_lib/discounts';
+import { mailLang } from '../_lib/payments/customer-texts';
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   // Checkout is JS-only (the cart lives in the browser), so always answer with JSON.
@@ -49,9 +50,14 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     const qty = Number(item?.qty);
     if (!p) return json(400, { ok: false, error: 'An item in your cart is no longer available.' });
     if (!Number.isInteger(qty) || qty < 1 || qty > MAX_QTY_PER_ITEM) return json(400, { ok: false, error: 'Invalid quantity.' });
-    const available = left?.get(p.id)?.left ?? p.stock;
+    const sizeWanted = typeof item?.size === 'string' ? item.size : '';
+    // Products with stock per size: check the stock of that size.
+    const available = p.sizeStock && sizeWanted
+      ? (left?.get(p.id)?.sizes?.[sizeWanted]?.left ?? p.sizeStock[sizeWanted] ?? 0)
+      : (left?.get(p.id)?.left ?? p.stock);
     if (available < qty) {
-      return json(409, { ok: false, error: available > 0 ? `Sorry, only ${available} of "${p.name}" left.` : `Sorry, "${p.name}" is sold out.` });
+      const label = p.sizeStock && sizeWanted ? `${p.name}" in size "${sizeWanted}` : p.name;
+      return json(409, { ok: false, error: available > 0 ? `Sorry, only ${available} of "${label}" left.` : `Sorry, "${label}" is sold out.` });
     }
     const size = typeof item.size === 'string' && item.size ? item.size : undefined;
     if (p.sizes ? !size || !p.sizes.includes(size) : size) return json(400, { ok: false, error: `Please choose a valid size for "${p.name}".` });
@@ -119,6 +125,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     shippingZone: zone.label,
     ...(discount ? { discount } : {}),
     pagePrefix: ['fr', 'de'].includes(str(fd, 'lang', 2)) ? `/${str(fd, 'lang', 2)}` : '',
+    lang: mailLang(str(fd, 'lang', 2)),
     customer,
   };
 

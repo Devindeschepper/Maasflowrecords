@@ -14,10 +14,12 @@ const soldOut = p.stock <= 0;
 const low = !soldOut && p.stock <= 5;
 const lang = getLang(Astro);
 const t = pick(lang, {
-  en: { soon: 'Coming soon', soldOut: 'Sold out', preorder: 'Pre-order', only: (n: number) => `Only ${n} left`, inStock: 'In stock', size: 'Size', chooseSize: 'Choose size', add: 'Add to cart', back: "Tell me when it's back" },
-  fr: { soon: 'Bientôt', soldOut: 'Épuisé', preorder: 'Précommande', only: (n) => `Plus que ${n}`, inStock: 'En stock', size: 'Taille', chooseSize: 'Choisir la taille', add: 'Ajouter au panier', back: 'Me prévenir du retour' },
-  de: { soon: 'Demnächst', soldOut: 'Ausverkauft', preorder: 'Vorbestellen', only: (n) => `Nur noch ${n}`, inStock: 'Auf Lager', size: 'Größe', chooseSize: 'Größe wählen', add: 'In den Warenkorb', back: 'Benachrichtigen, wenn wieder da' },
+  en: { soon: 'Coming soon', soldOut: 'Sold out', preorder: 'Pre-order', only: (n: number) => `Only ${n} left`, sizeOut: 'sold out', inStock: 'In stock', size: 'Size', chooseSize: 'Choose size', add: 'Add to cart', back: "Tell me when it's back" },
+  fr: { soon: 'Bientôt', soldOut: 'Épuisé', preorder: 'Précommande', only: (n) => `Plus que ${n}`, sizeOut: 'épuisé', inStock: 'En stock', size: 'Taille', chooseSize: 'Choisir la taille', add: 'Ajouter au panier', back: 'Me prévenir du retour' },
+  de: { soon: 'Demnächst', soldOut: 'Ausverkauft', preorder: 'Vorbestellen', only: (n) => `Nur noch ${n}`, sizeOut: 'ausverkauft', inStock: 'Auf Lager', size: 'Größe', chooseSize: 'Größe wählen', add: 'In den Warenkorb', back: 'Benachrichtigen, wenn wieder da' },
 });
+// With stock per size, a sold-out size can't be chosen.
+const sizeLeft = (size: string) => p.sizeStock?.[size];
 const stockLabel = comingSoon ? t.soon : soldOut ? t.soldOut : p.preorder ? t.preorder : low ? t.only(p.stock) : t.inStock;
 ---
 
@@ -45,7 +47,7 @@ const stockLabel = comingSoon ? t.soon : soldOut ? t.soldOut : p.preorder ? t.pr
               <label for={`size-${p.id}`}>{t.size}</label>
               <select id={`size-${p.id}`} name="size" required disabled={soldOut}>
                 <option value="">{t.chooseSize}</option>
-                {p.sizes.map((s) => <option value={s}>{s}</option>)}
+                {p.sizes.map((s) => <option value={s} disabled={sizeLeft(s) === 0} data-max={sizeLeft(s) === undefined ? undefined : Math.min(10, sizeLeft(s)!)}>{sizeLeft(s) === 0 ? `${s} - ${t.sizeOut}` : s}</option>)}
               </select>
             </div>
           )
