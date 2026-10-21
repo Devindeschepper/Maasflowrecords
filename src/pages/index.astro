@@ -10,7 +10,8 @@ import { beats } from '../data/services';
 import { labelReleases, latestRelease, upcomingReleases } from '../data/releases';
 import { upcomingEvents } from '../data/events';
 import { products } from '../data/products';
-import { artistNames, catalogNo, releaseDateLabel } from '../lib/format';
+import { artistNames, catalogNo, outLabel, releaseDateLabel } from '../lib/format';
+import { getLang, localize, pick } from '../i18n';
 
 const vin = artists[0];
 const latest = latestRelease();
@@ -21,6 +22,59 @@ const moreReleases = labelReleases().filter((r) => r.slug !== featuredRelease?.s
 const events = upcomingEvents()
   .filter((e) => !(featuredRelease && e.kind === 'Release' && e.ticketUrl === `/music/${featuredRelease.slug}/`))
   .slice(0, 3);
+
+const lang = getLang(Astro);
+const L = (href: string) => localize(href, lang);
+const t = pick(lang, {
+  en: {
+    eyebrow: 'Independent music label', lead1: 'Independent music label founded by producer and rapper', about: 'About the label',
+    listen: '▶ Listen', discoverVin: 'Discover VIN', viewReleases: 'View releases', mainArtist: 'Main artist',
+    ticker: 'MAAS FLOW RECORDS ✦ INDEPENDENT ✦ BEHIND THE BEATS ✦ BEHIND THE MIC ✦ STUDENT OF THE GAME ✦ ',
+    cover: 'cover art', next: 'Next release', latest: 'Latest release', details: 'Release details', listenNow: '▶ Listen now',
+    preorder: 'Pre-order the CD', latestOut: 'Latest out now:', music: 'Music', allReleases: 'All releases',
+    upcoming: 'Upcoming', allEvents: 'All events', noEvents: 'No events yet. Check back soon.',
+    quote: '“I rap what I live.”', readBio: 'Read the bio',
+    forArtists: 'For artists', buyBeats: 'Buy beats', beatsText: 'Leases & exclusives from VIN on BeatStars.', browseBeats: 'Browse beats',
+    workWithUs: 'Work with us', sendMusic: 'Send music / collab', sendText: 'Singers, rappers, producers, musicians - send your work.', join: 'Join',
+    aboutLead: 'Maas Flow Records is an independent music label, created by artist and producer VIN.',
+    about1: 'Everything happens in-house: the beat, the recording, the mix, the master and the release. No big label in between.',
+    about2: "Right now that's VIN's music. Next up: other artists who want to grow at their own pace and stay who they are.",
+    about3: 'Singer, rapper, producer or engineer? If you take your music seriously, send it to us.',
+    roster: 'The roster',
+  },
+  fr: {
+    eyebrow: 'Label de musique indépendant', lead1: 'Label de musique indépendant fondé par le producteur et rappeur', about: 'À propos du label',
+    listen: '▶ Écouter', discoverVin: 'Découvrir VIN', viewReleases: 'Voir les sorties', mainArtist: 'Artiste principal',
+    ticker: 'MAAS FLOW RECORDS ✦ INDÉPENDANT ✦ DERRIÈRE LES BEATS ✦ DERRIÈRE LE MICRO ✦ TOUJOURS EN TRAIN D’APPRENDRE ✦ ',
+    cover: 'pochette', next: 'Prochaine sortie', latest: 'Dernière sortie', details: 'Détails de la sortie', listenNow: '▶ Écouter maintenant',
+    preorder: 'Précommander le CD', latestOut: 'Dernière sortie disponible :', music: 'Musique', allReleases: 'Toutes les sorties',
+    upcoming: 'À venir', allEvents: 'Tous les événements', noEvents: "Pas encore d'événements. Repasse bientôt.",
+    quote: '“Je rappe ce que je vis.”', readBio: 'Lire la bio',
+    forArtists: 'Pour les artistes', buyBeats: 'Acheter des beats', beatsText: 'Leases et exclusives de VIN sur BeatStars.', browseBeats: 'Voir les beats',
+    workWithUs: 'Travailler avec nous', sendMusic: 'Envoyer ta musique / collab', sendText: 'Chanteurs, rappeurs, producteurs, musiciens - envoie ton travail.', join: 'Nous rejoindre',
+    aboutLead: "Maas Flow Records est un label de musique indépendant, créé par l'artiste et producteur VIN.",
+    about1: 'Tout se fait en interne : le beat, l’enregistrement, le mix, le master et la sortie. Pas de grand label entre les deux.',
+    about2: "Pour l'instant, c'est la musique de VIN. Ensuite : d'autres artistes qui veulent grandir à leur rythme et rester eux-mêmes.",
+    about3: 'Chanteur, rappeur, producteur ou ingé son ? Si tu prends ta musique au sérieux, envoie-la-nous.',
+    roster: 'Les artistes',
+  },
+  de: {
+    eyebrow: 'Unabhängiges Musiklabel', lead1: 'Unabhängiges Musiklabel, gegründet vom Producer und Rapper', about: 'Über das Label',
+    listen: '▶ Anhören', discoverVin: 'VIN entdecken', viewReleases: 'Alle Releases', mainArtist: 'Hauptartist',
+    ticker: 'MAAS FLOW RECORDS ✦ UNABHÄNGIG ✦ HINTER DEN BEATS ✦ HINTER DEM MIC ✦ STUDENT OF THE GAME ✦ ',
+    cover: 'Cover', next: 'Nächstes Release', latest: 'Neuestes Release', details: 'Zum Release', listenNow: '▶ Jetzt anhören',
+    preorder: 'CD vorbestellen', latestOut: 'Neu draußen:', music: 'Musik', allReleases: 'Alle Releases',
+    upcoming: 'Demnächst', allEvents: 'Alle Events', noEvents: 'Noch keine Events. Schau bald wieder vorbei.',
+    quote: '“Ich rappe, was ich lebe.”', readBio: 'Zur Bio',
+    forArtists: 'Für Artists', buyBeats: 'Beats kaufen', beatsText: 'Leases & Exclusives von VIN auf BeatStars.', browseBeats: 'Beats ansehen',
+    workWithUs: 'Mit uns arbeiten', sendMusic: 'Musik schicken / Collab', sendText: 'Sänger, Rapper, Producer, Musiker - schick uns deine Arbeit.', join: 'Mitmachen',
+    aboutLead: 'Maas Flow Records ist ein unabhängiges Musiklabel, gegründet vom Artist und Producer VIN.',
+    about1: 'Alles passiert in-house: der Beat, die Aufnahme, der Mix, das Master und das Release. Kein großes Label dazwischen.',
+    about2: 'Im Moment ist das die Musik von VIN. Als Nächstes: andere Artists, die in ihrem eigenen Tempo wachsen und sie selbst bleiben wollen.',
+    about3: 'Sänger, Rapper, Producer oder Engineer? Wenn du deine Musik ernst nimmst, schick sie uns.',
+    roster: 'Die Artists',
+  },
+});
 ---
 
 <BaseLayout>
@@ -28,22 +82,22 @@ const events = upcomingEvents()
   <section class="hero">
     <div class="container hero-grid">
       <div class="hero-copy">
-        <p class="eyebrow"><span class="dot"></span>Independent music label</p>
+        <p class="eyebrow"><span class="dot"></span>{t.eyebrow}</p>
         <h1>Maas <br />Flow <br /><span class="outline">Records</span></h1>
         <p class="lead">
-          Independent music label founded by producer and rapper <strong>VIN</strong>.
+          {t.lead1} <strong>VIN</strong>.
         </p>
-        <p><a class="link-arrow" href="#label">About the label</a></p>
+        <p><a class="link-arrow" href="#label">{t.about}</a></p>
         <div class="btn-row">
-          {latest && <a class="btn btn-primary" href={`/music/${latest.slug}/`}>▶ Listen</a>}
-          <a class="btn" href="/artists/vin/">Discover VIN</a>
-          <a class="btn btn-ghost" href="/music/">View releases</a>
+          {latest && <a class="btn btn-primary" href={L(`/music/${latest.slug}/`)}>{t.listen}</a>}
+          <a class="btn" href={L('/artists/vin/')}>{t.discoverVin}</a>
+          <a class="btn btn-ghost" href={L('/music/')}>{t.viewReleases}</a>
         </div>
       </div>
       <figure class="hero-artist">
         <img src={vin.image} srcset={photoSrcset(vin.image)} sizes="(max-width: 800px) 100vw, 600px" alt={vin.imageAlt} width="720" height="900" fetchpriority="high" />
         <figcaption>
-          <span class="mono muted">Main artist</span>
+          <span class="mono muted">{t.mainArtist}</span>
           <span class="name">{vin.name}</span>
           <span class="mono muted">{vin.roles.join(' / ')}</span>
         </figcaption>
@@ -52,7 +106,7 @@ const events = upcomingEvents()
     <div class="ticker" aria-hidden="true">
       <div class="ticker-track mono">
         {Array.from({ length: 2 }).map(() => (
-          <span>MAAS FLOW RECORDS ✦ INDEPENDENT ✦ BEHIND THE BEATS ✦ BEHIND THE MIC ✦ STUDENT OF THE GAME ✦ </span>
+          <span>{t.ticker}</span>
         ))}
       </div>
     </div>
@@ -63,29 +117,29 @@ const events = upcomingEvents()
     featuredRelease && (
       <section class="section">
         <div class="container feature">
-          <a href={`/music/${featuredRelease.slug}/`} class="feature-cover">
-            <img src={featuredRelease.cover} alt={`${featuredRelease.title} cover art`} width="700" height="700" loading="lazy" />
+          <a href={L(`/music/${featuredRelease.slug}/`)} class="feature-cover">
+            <img src={featuredRelease.cover} alt={`${featuredRelease.title} ${t.cover}`} width="700" height="700" loading="lazy" />
           </a>
           <div>
             <p class="eyebrow">
               <span class="dot" />
-              {next ? 'Next release' : 'Latest release'} · {catalogNo(featuredRelease)}
+              {next ? t.next : t.latest} · {catalogNo(featuredRelease)}
             </p>
             <h2>{featuredRelease.title}</h2>
             <p class="mono muted">
-              {featuredRelease.type} · {artistNames(featuredRelease)} · {next && featuredRelease.releaseDate && !featuredRelease.dateTentative ? 'Out ' : ''}{releaseDateLabel(featuredRelease)}
+              {featuredRelease.type} · {artistNames(featuredRelease)} · {next ? outLabel(featuredRelease, lang) : releaseDateLabel(featuredRelease, lang)}
             </p>
             {next && featuredRelease.releaseDate && <Countdown date={featuredRelease.releaseDate} tentative={featuredRelease.dateTentative} />}
             <p class="lead">{featuredRelease.description}</p>
             <div class="btn-row">
-              <a class="btn btn-primary" href={`/music/${featuredRelease.slug}/`}>
-                {next ? 'Release details' : '▶ Listen now'}
+              <a class="btn btn-primary" href={L(`/music/${featuredRelease.slug}/`)}>
+                {next ? t.details : t.listenNow}
               </a>
-              {shopOpen && next && products.some((p) => p.preorder) && <a class="btn" href="/shop/">Pre-order the CD</a>}
+              {shopOpen && next && products.some((p) => p.preorder) && <a class="btn" href={L('/shop/')}>{t.preorder}</a>}
             </div>
             {latest && next && (
               <p class="also muted">
-                Latest out now: <a href={`/music/${latest.slug}/`}>{latest.title}</a>
+                {t.latestOut} <a href={L(`/music/${latest.slug}/`)}>{latest.title}</a>
               </p>
             )}
           </div>
@@ -98,8 +152,8 @@ const events = upcomingEvents()
   <section class="section">
     <div class="container">
       <div class="section-head">
-        <h2>Music</h2>
-        <a class="link-arrow" href="/music/">All releases</a>
+        <h2>{t.music}</h2>
+        <a class="link-arrow" href={L('/music/')}>{t.allReleases}</a>
       </div>
       <div class="grid grid-4">
         {moreReleases.map((r) => <ReleaseCard release={r} />)}
@@ -111,10 +165,10 @@ const events = upcomingEvents()
   <section class="section">
     <div class="container">
       <div class="section-head">
-        <h2>Upcoming</h2>
-        <a class="link-arrow" href="/events/">All events</a>
+        <h2>{t.upcoming}</h2>
+        <a class="link-arrow" href={L('/events/')}>{t.allEvents}</a>
       </div>
-      {events.length ? events.map((e) => <EventCard event={e} compact />) : <p class="empty">No events yet. Check back soon.</p>}
+      {events.length ? events.map((e) => <EventCard event={e} compact />) : <p class="empty">{t.noEvents}</p>}
     </div>
   </section>
 
@@ -123,25 +177,25 @@ const events = upcomingEvents()
     <div class="container spotlight-grid">
       <div>
         <h2>{vin.name}</h2>
-        <blockquote>“I rap what I live.”</blockquote>
+        <blockquote>{t.quote}</blockquote>
         <p class="lead muted">{vin.description}</p>
         <div class="btn-row">
-          <a class="btn btn-primary" href="/artists/vin/">Discover VIN</a>
-          <a class="btn btn-ghost" href="/bio/#vin">Read the bio</a>
+          <a class="btn btn-primary" href={L('/artists/vin/')}>{t.discoverVin}</a>
+          <a class="btn btn-ghost" href={L('/bio/#vin')}>{t.readBio}</a>
         </div>
       </div>
       <div class="split-cards">
-        <a class="split card" href={beats.beatstars || '/services/'} {...(beats.beatstars ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
-          <p class="mono muted">For artists</p>
-          <h3>Buy beats</h3>
-          <p class="muted">Leases &amp; exclusives from VIN on BeatStars.</p>
-          <span class="link-arrow">Browse beats</span>
+        <a class="split card" href={beats.beatstars || L('/services/')} {...(beats.beatstars ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+          <p class="mono muted">{t.forArtists}</p>
+          <h3>{t.buyBeats}</h3>
+          <p class="muted">{t.beatsText}</p>
+          <span class="link-arrow">{t.browseBeats}</span>
         </a>
-        <a class="split card" href="/casting/">
-          <p class="mono muted">Work with us</p>
-          <h3>Send music / collab</h3>
-          <p class="muted">Singers, rappers, producers, musicians - send your work.</p>
-          <span class="link-arrow">Join</span>
+        <a class="split card" href={L('/casting/')}>
+          <p class="mono muted">{t.workWithUs}</p>
+          <h3>{t.sendMusic}</h3>
+          <p class="muted">{t.sendText}</p>
+          <span class="link-arrow">{t.join}</span>
         </a>
       </div>
     </div>
@@ -154,21 +208,13 @@ const events = upcomingEvents()
         <h2>Maas Flow Records</h2>
       </div>
       <div class="prose">
-        <p class="lead">Maas Flow Records is an independent music label, created by artist and producer VIN.</p>
-        <p class="muted">
-          Everything happens in-house: the beat, the recording, the mix, the master and the release.
-          No big label in between.
-        </p>
-        <p class="muted">
-          Right now that's VIN's music. Next up: other artists who want to grow at their own pace
-          and stay who they are.
-        </p>
-        <p class="muted">
-          Singer, rapper, producer or engineer? If you take your music seriously, send it to us.
-        </p>
+        <p class="lead">{t.aboutLead}</p>
+        <p class="muted">{t.about1}</p>
+        <p class="muted">{t.about2}</p>
+        <p class="muted">{t.about3}</p>
         <div class="btn-row">
-          <a class="btn btn-primary" href="/artists/">The roster</a>
-          <a class="btn btn-ghost" href="/casting/">Work with us</a>
+          <a class="btn btn-primary" href={L('/artists/')}>{t.roster}</a>
+          <a class="btn btn-ghost" href={L('/casting/')}>{t.workWithUs}</a>
         </div>
       </div>
     </div>

@@ -1,11 +1,19 @@
 ---
 import type { LabelEvent } from '../data/types';
 import { isPast } from '../data/events';
-import { fmtEventDate } from '../lib/format';
+import { fmtEventDate, kindLabel } from '../lib/format';
+import { getLang, localize, pick } from '../i18n';
 
 interface Props { event: LabelEvent; compact?: boolean }
 const { event: e, compact = false } = Astro.props;
-const d = e.start ? fmtEventDate(e.start) : null;
+const lang = getLang(Astro);
+const d = e.start ? fmtEventDate(e.start, lang) : null;
+const t = pick(lang, {
+  en: { tba: 'TBA', dateTba: 'Date TBA', expected: 'Expected ', past: 'Past event', tickets: 'Tickets', for: 'for', dateSoon: 'Date soon', linkSoon: 'Link soon', ticketsSoon: 'Tickets soon' },
+  fr: { tba: 'À conf.', dateTba: 'Date à confirmer', expected: 'Prévu : ', past: 'Événement passé', tickets: 'Billets', for: 'pour', dateSoon: 'Date bientôt', linkSoon: 'Lien bientôt', ticketsSoon: 'Billets bientôt' },
+  de: { tba: 'TBA', dateTba: 'Datum folgt', expected: 'Geplant: ', past: 'Vergangenes Event', tickets: 'Tickets', for: 'für', dateSoon: 'Datum folgt', linkSoon: 'Link folgt', ticketsSoon: 'Tickets folgen' },
+});
+const ticketUrl = e.ticketUrl ? localize(e.ticketUrl, lang) : undefined;
 const past = isPast(e);
 ---
 
@@ -18,7 +26,7 @@ const past = isPast(e);
         <span class="yr mono">{d.year}</span>
       </>
     ) : (
-      <span class="day tba">TBA</span>
+      <span class="day tba">{t.tba}</span>
     )}
   </div>
 
@@ -29,13 +37,13 @@ const past = isPast(e);
   )}
 
   <div class="body">
-    <p class="eyebrow"><span class="tag">{e.kind}</span></p>
+    <p class="eyebrow"><span class="tag">{kindLabel(e.kind, lang)}</span></p>
     <h3>{e.title}</h3>
     <p class="where">
       {e.start && d ? (
-        <time datetime={e.allDay ? e.start.slice(0, 10) : e.start}>{e.dateTentative ? 'Expected ' : ''}{d.full}{e.allDay ? '' : ` · ${d.time}`}</time>
+        <time datetime={e.allDay ? e.start.slice(0, 10) : e.start}>{e.dateTentative ? t.expected : ''}{d.full}{e.allDay ? '' : ` · ${d.time}`}</time>
       ) : (
-        <span>Date TBA</span>
+        <span>{t.dateTba}</span>
       )}<br />
       <span class="muted">{e.venue}{e.city ? ` - ${e.city}` : ''}</span>
     </p>
@@ -45,13 +53,13 @@ const past = isPast(e);
   <div class="cta">
     {
       past ? (
-        <span class="tag">Past event</span>
-      ) : e.ticketUrl ? (
-        <a class="btn btn-primary" href={e.ticketUrl} {...(e.ticketUrl.startsWith('/') ? {} : { target: '_blank', rel: 'noopener noreferrer' })}>
-          {e.ticketLabel ?? 'Tickets'} <span class="sr-only">for {e.title}</span>
+        <span class="tag">{t.past}</span>
+      ) : ticketUrl ? (
+        <a class="btn btn-primary" href={ticketUrl} {...(ticketUrl.startsWith('/') ? {} : { target: '_blank', rel: 'noopener noreferrer' })}>
+          {e.ticketLabel ?? t.tickets} <span class="sr-only">{t.for} {e.title}</span>
         </a>
       ) : (
-        <span class="btn btn-ghost" aria-disabled="true">{!e.start ? 'Date soon' : e.online ? 'Link soon' : 'Tickets soon'}</span>
+        <span class="btn btn-ghost" aria-disabled="true">{!e.start ? t.dateSoon : e.online ? t.linkSoon : t.ticketsSoon}</span>
       )
     }
   </div>

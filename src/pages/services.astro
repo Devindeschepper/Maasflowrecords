@@ -4,16 +4,51 @@ import PageHero from '../components/PageHero.astro';
 import Turnstile from '../components/Turnstile.astro';
 import PlatformIcon from '../components/PlatformIcon.astro';
 import { beats, mixing, requestTypes } from '../data/services';
+import { getLang, pick } from '../i18n';
+import { ui } from '../i18n/ui';
 
 const today = new Date().toISOString().slice(0, 10);
+const lang = getLang(Astro);
+const t = pick(lang, {
+  en: {
+    desc: 'Beats, mixing and mastering by Maas Flow Records. Leases and exclusives on BeatStars, mix and master requests for artists.',
+    title: 'Services', h1: 'Beats, mix & master', lead: 'Beats, mixing and mastering from the Maas Flow Records studio. Made for your next release.',
+    beatstars: 'Beats on BeatStars', youtube: 'Listen on YouTube', custom: 'Request a custom beat', mixing: 'Mixing & mastering', onRequest: 'Price on request',
+    budget: 'Different budget? Tell us what you can pay in the request form.', delivery: 'Delivery:',
+    send: 'Send a request', sendLead: 'Tell us what you need. If you like, add your budget and the date it needs to be done by. We reply by email with the price, timing and how to send your files. Nothing is charged on this website.',
+    success: "Thanks - your request was sent. We'll reply by email soon.", name: 'Name', artist: 'Artist name', email: 'Email', need: 'What do you need?', choose: 'Choose…',
+    types: { 'custom-beat': 'Custom beat', other: 'Other / not sure' } as Record<string, string>,
+    songs: 'Number of songs', stems: 'Number of stems (for mixing)', notSure: 'Not sure / not needed', yourBudget: 'Your budget (optional)', budgetEx: 'e.g. €25 per song', budgetHint: 'Want to pay a different price? Tell us.',
+    deadline: 'Needs to be done by (optional)', noRush: "Leave empty if there's no rush.", message: 'Message', messageEx: 'Genre, reference tracks, what you want it to sound like…', submit: 'Send request',
+  },
+  fr: {
+    desc: 'Beats, mix et mastering par Maas Flow Records. Leases et exclusives sur BeatStars, demandes de mix et master pour artistes.',
+    title: 'Services', h1: 'Beats, mix & master', lead: 'Beats, mix et mastering depuis le studio Maas Flow Records. Faits pour ta prochaine sortie.',
+    beatstars: 'Beats sur BeatStars', youtube: 'Écouter sur YouTube', custom: 'Demander un beat sur mesure', mixing: 'Mix & mastering', onRequest: 'Prix sur demande',
+    budget: 'Un autre budget ? Dis-nous ce que tu peux payer dans le formulaire.', delivery: 'Délai :',
+    send: 'Envoyer une demande', sendLead: "Dis-nous ce dont tu as besoin. Si tu veux, ajoute ton budget et la date limite. On te répond par e-mail avec le prix, le délai et comment envoyer tes fichiers. Rien n'est payé sur ce site.",
+    success: 'Merci - ta demande a été envoyée. On te répond vite par e-mail.', name: 'Nom', artist: "Nom d'artiste", email: 'E-mail', need: 'De quoi as-tu besoin ?', choose: 'Choisir…',
+    types: { 'custom-beat': 'Beat sur mesure', other: 'Autre / je ne sais pas' },
+    songs: 'Nombre de morceaux', stems: 'Nombre de pistes (pour le mix)', notSure: 'Je ne sais pas / pas nécessaire', yourBudget: 'Ton budget (facultatif)', budgetEx: 'ex. 25 € par morceau', budgetHint: 'Tu veux payer un autre prix ? Dis-le-nous.',
+    deadline: 'À terminer avant le (facultatif)', noRush: "Laisse vide si ce n'est pas urgent.", message: 'Message', messageEx: 'Genre, morceaux de référence, le son que tu veux…', submit: 'Envoyer la demande',
+  },
+  de: {
+    desc: 'Beats, Mixing und Mastering von Maas Flow Records. Leases und Exclusives auf BeatStars, Mix- und Master-Anfragen für Artists.',
+    title: 'Services', h1: 'Beats, Mix & Master', lead: 'Beats, Mixing und Mastering aus dem Maas Flow Records Studio. Gemacht für dein nächstes Release.',
+    beatstars: 'Beats auf BeatStars', youtube: 'Auf YouTube anhören', custom: 'Custom-Beat anfragen', mixing: 'Mixing & Mastering', onRequest: 'Preis auf Anfrage',
+    budget: 'Anderes Budget? Sag uns im Formular, was du zahlen kannst.', delivery: 'Lieferzeit:',
+    send: 'Anfrage senden', sendLead: 'Sag uns, was du brauchst. Wenn du willst, schreib dein Budget und die Deadline dazu. Wir antworten per E-Mail mit Preis, Zeitplan und wie du deine Files schickst. Auf dieser Website wird nichts bezahlt.',
+    success: 'Danke - deine Anfrage wurde gesendet. Wir antworten bald per E-Mail.', name: 'Name', artist: 'Artist-Name', email: 'E-Mail', need: 'Was brauchst du?', choose: 'Auswählen…',
+    types: { 'custom-beat': 'Custom-Beat', other: 'Sonstiges / weiß nicht' },
+    songs: 'Anzahl Songs', stems: 'Anzahl Stems (fürs Mixing)', notSure: 'Weiß nicht / nicht nötig', yourBudget: 'Dein Budget (optional)', budgetEx: 'z. B. 25 € pro Song', budgetHint: 'Du willst einen anderen Preis zahlen? Sag es uns.',
+    deadline: 'Fertig bis (optional)', noRush: 'Leer lassen, wenn es nicht eilt.', message: 'Nachricht', messageEx: 'Genre, Referenz-Tracks, wie es klingen soll…', submit: 'Anfrage senden',
+  },
+});
+const price = (p: string) => (p === 'Price on request' ? t.onRequest : p);
 ---
 
-<BaseLayout title="Services" description="Beats, mixing and mastering by Maas Flow Records. Leases and exclusives on BeatStars, mix and master requests for artists.">
-  <PageHero
-    eyebrow="Services"
-    title="Beats, mix & master"
-    lead="Beats, mixing and mastering from the Maas Flow Records studio. Made for your next release."
-  />
+<BaseLayout title={t.title} description={t.desc}>
+  <PageHero eyebrow={t.title} title={t.h1} lead={t.lead} />
 
   <section class="section" id="beats">
     <div class="container two">
@@ -24,15 +59,15 @@ const today = new Date().toISOString().slice(0, 10);
       <div class="links">
         {beats.beatstars && (
           <a class="btn btn-primary" href={beats.beatstars} target="_blank" rel="noopener noreferrer">
-            <PlatformIcon id="beatstars" size={18} /> Beats on BeatStars
+            <PlatformIcon id="beatstars" size={18} /> {t.beatstars}
           </a>
         )}
         {beats.youtube && (
           <a class="btn" href={beats.youtube} target="_blank" rel="noopener noreferrer">
-            <PlatformIcon id="youtube" size={18} /> Listen on YouTube
+            <PlatformIcon id="youtube" size={18} /> {t.youtube}
           </a>
         )}
-        <a class="btn btn-ghost" href="#request" data-type="custom-beat">Request a custom beat</a>
+        <a class="btn btn-ghost" href="#request" data-type="custom-beat">{t.custom}</a>
       </div>
     </div>
   </section>
@@ -40,7 +75,7 @@ const today = new Date().toISOString().slice(0, 10);
   <section class="section" id="mixing">
     <div class="container">
       <div class="section-head">
-        <h2>Mixing &amp; mastering</h2>
+        <h2>{t.mixing}</h2>
       </div>
       <p class="muted intro">{mixing.intro}</p>
       <ul class="packages">
@@ -48,85 +83,85 @@ const today = new Date().toISOString().slice(0, 10);
           <li class="card pkg">
             <h3>{p.name}</h3>
             <p class="muted">{p.stems}</p>
-            <a class="price" href="#request" data-type={p.id}>{p.price} <span aria-hidden="true">→</span></a>
+            <a class="price" href="#request" data-type={p.id}>{price(p.price)} <span aria-hidden="true">→</span></a>
           </li>
         ))}
       </ul>
       {mixing.terms && <p class="muted small">{mixing.terms}</p>}
-      <p class="muted small">Different budget? Tell us what you can pay in the request form.</p>
-      {mixing.turnaround && <p class="muted small">Delivery: {mixing.turnaround}</p>}
+      <p class="muted small">{t.budget}</p>
+      {mixing.turnaround && <p class="muted small">{t.delivery} {mixing.turnaround}</p>}
     </div>
   </section>
 
   <section class="section" id="request">
     <div class="container two">
       <aside>
-        <h2>Send a request</h2>
-        <p class="muted">Tell us what you need. If you like, add your budget and the date it needs to be done by. We reply by email with the price, timing and how to send your files. Nothing is charged on this website.</p>
+        <h2>{t.send}</h2>
+        <p class="muted">{t.sendLead}</p>
       </aside>
 
-      <form class="form card pad" action="/api/services" method="post" data-ajax data-success="Thanks - your request was sent. We'll reply by email soon.">
+      <form class="form card pad" action="/api/services" method="post" data-ajax data-success={t.success}>
         <div class="form-row">
           <div class="field">
-            <label for="s-name">Name <span class="req">*</span></label>
+            <label for="s-name">{t.name} <span class="req">*</span></label>
             <input id="s-name" name="name" required maxlength="100" autocomplete="name" />
           </div>
           <div class="field">
-            <label for="s-artist">Artist name</label>
+            <label for="s-artist">{t.artist}</label>
             <input id="s-artist" name="artistName" maxlength="100" />
           </div>
         </div>
         <div class="field">
-          <label for="s-email">Email <span class="req">*</span></label>
+          <label for="s-email">{t.email} <span class="req">*</span></label>
           <input id="s-email" name="email" type="email" required maxlength="200" autocomplete="email" />
         </div>
         <div class="form-row">
           <div class="field">
-            <label for="s-type">What do you need? <span class="req">*</span></label>
+            <label for="s-type">{t.need} <span class="req">*</span></label>
             <select id="s-type" name="type" required>
-              <option value="">Choose…</option>
-              {requestTypes.map((t) => <option value={t.value}>{t.label}</option>)}
+              <option value="">{t.choose}</option>
+              {requestTypes.map((r) => <option value={r.value}>{t.types[r.value] ?? r.label}</option>)}
             </select>
           </div>
           <div class="field">
-            <label for="s-songs">Number of songs</label>
+            <label for="s-songs">{t.songs}</label>
             <input id="s-songs" name="songs" type="number" min="1" max="999" inputmode="numeric" />
           </div>
         </div>
         {mixing.stemOptions.length > 0 && (
           <div class="field">
-            <label for="s-stems">Number of stems (for mixing)</label>
+            <label for="s-stems">{t.stems}</label>
             <select id="s-stems" name="stems">
-              <option value="">Not sure / not needed</option>
+              <option value="">{t.notSure}</option>
               {mixing.stemOptions.map((o) => <option>{o}</option>)}
             </select>
           </div>
         )}
         <div class="form-row">
           <div class="field">
-            <label for="s-budget">Your budget (optional)</label>
-            <input id="s-budget" name="budget" maxlength="40" inputmode="decimal" placeholder="e.g. €25 per song" />
-            <span class="hint">Want to pay a different price? Tell us.</span>
+            <label for="s-budget">{t.yourBudget}</label>
+            <input id="s-budget" name="budget" maxlength="40" inputmode="decimal" placeholder={t.budgetEx} />
+            <span class="hint">{t.budgetHint}</span>
           </div>
           <div class="field">
-            <label for="s-deadline">Needs to be done by (optional)</label>
+            <label for="s-deadline">{t.deadline}</label>
             <input id="s-deadline" name="deadline" type="date" min={today} />
-            <span class="hint">Leave empty if there's no rush.</span>
+            <span class="hint">{t.noRush}</span>
           </div>
         </div>
         <div class="field">
-          <label for="s-msg">Message <span class="req">*</span></label>
-          <textarea id="s-msg" name="message" required maxlength="4000" placeholder="Genre, reference tracks, what you want it to sound like…"></textarea>
+          <label for="s-msg">{t.message} <span class="req">*</span></label>
+          <textarea id="s-msg" name="message" required maxlength="4000" placeholder={t.messageEx}></textarea>
         </div>
 
         <div class="hp" aria-hidden="true">
-          <label for="s-website">Website</label>
+          <label for="s-website">{ui[lang].form.website}</label>
           <input id="s-website" name="website" tabindex="-1" autocomplete="off" />
         </div>
         <input type="hidden" name="_ts" value="" />
 
         <Turnstile />
-        <button class="btn btn-primary" type="submit">Send request</button>
+        <button class="btn btn-primary" type="submit">{t.submit}</button>
         <p class="form-status" role="status" aria-live="polite"></p>
       </form>
     </div>

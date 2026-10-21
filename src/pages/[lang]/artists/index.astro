@@ -1,0 +1,7 @@
+---
+// French and German version of /artists/.
+import Page from '../../artists/index.astro';
+export const getStaticPaths = () => [{ params: { lang: 'fr' } }, { params: { lang: 'de' } }];
+---
+
+<Page />

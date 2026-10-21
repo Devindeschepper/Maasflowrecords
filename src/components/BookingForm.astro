@@ -2,76 +2,84 @@
 // Booking request form ("Book an artist"). Posts to /api/booking.
 import Turnstile from './Turnstile.astro';
 import { artists } from '../data/artists';
+import { getLang, pick } from '../i18n';
+import { ui } from '../i18n/ui';
 
-// Keep in sync with EVENT_TYPES in functions/api/booking.ts
+// Keep in sync with EVENT_TYPES in functions/api/booking.ts (the values stay English, only the labels change).
 const eventTypes = ['Concert / show', 'Festival', 'Club night', 'Private event', 'Livestream', 'Other'];
 const today = new Date().toISOString().slice(0, 10);
+const lang = getLang(Astro);
+const t = pick(lang, {
+  en: { success: "Thanks - your booking request was sent. We'll get back to you soon.", artist: 'Artist', type: 'Type of event', choose: 'Choose…', types: eventTypes, date: 'Date', flexible: 'Leave empty if the date is flexible.', where: 'City / venue', audience: 'Expected audience', audienceEx: 'e.g. 200 people', budget: 'Budget / fee', optional: 'Optional', name: 'Your name', org: 'Organisation / venue name', email: 'Email', msg: 'Tell us about the event', msgEx: 'Set length, other artists on the bill, technical setup, travel…', send: 'Send booking request' },
+  fr: { success: 'Merci - ta demande de booking a été envoyée. On te répond vite.', artist: 'Artiste', type: "Type d'événement", choose: 'Choisir…', types: ['Concert / show', 'Festival', 'Soirée club', 'Événement privé', 'Livestream', 'Autre'], date: 'Date', flexible: 'Laisse vide si la date est flexible.', where: 'Ville / salle', audience: 'Public attendu', audienceEx: 'ex. 200 personnes', budget: 'Budget / cachet', optional: 'Facultatif', name: 'Ton nom', org: 'Organisation / nom de la salle', email: 'E-mail', msg: "Parle-nous de l'événement", msgEx: 'Durée du set, autres artistes à l’affiche, technique, déplacement…', send: 'Envoyer la demande' },
+  de: { success: 'Danke - deine Booking-Anfrage wurde gesendet. Wir melden uns bald.', artist: 'Artist', type: 'Art des Events', choose: 'Auswählen…', types: ['Konzert / Show', 'Festival', 'Clubnacht', 'Private Feier', 'Livestream', 'Sonstiges'], date: 'Datum', flexible: 'Leer lassen, wenn das Datum flexibel ist.', where: 'Stadt / Location', audience: 'Erwartete Besucher', audienceEx: 'z. B. 200 Leute', budget: 'Budget / Gage', optional: 'Optional', name: 'Dein Name', org: 'Organisation / Location', email: 'E-Mail', msg: 'Erzähl uns vom Event', msgEx: 'Set-Länge, andere Artists im Line-up, Technik, Anreise…', send: 'Booking-Anfrage senden' },
+});
 ---
 
-<form class="form card pad" id="booking-form" action="/api/booking" method="post" data-ajax data-success="Thanks - your booking request was sent. We'll get back to you soon.">
+<form class="form card pad" id="booking-form" action="/api/booking" method="post" data-ajax data-success={t.success}>
   <div class="form-row">
     <div class="field">
-      <label for="b-artist">Artist <span class="req">*</span></label>
+      <label for="b-artist">{t.artist} <span class="req">*</span></label>
       <select id="b-artist" name="artist" required>
         {artists.map((a) => <option value={a.slug}>{a.name}</option>)}
       </select>
     </div>
     <div class="field">
-      <label for="b-type">Type of event <span class="req">*</span></label>
+      <label for="b-type">{t.type} <span class="req">*</span></label>
       <select id="b-type" name="eventType" required>
-        <option value="">Choose…</option>
-        {eventTypes.map((t) => <option>{t}</option>)}
+        <option value="">{t.choose}</option>
+        {eventTypes.map((v, i) => <option value={v}>{t.types[i]}</option>)}
       </select>
     </div>
   </div>
   <div class="form-row">
     <div class="field">
-      <label for="b-date">Date</label>
+      <label for="b-date">{t.date}</label>
       <input id="b-date" name="date" type="date" min={today} />
-      <span class="hint">Leave empty if the date is flexible.</span>
+      <span class="hint">{t.flexible}</span>
     </div>
     <div class="field">
-      <label for="b-location">City / venue <span class="req">*</span></label>
+      <label for="b-location">{t.where} <span class="req">*</span></label>
       <input id="b-location" name="location" required maxlength="150" />
     </div>
   </div>
   <div class="form-row">
     <div class="field">
-      <label for="b-audience">Expected audience</label>
-      <input id="b-audience" name="audience" maxlength="50" placeholder="e.g. 200 people" />
+      <label for="b-audience">{t.audience}</label>
+      <input id="b-audience" name="audience" maxlength="50" placeholder={t.audienceEx} />
     </div>
     <div class="field">
-      <label for="b-budget">Budget / fee</label>
-      <input id="b-budget" name="budget" maxlength="80" placeholder="Optional" />
+      <label for="b-budget">{t.budget}</label>
+      <input id="b-budget" name="budget" maxlength="80" placeholder={t.optional} />
     </div>
   </div>
   <div class="form-row">
     <div class="field">
-      <label for="b-name">Your name <span class="req">*</span></label>
+      <label for="b-name">{t.name} <span class="req">*</span></label>
       <input id="b-name" name="name" required maxlength="100" autocomplete="name" />
     </div>
     <div class="field">
-      <label for="b-org">Organisation / venue name</label>
+      <label for="b-org">{t.org}</label>
       <input id="b-org" name="organisation" maxlength="150" autocomplete="organization" />
     </div>
   </div>
   <div class="field">
-    <label for="b-email">Email <span class="req">*</span></label>
+    <label for="b-email">{t.email} <span class="req">*</span></label>
     <input id="b-email" name="email" type="email" required maxlength="200" autocomplete="email" />
   </div>
   <div class="field">
-    <label for="b-msg">Tell us about the event <span class="req">*</span></label>
-    <textarea id="b-msg" name="message" required maxlength="4000" placeholder="Set length, other artists on the bill, technical setup, travel…"></textarea>
+    <label for="b-msg">{t.msg} <span class="req">*</span></label>
+    <textarea id="b-msg" name="message" required maxlength="4000" placeholder={t.msgEx}></textarea>
   </div>
 
   <div class="hp" aria-hidden="true">
-    <label for="b-website">Website</label>
+    <label for="b-website">{ui[lang].form.website}</label>
     <input id="b-website" name="website" tabindex="-1" autocomplete="off" />
   </div>
   <input type="hidden" name="_ts" value="" />
 
   <Turnstile />
-  <button class="btn btn-primary" type="submit">Send booking request</button>
+  <button class="btn btn-primary" type="submit">{t.send}</button>
   <p class="form-status" role="status" aria-live="polite"></p>
 </form>
 

@@ -6,49 +6,54 @@ import PlatformLinks from './PlatformLinks.astro';
 import ProductCard from './ProductCard.astro';
 import { labelSocials } from '../data/site';
 import { products } from '../data/products';
+import { getLang, pick } from '../i18n';
 
 interface Props { dropAt?: string }
 const { dropAt } = Astro.props;
+const t = pick(getLang(Astro), {
+  en: { drop: 'The drop', soon: 'Coming soon', dropping: 'Dropping in', units: ['days', 'hours', 'min', 'sec'], opens: 'The shop opens', limited: 'Limited pieces, so be quick. Follow us to get the reminder.', first: 'The first drop is coming', firstText: 'The 2Real4U CD is coming. Follow us on Instagram or TikTok to see when the shop opens.', questions: 'Questions or wholesale?', coming: "What's coming" },
+  fr: { drop: 'Le drop', soon: 'Bientôt', dropping: 'Drop dans', units: ['jours', 'heures', 'min', 'sec'], opens: 'La boutique ouvre', limited: 'Pièces limitées, alors sois rapide. Suis-nous pour avoir le rappel.', first: 'Le premier drop arrive', firstText: 'Le CD 2Real4U arrive. Suis-nous sur Instagram ou TikTok pour savoir quand la boutique ouvre.', questions: 'Questions ou vente en gros ?', coming: 'Ce qui arrive' },
+  de: { drop: 'Der Drop', soon: 'Demnächst', dropping: 'Drop in', units: ['Tage', 'Std', 'Min', 'Sek'], opens: 'Der Shop öffnet', limited: 'Limitierte Stückzahl, also sei schnell. Folg uns, um die Erinnerung zu bekommen.', first: 'Der erste Drop kommt', firstText: 'Die 2Real4U CD kommt. Folg uns auf Instagram oder TikTok, um zu sehen, wann der Shop öffnet.', questions: 'Fragen oder Großhandel?', coming: 'Was kommt' },
+});
 ---
 
 <section class="section" data-drop-gate={dropAt}>
   <div class="container soon">
     <div>
-      <p class="eyebrow"><span class="dot"></span>{dropAt ? 'The drop' : 'Coming soon'}</p>
+      <p class="eyebrow"><span class="dot"></span>{dropAt ? t.drop : t.soon}</p>
       {dropAt ? (
         <>
-          <h2>Dropping in</h2>
+          <h2>{t.dropping}</h2>
           <p class="clock" data-drop-clock aria-live="off">
-            <span><b data-u="d">-</b><small>days</small></span>
-            <span><b data-u="h">--</b><small>hours</small></span>
-            <span><b data-u="m">--</b><small>min</small></span>
-            <span><b data-u="s">--</b><small>sec</small></span>
+            <span><b data-u="d">-</b><small>{t.units[0]}</small></span>
+            <span><b data-u="h">--</b><small>{t.units[1]}</small></span>
+            <span><b data-u="m">--</b><small>{t.units[2]}</small></span>
+            <span><b data-u="s">--</b><small>{t.units[3]}</small></span>
           </p>
-          <p class="lead muted">The shop opens <span data-drop-when></span>. Limited pieces, so be quick. Follow us to get the reminder.</p>
+          <p class="lead muted">{t.opens} <span data-drop-when></span>. {t.limited}</p>
         </>
       ) : (
         <>
-          <h2>The first drop is coming</h2>
-          <p class="lead muted">
-            The 2Real4U CD is coming. Follow us on Instagram or TikTok to see when the shop opens.
-          </p>
+          <h2>{t.first}</h2>
+          <p class="lead muted">{t.firstText}</p>
         </>
       )}
       <PlatformLinks links={labelSocials} variant="chips" hideEmpty />
-      <p class="muted small">Questions or wholesale? <Email /></p>
+      <p class="muted small">{t.questions} <Email /></p>
     </div>
-    <div class="coming" aria-label="What's coming">
+    <div class="coming" aria-label={t.coming}>
       {products.map((p) => <ProductCard product={p} comingSoon />)}
     </div>
   </div>
 </section>
 
 <script>
+  import { pageLocale, tc } from '../i18n/client';
   const gate = document.querySelector<HTMLElement>('[data-drop-gate]');
   if (gate) {
     const at = Date.parse(gate.dataset.dropGate!);
     const when = gate.querySelector<HTMLElement>('[data-drop-when]');
-    if (when) when.textContent = `on ${new Date(at).toLocaleString(undefined, { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}`;
+    if (when) when.textContent = tc().dropWhen(new Date(at).toLocaleString(pageLocale(), { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }));
     const unit = (u: string) => gate.querySelector<HTMLElement>(`[data-u="${u}"]`)!;
     const pad = (n: number) => String(n).padStart(2, '0');
     let timer = 0;

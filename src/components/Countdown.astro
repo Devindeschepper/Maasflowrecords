@@ -3,9 +3,15 @@
 // so it stays correct between site rebuilds. Hidden once the date has passed.
 interface Props { date: string; tentative?: boolean }
 const { date, tentative = false } = Astro.props;
+import { getLang, pick } from '../i18n';
+const t = pick(getLang(Astro), {
+  en: { today: 'Out today', day: 'day to go', days: 'days to go', expected: ' (expected)' },
+  fr: { today: "Sort aujourd'hui", day: 'jour restant', days: 'jours restants', expected: ' (prévu)' },
+  de: { today: 'Heute draußen', day: 'Tag noch', days: 'Tage noch', expected: ' (geplant)' },
+});
 ---
 
-<p class="countdown mono" data-countdown={date} data-tentative={tentative ? '1' : undefined} hidden>
+<p class="countdown mono" data-countdown={date} data-tentative={tentative ? '1' : undefined} data-l={JSON.stringify(t)} hidden>
   <span class="num"></span> <span class="unit"></span>
 </p>
 
@@ -18,12 +24,13 @@ const { date, tentative = false } = Astro.props;
     if (days < 0) return;
     const num = el.querySelector<HTMLElement>('.num')!;
     const unit = el.querySelector<HTMLElement>('.unit')!;
+    const t = JSON.parse(el.dataset.l!) as { today: string; day: string; days: string; expected: string };
     if (days === 0) {
-      num.textContent = 'Out today';
+      num.textContent = t.today;
       unit.textContent = '';
     } else {
       num.textContent = String(days);
-      unit.textContent = `${days === 1 ? 'day' : 'days'} to go${el.dataset.tentative ? ' (expected)' : ''}`;
+      unit.textContent = `${days === 1 ? t.day : t.days}${el.dataset.tentative ? t.expected : ''}`;
     }
     el.hidden = false;
   });

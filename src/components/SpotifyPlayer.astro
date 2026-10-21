@@ -8,6 +8,12 @@ interface Props {
   title: string;
 }
 const { url, title } = Astro.props;
+import { getLang, pick } from '../i18n';
+const t = pick(getLang(Astro), {
+  en: { play: `Play ${title} on Spotify`, note: 'Loads the Spotify player · Spotify may set cookies', frame: `${title} on Spotify` },
+  fr: { play: `Écouter ${title} sur Spotify`, note: 'Charge le lecteur Spotify · Spotify peut déposer des cookies', frame: `${title} sur Spotify` },
+  de: { play: `${title} auf Spotify abspielen`, note: 'Lädt den Spotify-Player · Spotify kann Cookies setzen', frame: `${title} auf Spotify` },
+});
 
 const match = url?.match(/open\.spotify\.com\/(?:intl-[a-z-]+\/)?(track|album|artist|playlist)\/([A-Za-z0-9]+)/);
 const kind = match?.[1];
@@ -18,14 +24,14 @@ const height = kind === 'track' ? 152 : 352;
 
 {
   embed && (
-    <div class="spotify" data-spotify={embed} data-title={title} style={`--h:${height}px`}>
+    <div class="spotify" data-spotify={embed} data-title={t.frame} style={`--h:${height}px`}>
       <button type="button" class="load">
         <span class="icon" aria-hidden="true">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
         </span>
         <span>
-          <strong>Play {title} on Spotify</strong>
-          <span class="note">Loads the Spotify player · Spotify may set cookies</span>
+          <strong>{t.play}</strong>
+          <span class="note">{t.note}</span>
         </span>
       </button>
     </div>
@@ -37,7 +43,7 @@ const height = kind === 'track' ? 152 : 352;
     box.querySelector('button')?.addEventListener('click', () => {
       const frame = document.createElement('iframe');
       frame.src = `${box.dataset.spotify}&autoplay=1`;
-      frame.title = `${box.dataset.title} on Spotify`;
+      frame.title = box.dataset.title ?? '';
       frame.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
       frame.loading = 'lazy';
       box.replaceChildren(frame);

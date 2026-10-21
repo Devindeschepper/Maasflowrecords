@@ -1,5 +1,6 @@
 // Progressive enhancement for forms marked `data-ajax`.
 // Without JS the form posts normally and the server redirects to /thanks/.
+import { tc } from '../i18n/client';
 
 declare global {
   interface Window { turnstile?: { reset: (el?: Element | string) => void } }
@@ -27,12 +28,12 @@ export function enhanceForms() {
       const file = form.querySelector<HTMLInputElement>('input[type="file"]')?.files?.[0];
       const maxMb = Number(form.dataset.maxFileMb ?? 0);
       if (file && maxMb && file.size > maxMb * 1024 * 1024) {
-        setStatus(`File is too large (max ${maxMb} MB). Share a link instead.`, 'error');
+        setStatus(tc().tooLarge(maxMb), 'error');
         return;
       }
 
       button?.setAttribute('disabled', '');
-      setStatus('Sending…', '');
+      setStatus(tc().sending, '');
       try {
         const res = await fetch(form.action, {
           method: 'POST',
@@ -40,13 +41,13 @@ export function enhanceForms() {
           headers: { Accept: 'application/json' },
         });
         const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
-        if (!res.ok || !data.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
+        if (!res.ok || !data.ok) throw new Error(data.error || tc().failed);
         form.reset();
         if (started) started.value = String(Date.now());
-        setStatus(form.dataset.success ?? 'Thanks - your message was sent.', 'ok');
+        setStatus(form.dataset.success ?? tc().sent, 'ok');
       } catch (err) {
         setStatus(
-          `${(err as Error).message} You can also email ${['info', 'maasflowrecords.com'].join('@')}.`,
+          `${(err as Error).message} ${tc().orEmail(['info', 'maasflowrecords.com'].join('@'))}`,
           'error',
         );
       } finally {

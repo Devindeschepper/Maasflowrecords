@@ -11,40 +11,48 @@ import { labelSocials } from '../data/site';
 import { artists } from '../data/artists';
 import { latestRelease, upcomingReleases } from '../data/releases';
 import { beats } from '../data/services';
-import { releaseDateLabel } from '../lib/format';
+import { outLabel } from '../lib/format';
+import { getLang, localize, pick } from '../i18n';
 
 const vin = artists[0];
 const next = upcomingReleases()[0];
 const latest = latestRelease();
+const lang = getLang(Astro);
+const L = (href: string) => localize(href, lang);
+const t = pick(lang, {
+  en: { new: 'new', outNow: 'out now', soon: 'Coming soon', onSpotify: 'Listen on Spotify', on: 'VIN on', followNew: 'Follow for new releases', beats: 'Buy beats', beatsSub: 'Leases & exclusives on BeatStars', mixing: 'Mixing & mastering', request: 'Send a request', send: 'Send us your music', sendSub: 'Singers, rappers, producers, musicians', events: 'Events & booking', website: 'Website', desc: 'All Maas Flow Records links: new music from VIN, streaming, beats, mixing & mastering and casting.', tagline: 'Independent music label · Founded by VIN', social: 'Maas Flow Records on' },
+  fr: { new: 'nouveau', outNow: 'disponible', soon: 'Bientôt', onSpotify: 'Écouter sur Spotify', on: 'VIN sur', followNew: 'Abonne-toi pour les nouvelles sorties', beats: 'Acheter des beats', beatsSub: 'Leases & exclusives sur BeatStars', mixing: 'Mix & mastering', request: 'Envoyer une demande', send: 'Envoie-nous ta musique', sendSub: 'Chanteurs, rappeurs, producteurs, musiciens', events: 'Événements & booking', website: 'Site web', desc: 'Tous les liens Maas Flow Records : nouvelle musique de VIN, streaming, beats, mix & mastering et casting.', tagline: 'Label de musique indépendant · Fondé par VIN', social: 'Maas Flow Records sur' },
+  de: { new: 'neue', outNow: 'jetzt draußen', soon: 'Demnächst', onSpotify: 'Auf Spotify anhören', on: 'VIN auf', followNew: 'Folgen für neue Releases', beats: 'Beats kaufen', beatsSub: 'Leases & Exclusives auf BeatStars', mixing: 'Mixing & Mastering', request: 'Anfrage senden', send: 'Schick uns deine Musik', sendSub: 'Sänger, Rapper, Producer, Musiker', events: 'Events & Booking', website: 'Website', desc: 'Alle Links von Maas Flow Records: neue Musik von VIN, Streaming, Beats, Mixing & Mastering und Casting.', tagline: 'Unabhängiges Musiklabel · Gegründet von VIN', social: 'Maas Flow Records auf' },
+});
 
 type Item = { href: string; title: string; sub?: string; icon?: 'spotify' | 'appleMusic' | 'youtubeMusic' | 'beatstars'; external?: boolean; featured?: boolean };
 
 const items: Item[] = [
-  ...(next ? [{ href: `/music/${next.slug}/`, title: `${next.title} - new ${next.type}`, sub: next.releaseDate ? (next.dateTentative ? releaseDateLabel(next) : `Out ${releaseDateLabel(next)}`) : 'Coming soon', featured: true }] : []),
+  ...(next ? [{ href: L(`/music/${next.slug}/`), title: `${next.title} - ${t.new} ${next.type}`, sub: next.releaseDate ? outLabel(next, lang) : t.soon, featured: true }] : []),
   ...(latest
     ? [
         latest.links.spotify
-          ? { href: latest.links.spotify, title: `${latest.title} - out now`, sub: 'Listen on Spotify', icon: 'spotify' as const, external: true, featured: !next }
-          : { href: `/music/${latest.slug}/`, title: `${latest.title} - out now`, featured: !next },
+          ? { href: latest.links.spotify, title: `${latest.title} - ${t.outNow}`, sub: t.onSpotify, icon: 'spotify' as const, external: true, featured: !next }
+          : { href: L(`/music/${latest.slug}/`), title: `${latest.title} - ${t.outNow}`, featured: !next },
       ]
     : []),
-  ...(vin.streaming.spotify ? [{ href: vin.streaming.spotify, title: 'VIN on Spotify', sub: 'Follow for new releases', icon: 'spotify' as const, external: true }] : []),
-  ...(vin.streaming.appleMusic ? [{ href: vin.streaming.appleMusic, title: 'VIN on Apple Music', icon: 'appleMusic' as const, external: true }] : []),
-  ...(vin.streaming.youtubeMusic ? [{ href: vin.streaming.youtubeMusic, title: 'VIN on YouTube Music', icon: 'youtubeMusic' as const, external: true }] : []),
-  ...(beats.beatstars ? [{ href: beats.beatstars, title: 'Buy beats', sub: 'Leases & exclusives on BeatStars', icon: 'beatstars' as const, external: true }] : []),
-  { href: '/services/', title: 'Mixing & mastering', sub: 'Send a request' },
-  { href: '/casting/', title: 'Send us your music', sub: 'Singers, rappers, producers, musicians' },
-  { href: '/events/', title: 'Events & booking' },
-  { href: '/', title: 'Website', sub: 'maasflowrecords.com' },
+  ...(vin.streaming.spotify ? [{ href: vin.streaming.spotify, title: `${t.on} Spotify`, sub: t.followNew, icon: 'spotify' as const, external: true }] : []),
+  ...(vin.streaming.appleMusic ? [{ href: vin.streaming.appleMusic, title: `${t.on} Apple Music`, icon: 'appleMusic' as const, external: true }] : []),
+  ...(vin.streaming.youtubeMusic ? [{ href: vin.streaming.youtubeMusic, title: `${t.on} YouTube Music`, icon: 'youtubeMusic' as const, external: true }] : []),
+  ...(beats.beatstars ? [{ href: beats.beatstars, title: t.beats, sub: t.beatsSub, icon: 'beatstars' as const, external: true }] : []),
+  { href: L('/services/'), title: t.mixing, sub: t.request },
+  { href: L('/casting/'), title: t.send, sub: t.sendSub },
+  { href: L('/events/'), title: t.events },
+  { href: L('/'), title: t.website, sub: 'maasflowrecords.com' },
 ];
 ---
 
-<BaseLayout title="Links" description="All Maas Flow Records links: new music from VIN, streaming, beats, mixing & mastering and casting." bare noindex>
+<BaseLayout title="Links" description={t.desc} bare noindex>
   <div class="links-page">
     <header class="top">
-      <h1 class="brand"><a href="/"><Logo size="lg" /></a></h1>
-      <p class="muted">Independent music label · Founded by VIN</p>
-      <PlatformLinks links={labelSocials} variant="icons" context="Maas Flow Records on" />
+      <h1 class="brand"><a href={L('/')}><Logo size="lg" /></a></h1>
+      <p class="muted">{t.tagline}</p>
+      <PlatformLinks links={labelSocials} variant="icons" context={t.social} />
     </header>
 
     <ul class="list">

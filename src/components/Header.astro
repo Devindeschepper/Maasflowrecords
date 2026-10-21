@@ -1,42 +1,51 @@
 ---
 import { nav, shopOpen } from '../data/site';
 import Logo from './Logo.astro';
+import { getLang, LANGS, localize, stripLang, switchLang } from '../i18n';
+import { ui } from '../i18n/ui';
 
-const path = Astro.url.pathname.replace(/\/?$/, '/');
+const lang = getLang(Astro);
+const t = ui[lang];
+const path = stripLang(Astro.url.pathname).replace(/\/?$/, '/');
 const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
 ---
 
 <header class="site-header">
   <div class="container bar">
     <button class="menu-btn" type="button" aria-controls="site-nav" aria-expanded="false">
-      <span class="sr-only">Menu</span>
+      <span class="sr-only">{t.menu}</span>
       <span class="bars" aria-hidden="true"><span></span><span></span></span>
     </button>
 
-    <a href="/" class="home-link"><Logo /></a>
+    <a href={localize('/', lang)} class="home-link"><Logo /></a>
 
-    <nav id="site-nav" class="nav" aria-label="Main">
+    <nav id="site-nav" class="nav" aria-label={t.mainNav}>
       <ul>
         {
           nav.map((item) => (
             <li>
-              <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>
-                {item.label}
+              <a href={localize(item.href, lang)} aria-current={isActive(item.href) ? 'page' : undefined}>
+                {t.nav[item.href] ?? item.label}
               </a>
             </li>
           ))
         }
       </ul>
+      <ul class="langs" aria-label={t.language}>
+        {LANGS.map((l) => (
+          <li><a href={switchLang(Astro.url.pathname, l)} hreflang={l} lang={l} aria-current={l === lang ? 'true' : undefined} data-lang-pick={l}>{l.toUpperCase()}</a></li>
+        ))}
+      </ul>
     </nav>
 
     <div class="actions">
       {/* Lit by /api/studio while FL Studio is open on the studio PC (see tools/studio-light). */}
-      <button type="button" class="studio-sign" data-studio-light disabled title="Lights up when VIN is in the studio" aria-label="In the studio: off">
-        <span class="long">In the studio</span><span class="short" aria-hidden="true">Studio</span>
+      <button type="button" class="studio-sign" data-studio-light disabled title={t.studio.off} aria-label={t.studio.offLabel}>
+        <span class="long">{t.studio.long}</span><span class="short" aria-hidden="true">{t.studio.short}</span>
       </button>
       <p class="knock-toast" data-knock-toast role="status" aria-live="polite" hidden></p>
       {/* Always shown; while the shop is closed the cart page says "Coming soon". */}
-      <a href="/cart/" class="cart-link" aria-label="Shopping cart">
+      <a href={localize('/cart/', lang)} class="cart-link" aria-label={t.cart}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
           <path d="M5 7h14l-1.2 12.2a1 1 0 0 1-1 .8H7.2a1 1 0 0 1-1-.8L5 7Z" /><path d="M9 7V5a3 3 0 0 1 6 0v2" />
         </svg>
@@ -48,6 +57,8 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
 
 <script>
   import { cartCount, onCartChange } from '../scripts/cart';
+  import { tc } from '../i18n/client';
+  const tx = tc();
 
   const btn = document.querySelector<HTMLButtonElement>('.menu-btn');
   const header = document.querySelector('.site-header');
@@ -67,7 +78,7 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     if (!badge) return;
     badge.textContent = String(n);
     badge.hidden = n === 0;
-    badge.parentElement?.setAttribute('aria-label', `Shopping cart, ${n} item${n === 1 ? '' : 's'}`);
+    badge.parentElement?.setAttribute('aria-label', tx.cartItems(n));
   };
   render();
   onCartChange(render);
@@ -88,8 +99,8 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     if (!light) return;
     light.classList.toggle('is-live', live);
     light.disabled = !live;
-    light.title = live ? 'VIN is in the studio right now. Click to knock' : 'Lights up when VIN is in the studio';
-    light.setAttribute('aria-label', live ? 'In the studio: VIN is in the studio right now. Knock on the door' : 'In the studio: off');
+    light.title = live ? tx.knockLive : tx.knockOff;
+    light.setAttribute('aria-label', live ? tx.knockLiveLabel : tx.knockOffLabel);
   };
   const checkStudio = async () => {
     if (!light || document.hidden) return;
@@ -109,17 +120,13 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
       const data = await res.json();
       if (res.status === 409) {
         setLive(false);
-        say('VIN has just left the studio. Check back soon.');
+        say(tx.knockLeft);
       } else if (data.ok) {
         const others = Math.max(0, (data.knocks ?? 1) - 1);
-        say(
-          data.counted
-            ? `Knock received. VIN is in the studio working on new music.${others ? ` ${others} other${others === 1 ? '' : 's'} knocked this session.` : ''}`
-            : 'Your knock was already received. Thank you for the support.',
-        );
+        say(data.counted ? tx.knockReceived(others) : tx.knockAgain);
       }
     } catch {
-      say('Something went wrong. Please try again in a moment.');
+      say(tx.knockError);
     }
   });
   checkStudio();
@@ -217,6 +224,10 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     font-family: var(--font-display); font-size: 2rem; text-transform: uppercase;
   }
   .nav a[aria-current='page'] { color: var(--accent); }
+  .nav .langs { display: flex; gap: 0.25rem; margin-top: 1.5rem; }
+  .nav .langs li { border: 0; }
+  .nav .langs a { font: 600 0.85rem/1 var(--font-mono); letter-spacing: 0.1em; padding: 0.7rem 0.8rem; border: 1px solid var(--line); color: var(--muted); }
+  .nav .langs a[aria-current='true'] { color: var(--bg); background: var(--text); border-color: var(--text); }
 
   /* desktop: logo left, page links, cart right */
   @media (min-width: 1080px) {
@@ -232,5 +243,9 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     }
     .nav a:hover { color: var(--text); }
     .nav a[aria-current='page'] { color: var(--text); border-bottom-color: var(--accent); }
+    .nav { display: flex; align-items: center; gap: 1.6rem; }
+    .nav .langs { margin: 0; gap: 0.1rem; }
+    .nav .langs a { padding: 0.35rem 0.4rem; font-size: 0.66rem; border: 0; }
+    .nav .langs a[aria-current='true'] { color: var(--text); background: none; border-bottom: 1px solid var(--accent); }
   }
 </style>

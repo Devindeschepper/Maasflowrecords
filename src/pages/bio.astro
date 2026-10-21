@@ -2,68 +2,100 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from '../components/PageHero.astro';
 import { artists } from '../data/artists';
+import { getLang, localize, pick } from '../i18n';
 
 const vin = artists[0];
 const bioPhoto = { src: vin.bioPhoto ?? vin.image, alt: vin.bioPhotoAlt ?? vin.imageAlt };
+const lang = getLang(Astro);
+
+// VIN's bio. Each line: [style, text]. Styles: first line, normal paragraph, pull quote, closing line.
+type Line = ['first' | 'p' | 'pull' | 'closing', string];
+const t = pick(lang, {
+  en: {
+    desc: 'The story of VIN - producer and rapper from Rotterdam, and founder of the independent label Maas Flow Records.',
+    title: 'The story', lead: 'Producer and rapper from Rotterdam.', side: ['VIN - Artist bio', 'Producer / Rapper', 'Rotterdam, NL'],
+    listen: 'Listen to VIN', press: 'Press enquiries',
+    lines: [
+      ['first', "I'm VIN, born in Rotterdam."],
+      ['p', 'My relationship with music started long before I ever thought about becoming an artist. Growing up, I listened to rap and R&B because of my older brother. Those sounds became part of my life early on. I listened, absorbed, and eventually became curious about what was happening behind the music - how a beat was made, how a voice could carry a story, and how artists could turn their own lives into something other people could feel.'],
+      ['p', 'About five years ago, I started making music as a producer. At the beginning, it was simply about learning, experimenting and trying to turn ideas into sound. I made mistakes, started over, tried different things and slowly began understanding what I liked.'],
+      ['p', 'A few years later, I started rapping.'],
+      ['p', 'That gave music a different meaning for me. Producing lets me build the world around a song. Rapping lets me step inside that world and tell my side of the story.'],
+      ['pull', 'I rap what I live.'],
+      ['p', "My experiences, my thoughts, the people around me, the situations I go through and the things I can't always explain in a normal conversation. I don't want to pretend to be someone I'm not just because it sounds better on a record. VIN is me, and the music is another way of showing parts of myself that don't always come out in everyday life."],
+      ['p', "I'm still learning everything I can. Production, songwriting, recording, mixing, mastering, flow and delivery - there is always another part of the game to understand."],
+      ['pull', 'I consider myself a student of the game.'],
+      ['p', "I study the artists who came before me, especially the rap and R&B that I grew up listening to because of my brother. I listen to what's happening today too, but I'm not trying to become someone else. I take inspiration, learn from it and then try to find my own way of putting it together."],
+      ['p', "I'm still developing my sound. Still making mistakes. Still learning how to turn what's in my head into something people can hear."],
+      ['p', 'Five years ago, I started behind the beats.'],
+      ['p', "Today, I'm behind the beats and behind the mic."],
+      ['p', "And I'm still learning."],
+      ['closing', "I'm VIN. This is what I live, this is what I hear, and this is what I'm becoming."],
+    ] as Line[],
+  },
+  fr: {
+    desc: "L'histoire de VIN - producteur et rappeur de Rotterdam, fondateur du label indépendant Maas Flow Records.",
+    title: "L'histoire", lead: 'Producteur et rappeur de Rotterdam.', side: ["VIN - Bio d'artiste", 'Producteur / Rappeur', 'Rotterdam, NL'],
+    listen: 'Écouter VIN', press: 'Demandes presse',
+    lines: [
+      ['first', 'Je suis VIN, né à Rotterdam.'],
+      ['p', "Ma relation avec la musique a commencé bien avant que je pense un jour à devenir artiste. En grandissant, j'écoutais du rap et du R&B grâce à mon grand frère. Ces sons sont vite devenus une partie de ma vie. J'écoutais, j'absorbais, et petit à petit je suis devenu curieux de ce qui se passait derrière la musique - comment un beat est fait, comment une voix peut porter une histoire, et comment des artistes arrivent à transformer leur propre vie en quelque chose que les autres peuvent ressentir."],
+      ['p', "Il y a environ cinq ans, j'ai commencé à faire de la musique en tant que producteur. Au début, il s'agissait simplement d'apprendre, d'expérimenter et d'essayer de transformer des idées en son. J'ai fait des erreurs, j'ai recommencé, j'ai essayé différentes choses et j'ai peu à peu compris ce que j'aimais."],
+      ['p', "Quelques années plus tard, j'ai commencé à rapper."],
+      ['p', "Ça a donné un autre sens à la musique pour moi. Produire me permet de construire le monde autour d'un morceau. Rapper me permet d'entrer dans ce monde et de raconter ma version de l'histoire."],
+      ['pull', 'Je rappe ce que je vis.'],
+      ['p', "Mes expériences, mes pensées, les gens autour de moi, les situations que je traverse et les choses que je n'arrive pas toujours à expliquer dans une conversation normale. Je ne veux pas faire semblant d'être quelqu'un que je ne suis pas juste parce que ça sonne mieux sur un morceau. VIN, c'est moi, et la musique est une autre façon de montrer des parties de moi qui ne ressortent pas toujours au quotidien."],
+      ['p', "J'apprends encore tout ce que je peux. La production, l'écriture, l'enregistrement, le mix, le mastering, le flow et l'interprétation - il y a toujours une autre partie du jeu à comprendre."],
+      ['pull', 'Je me considère comme un élève du game.'],
+      ['p', "J'étudie les artistes qui sont venus avant moi, surtout le rap et le R&B avec lesquels j'ai grandi grâce à mon frère. J'écoute aussi ce qui se fait aujourd'hui, mais je n'essaie pas de devenir quelqu'un d'autre. Je m'inspire, j'apprends et ensuite j'essaie de trouver ma propre façon de tout assembler."],
+      ['p', "Je développe encore mon son. Je fais encore des erreurs. J'apprends encore à transformer ce que j'ai en tête en quelque chose que les gens peuvent entendre."],
+      ['p', "Il y a cinq ans, j'ai commencé derrière les beats."],
+      ['p', "Aujourd'hui, je suis derrière les beats et derrière le micro."],
+      ['p', "Et j'apprends toujours."],
+      ['closing', 'Je suis VIN. Voilà ce que je vis, ce que j’entends, et ce que je suis en train de devenir.'],
+    ] as Line[],
+  },
+  de: {
+    desc: 'Die Geschichte von VIN - Producer und Rapper aus Rotterdam und Gründer des unabhängigen Labels Maas Flow Records.',
+    title: 'Die Geschichte', lead: 'Producer und Rapper aus Rotterdam.', side: ['VIN - Artist-Bio', 'Producer / Rapper', 'Rotterdam, NL'],
+    listen: 'VIN anhören', press: 'Presseanfragen',
+    lines: [
+      ['first', 'Ich bin VIN, geboren in Rotterdam.'],
+      ['p', 'Meine Beziehung zur Musik hat lange angefangen, bevor ich überhaupt daran gedacht habe, Artist zu werden. Als ich aufgewachsen bin, habe ich wegen meines großen Bruders Rap und R&B gehört. Diese Sounds wurden früh ein Teil meines Lebens. Ich habe zugehört, alles aufgesaugt und wurde irgendwann neugierig, was hinter der Musik passiert - wie ein Beat entsteht, wie eine Stimme eine Geschichte tragen kann und wie Artists ihr eigenes Leben in etwas verwandeln, das andere fühlen können.'],
+      ['p', 'Vor ungefähr fünf Jahren habe ich angefangen, als Producer Musik zu machen. Am Anfang ging es einfach ums Lernen, Ausprobieren und darum, Ideen in Sound zu verwandeln. Ich habe Fehler gemacht, neu angefangen, verschiedene Dinge probiert und langsam verstanden, was mir gefällt.'],
+      ['p', 'Ein paar Jahre später habe ich angefangen zu rappen.'],
+      ['p', 'Dadurch hat Musik für mich eine andere Bedeutung bekommen. Beim Producen baue ich die Welt um einen Song herum. Beim Rappen gehe ich in diese Welt hinein und erzähle meine Seite der Geschichte.'],
+      ['pull', 'Ich rappe, was ich lebe.'],
+      ['p', 'Meine Erfahrungen, meine Gedanken, die Menschen um mich herum, die Situationen, die ich durchmache, und die Dinge, die ich in einem normalen Gespräch nicht immer erklären kann. Ich will nicht so tun, als wäre ich jemand anderes, nur weil es auf einem Track besser klingt. VIN bin ich, und die Musik ist ein anderer Weg, Seiten von mir zu zeigen, die im Alltag nicht immer rauskommen.'],
+      ['p', 'Ich lerne immer noch alles, was ich kann. Producing, Songwriting, Aufnahme, Mixing, Mastering, Flow und Delivery - es gibt immer noch einen Teil des Games, den man verstehen kann.'],
+      ['pull', 'Ich sehe mich als Student of the Game.'],
+      ['p', 'Ich studiere die Artists, die vor mir kamen, vor allem den Rap und R&B, mit dem ich wegen meines Bruders aufgewachsen bin. Ich höre auch, was heute passiert, aber ich versuche nicht, jemand anderes zu werden. Ich lasse mich inspirieren, lerne daraus und versuche dann, meinen eigenen Weg zu finden, alles zusammenzubringen.'],
+      ['p', 'Ich entwickle meinen Sound noch. Ich mache noch Fehler. Ich lerne noch, das, was in meinem Kopf ist, in etwas zu verwandeln, das andere hören können.'],
+      ['p', 'Vor fünf Jahren habe ich hinter den Beats angefangen.'],
+      ['p', 'Heute stehe ich hinter den Beats und hinter dem Mic.'],
+      ['p', 'Und ich lerne immer noch.'],
+      ['closing', 'Ich bin VIN. Das ist, was ich lebe, was ich höre, und was ich gerade werde.'],
+    ] as Line[],
+  },
+});
 ---
 
-<BaseLayout title="Bio" description="The story of VIN - producer and rapper from Rotterdam, and founder of the independent label Maas Flow Records." type="article">
-  <PageHero eyebrow="Bio" title="The story" lead="Producer and rapper from Rotterdam." />
+<BaseLayout title="Bio" description={t.desc} type="article">
+  <PageHero eyebrow="Bio" title={t.title} lead={t.lead} />
 
   <!-- VIN -->
   <section class="section" id="vin">
     <div class="container bio">
       <div class="side">
         <img src={bioPhoto.src} alt={bioPhoto.alt} width="480" height="600" loading="lazy" />
-        <p class="mono muted">VIN - Artist bio<br />Producer / Rapper<br />Rotterdam, NL</p>
+        <p class="mono muted">{t.side[0]}<br />{t.side[1]}<br />{t.side[2]}</p>
       </div>
       <article class="prose">
         <h2>VIN</h2>
-        <p class="first">I'm VIN, born in Rotterdam.</p>
-        <p>
-          My relationship with music started long before I ever thought about becoming an artist. Growing up, I listened
-          to rap and R&amp;B because of my older brother. Those sounds became part of my life early on. I listened,
-          absorbed, and eventually became curious about what was happening behind the music - how a beat was made, how a
-          voice could carry a story, and how artists could turn their own lives into something other people could feel.
-        </p>
-        <p>
-          About five years ago, I started making music as a producer. At the beginning, it was simply about learning,
-          experimenting and trying to turn ideas into sound. I made mistakes, started over, tried different things and
-          slowly began understanding what I liked.
-        </p>
-        <p>A few years later, I started rapping.</p>
-        <p>
-          That gave music a different meaning for me. Producing lets me build the world around a song. Rapping lets me
-          step inside that world and tell my side of the story.
-        </p>
-        <p class="pull">I rap what I live.</p>
-        <p>
-          My experiences, my thoughts, the people around me, the situations I go through and the things I can't always
-          explain in a normal conversation. I don't want to pretend to be someone I'm not just because it sounds better
-          on a record. VIN is me, and the music is another way of showing parts of myself that don't always come out in
-          everyday life.
-        </p>
-        <p>
-          I'm still learning everything I can. Production, songwriting, recording, mixing, mastering, flow and delivery
-          - there is always another part of the game to understand.
-        </p>
-        <p class="pull">I consider myself a student of the game.</p>
-        <p>
-          I study the artists who came before me, especially the rap and R&amp;B that I grew up listening to because of
-          my brother. I listen to what's happening today too, but I'm not trying to become someone else. I take
-          inspiration, learn from it and then try to find my own way of putting it together.
-        </p>
-        <p>
-          I'm still developing my sound. Still making mistakes. Still learning how to turn what's in my head into
-          something people can hear.
-        </p>
-        <p>Five years ago, I started behind the beats.</p>
-        <p>Today, I'm behind the beats and behind the mic.</p>
-        <p>And I'm still learning.</p>
-        <p class="closing">I'm VIN. This is what I live, this is what I hear, and this is what I'm becoming.</p>
+        {t.lines.map(([kind, text]) => <p class={kind === 'p' ? undefined : kind}>{text}</p>)}
         <div class="btn-row">
-          <a class="btn btn-primary" href="/artists/vin/">Listen to VIN</a>
-          <a class="btn btn-ghost" href="/contact/?topic=press">Press enquiries</a>
+          <a class="btn btn-primary" href={localize('/artists/vin/', lang)}>{t.listen}</a>
+          <a class="btn btn-ghost" href={localize('/contact/?topic=press', lang)}>{t.press}</a>
         </div>
       </article>
     </div>

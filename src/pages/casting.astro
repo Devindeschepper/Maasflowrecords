@@ -3,6 +3,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from '../components/PageHero.astro';
 import Turnstile from '../components/Turnstile.astro';
 import { site } from '../data/site';
+import { getLang, localize, pick } from '../i18n';
+import { ui } from '../i18n/ui';
 
 // Keep in sync with ROLES in functions/api/casting.ts
 const roles = [
@@ -10,103 +12,135 @@ const roles = [
   'DJ', 'Mixing engineer', 'Mastering engineer', 'Other',
 ];
 const MAX_MB = 10;
+const lang = getLang(Astro);
+const t = pick(lang, {
+  en: {
+    title: 'Join - Work With Us', desc: 'Singers, rappers, producers, musicians and engineers: send your music to Maas Flow Records and VIN for collaborations.',
+    eyebrow: 'Join the label', h1: 'Work with us', lead: 'Singer, rapper, producer, musician or engineer? Send your music. We listen to everything: features, collabs, session work and beats.',
+    look: 'What we look for', looking: ['Artists with their own sound and story', 'Producers & beatmakers - send beat packs', 'Session players: guitar, keys, drums, bass', 'Mixing & mastering engineers'],
+    tip: `Tip: a private SoundCloud, Google Drive, Dropbox or WeTransfer link works best. Uploads are limited to ${MAX_MB} MB (MP3, WAV, PDF, ZIP).`,
+    private: "Your details are sent privately to the label and are never published or shared. We usually reply within 2 weeks if there's a fit.",
+    success: "Thanks - your submission was received. We'll be in touch if there's a fit.",
+    name: 'Name', stage: 'Artist / stage name', email: 'Email', role: 'Instrument / role', choose: 'Choose…',
+    roles: roles, genre: 'Genre', genreEx: 'Rap, R&B, pop, dancehall…', location: 'Location', locationEx: 'City, country',
+    socials: 'Social media links', portfolio: 'Music / portfolio links', message: 'Short message', messageEx: 'Who are you, what do you do, and what would you like to work on?',
+    file: 'File upload (optional)', fileHint: `Max ${MAX_MB} MB. For bigger files, paste a link above.`,
+    consent: 'I agree that Maas Flow Records stores my details to review this submission and contact me about it.',
+    send: 'Send submission', noJs: 'This form needs JavaScript. You can also reach us through the', contact: 'contact page',
+  },
+  fr: {
+    title: 'Nous rejoindre - Travailler avec nous', desc: 'Chanteurs, rappeurs, producteurs, musiciens et ingés son : envoie ta musique à Maas Flow Records et VIN pour des collaborations.',
+    eyebrow: 'Rejoindre le label', h1: 'Travailler avec nous', lead: 'Chanteur, rappeur, producteur, musicien ou ingé son ? Envoie ta musique. On écoute tout : feats, collabs, sessions et beats.',
+    look: 'Ce qu’on recherche', looking: ['Des artistes avec leur propre son et leur histoire', 'Producteurs & beatmakers - envoie tes beat packs', 'Musiciens de session : guitare, clavier, batterie, basse', 'Ingés son mix & mastering'],
+    tip: `Astuce : un lien privé SoundCloud, Google Drive, Dropbox ou WeTransfer marche le mieux. Les fichiers sont limités à ${MAX_MB} Mo (MP3, WAV, PDF, ZIP).`,
+    private: "Tes infos sont envoyées en privé au label et ne sont jamais publiées ni partagées. On répond généralement sous 2 semaines si ça colle.",
+    success: 'Merci - ton envoi a bien été reçu. On te recontacte si ça colle.',
+    name: 'Nom', stage: "Nom d'artiste / de scène", email: 'E-mail', role: 'Instrument / rôle', choose: 'Choisir…',
+    roles: ['Chanteur·se', 'Rappeur·se', 'Producteur·rice', 'Guitariste', 'Pianiste', 'Batteur·se', 'Bassiste', 'DJ', 'Ingé son mix', 'Ingé son mastering', 'Autre'],
+    genre: 'Genre', genreEx: 'Rap, R&B, pop, dancehall…', location: 'Lieu', locationEx: 'Ville, pays',
+    socials: 'Liens réseaux sociaux', portfolio: 'Liens musique / portfolio', message: 'Petit message', messageEx: 'Qui es-tu, que fais-tu, et sur quoi aimerais-tu travailler ?',
+    file: 'Fichier (facultatif)', fileHint: `Max ${MAX_MB} Mo. Pour les gros fichiers, colle un lien plus haut.`,
+    consent: "J'accepte que Maas Flow Records conserve mes informations pour écouter cet envoi et me recontacter à ce sujet.",
+    send: 'Envoyer', noJs: 'Ce formulaire a besoin de JavaScript. Tu peux aussi nous joindre via la', contact: 'page contact',
+  },
+  de: {
+    title: 'Mitmachen - Arbeite mit uns', desc: 'Sänger, Rapper, Producer, Musiker und Engineers: Schick deine Musik an Maas Flow Records und VIN für Kollaborationen.',
+    eyebrow: 'Komm zum Label', h1: 'Arbeite mit uns', lead: 'Sänger, Rapper, Producer, Musiker oder Engineer? Schick uns deine Musik. Wir hören uns alles an: Features, Collabs, Session-Arbeit und Beats.',
+    look: 'Wen wir suchen', looking: ['Artists mit eigenem Sound und eigener Story', 'Producer & Beatmaker - schickt Beat-Packs', 'Session-Musiker: Gitarre, Keys, Drums, Bass', 'Mixing- & Mastering-Engineers'],
+    tip: `Tipp: Ein privater SoundCloud-, Google-Drive-, Dropbox- oder WeTransfer-Link funktioniert am besten. Uploads sind auf ${MAX_MB} MB begrenzt (MP3, WAV, PDF, ZIP).`,
+    private: 'Deine Daten gehen privat ans Label und werden nie veröffentlicht oder weitergegeben. Wenn es passt, antworten wir meistens innerhalb von 2 Wochen.',
+    success: 'Danke - deine Einsendung ist angekommen. Wir melden uns, wenn es passt.',
+    name: 'Name', stage: 'Artist- / Künstlername', email: 'E-Mail', role: 'Instrument / Rolle', choose: 'Auswählen…',
+    roles: ['Sänger:in', 'Rapper:in', 'Producer', 'Gitarrist:in', 'Pianist:in', 'Drummer', 'Bassist:in', 'DJ', 'Mixing-Engineer', 'Mastering-Engineer', 'Sonstiges'],
+    genre: 'Genre', genreEx: 'Rap, R&B, Pop, Dancehall…', location: 'Ort', locationEx: 'Stadt, Land',
+    socials: 'Social-Media-Links', portfolio: 'Musik- / Portfolio-Links', message: 'Kurze Nachricht', messageEx: 'Wer bist du, was machst du und woran würdest du gern arbeiten?',
+    file: 'Datei hochladen (optional)', fileHint: `Max. ${MAX_MB} MB. Für größere Dateien füge oben einen Link ein.`,
+    consent: 'Ich bin einverstanden, dass Maas Flow Records meine Daten speichert, um diese Einsendung zu prüfen und mich dazu zu kontaktieren.',
+    send: 'Einsendung abschicken', noJs: 'Dieses Formular braucht JavaScript. Du erreichst uns auch über die', contact: 'Kontaktseite',
+  },
+});
 ---
 
-<BaseLayout title="Join - Work With Us" description="Singers, rappers, producers, musicians and engineers: send your music to Maas Flow Records and VIN for collaborations.">
-  <PageHero
-    eyebrow="Join the label"
-    title="Work with us"
-    lead="Singer, rapper, producer, musician or engineer? Send your music. We listen to everything: features, collabs, session work and beats."
-  />
+<BaseLayout title={t.title} description={t.desc}>
+  <PageHero eyebrow={t.eyebrow} title={t.h1} lead={t.lead} />
 
   <section class="section">
     <div class="container cast">
       <aside class="info">
-        <h2>What we look for</h2>
-        <ul class="looking">
-          <li>Artists with their own sound and story</li>
-          <li>Producers &amp; beatmakers - send beat packs</li>
-          <li>Session players: guitar, keys, drums, bass</li>
-          <li>Mixing &amp; mastering engineers</li>
-        </ul>
-        <p class="muted small">
-          Tip: a private SoundCloud, Google Drive, Dropbox or WeTransfer link works best.
-          Uploads are limited to {MAX_MB} MB (MP3, WAV, PDF, ZIP).
-        </p>
-        <p class="muted small">
-          Your details are sent privately to the label and are never published or shared.
-          We usually reply within 2 weeks if there's a fit.
-        </p>
+        <h2>{t.look}</h2>
+        <ul class="looking">{t.looking.map((l) => <li>{l}</li>)}</ul>
+        <p class="muted small">{t.tip}</p>
+        <p class="muted small">{t.private}</p>
       </aside>
 
-      <form class="form card pad" action="/api/casting" method="post" enctype="multipart/form-data" data-ajax data-max-file-mb={MAX_MB} data-success="Thanks - your submission was received. We'll be in touch if there's a fit.">
+      <form class="form card pad" action="/api/casting" method="post" enctype="multipart/form-data" data-ajax data-max-file-mb={MAX_MB} data-success={t.success}>
         <div class="form-row">
           <div class="field">
-            <label for="c-name">Name <span class="req">*</span></label>
+            <label for="c-name">{t.name} <span class="req">*</span></label>
             <input id="c-name" name="name" required maxlength="100" autocomplete="name" />
           </div>
           <div class="field">
-            <label for="c-stage">Artist / stage name</label>
+            <label for="c-stage">{t.stage}</label>
             <input id="c-stage" name="stageName" maxlength="100" />
           </div>
         </div>
         <div class="form-row">
           <div class="field">
-            <label for="c-email">Email <span class="req">*</span></label>
+            <label for="c-email">{t.email} <span class="req">*</span></label>
             <input id="c-email" name="email" type="email" required maxlength="200" autocomplete="email" />
           </div>
           <div class="field">
-            <label for="c-role">Instrument / role <span class="req">*</span></label>
+            <label for="c-role">{t.role} <span class="req">*</span></label>
             <select id="c-role" name="role" required>
-              <option value="">Choose…</option>
-              {roles.map((r) => <option>{r}</option>)}
+              <option value="">{t.choose}</option>
+              {roles.map((r, i) => <option value={r}>{t.roles[i]}</option>)}
             </select>
           </div>
         </div>
         <div class="form-row">
           <div class="field">
-            <label for="c-genre">Genre</label>
-            <input id="c-genre" name="genre" maxlength="100" placeholder="Rap, R&B, pop, dancehall…" />
+            <label for="c-genre">{t.genre}</label>
+            <input id="c-genre" name="genre" maxlength="100" placeholder={t.genreEx} />
           </div>
           <div class="field">
-            <label for="c-loc">Location</label>
-            <input id="c-loc" name="location" maxlength="100" placeholder="City, country" autocomplete="address-level2" />
+            <label for="c-loc">{t.location}</label>
+            <input id="c-loc" name="location" maxlength="100" placeholder={t.locationEx} autocomplete="address-level2" />
           </div>
         </div>
         <div class="field">
-          <label for="c-social">Social media links</label>
+          <label for="c-social">{t.socials}</label>
           <textarea id="c-social" name="socials" class="short" maxlength="1000" rows="2" placeholder="Instagram, TikTok, YouTube…"></textarea>
         </div>
         <div class="field">
-          <label for="c-port">Music / portfolio links <span class="req">*</span></label>
+          <label for="c-port">{t.portfolio} <span class="req">*</span></label>
           <textarea id="c-port" name="portfolio" class="short" required maxlength="1500" rows="3" placeholder="SoundCloud, Spotify, YouTube, Drive, Dropbox…"></textarea>
         </div>
         <div class="field">
-          <label for="c-msg">Short message <span class="req">*</span></label>
-          <textarea id="c-msg" name="message" required maxlength="3000" placeholder="Who are you, what do you do, and what would you like to work on?"></textarea>
+          <label for="c-msg">{t.message} <span class="req">*</span></label>
+          <textarea id="c-msg" name="message" required maxlength="3000" placeholder={t.messageEx}></textarea>
         </div>
         <div class="field">
-          <label for="c-file">File upload (optional)</label>
+          <label for="c-file">{t.file}</label>
           <input id="c-file" name="file" type="file" accept=".mp3,.wav,.m4a,.pdf,.zip,audio/*,application/pdf,application/zip" />
-          <span class="hint">Max {MAX_MB} MB. For bigger files, paste a link above.</span>
+          <span class="hint">{t.fileHint}</span>
         </div>
 
         <!-- spam protection: honeypot + time check + Turnstile -->
         <div class="hp" aria-hidden="true">
-          <label for="c-website">Website</label>
+          <label for="c-website">{ui[lang].form.website}</label>
           <input id="c-website" name="website" tabindex="-1" autocomplete="off" />
         </div>
         <input type="hidden" name="_ts" value="" />
 
         <label class="check">
           <input type="checkbox" name="consent" value="yes" required />
-          <span>I agree that Maas Flow Records stores my details to review this submission and contact me about it.</span>
+          <span>{t.consent}</span>
         </label>
 
         <Turnstile />
-        <button class="btn btn-primary" type="submit">Send submission</button>
+        <button class="btn btn-primary" type="submit">{t.send}</button>
         <p class="form-status" role="status" aria-live="polite"></p>
-        <noscript><p class="muted small">This form needs JavaScript. You can also reach us through the <a href="/contact/">contact page</a>.</p></noscript>
+        <noscript><p class="muted small">{t.noJs} <a href={localize('/contact/', lang)}>{t.contact}</a>.</p></noscript>
       </form>
     </div>
   </section>

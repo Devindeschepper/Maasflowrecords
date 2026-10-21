@@ -3,12 +3,18 @@
 // Only one preview plays at a time; nothing is downloaded until the visitor presses play.
 interface Props { src: string; title: string; size?: 'sm' | 'lg' }
 const { src, title, size = 'sm' } = Astro.props;
+import { getLang, pick } from '../i18n';
+const t = pick(getLang(Astro), {
+  en: { play: `Play preview of ${title}`, pause: `Pause preview of ${title}`, label: 'Preview' },
+  fr: { play: `Écouter l'extrait de ${title}`, pause: `Mettre en pause l'extrait de ${title}`, label: 'Extrait' },
+  de: { play: `Vorschau von ${title} abspielen`, pause: `Vorschau von ${title} pausieren`, label: 'Vorschau' },
+});
 ---
 
-<button type="button" class:list={['preview', `preview--${size}`]} data-preview={src} aria-pressed="false" aria-label={`Play preview of ${title}`}>
+<button type="button" class:list={['preview', `preview--${size}`]} data-preview={src} aria-pressed="false" aria-label={t.play} data-l-play={t.play} data-l-pause={t.pause}>
   <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" /></svg>
   <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor" /></svg>
-  {size === 'lg' && <span class="label">Preview</span>}
+  {size === 'lg' && <span class="label">{t.label}</span>}
 </button>
 
 <script>
@@ -18,7 +24,7 @@ const { src, title, size = 'sm' } = Astro.props;
   const setState = (btn: HTMLButtonElement | null, playing: boolean) => {
     if (!btn) return;
     btn.setAttribute('aria-pressed', String(playing));
-    btn.setAttribute('aria-label', btn.getAttribute('aria-label')!.replace(/^(Play|Pause)/, playing ? 'Pause' : 'Play'));
+    btn.setAttribute('aria-label', (playing ? btn.dataset.lPause : btn.dataset.lPlay) ?? '');
   };
 
   document.querySelectorAll<HTMLButtonElement>('[data-preview]').forEach((btn) => {

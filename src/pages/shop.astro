@@ -9,9 +9,49 @@ import ShopComingSoon from '../components/ShopComingSoon.astro';
 import TestModeBanner from '../components/TestModeBanner.astro';
 import Turnstile from '../components/Turnstile.astro';
 import { site, shopOpen, dropAt, shopTestMode, paymentMethods } from '../data/site';
+import { getLang, localize, pick } from '../i18n';
+import { ui } from '../i18n/ui';
+import { categoryLabel, zoneText } from '../i18n/shop';
 
 const categories = [...new Set(products.map((p) => p.category))];
 const soldOut = products.filter((p) => p.stock <= 0);
+const lang = getLang(Astro);
+const L = (href: string) => localize(href, lang);
+const t = pick(lang, {
+  en: {
+    desc: 'Official Maas Flow Records store. Music and merch straight from the label.', eyebrow: 'Official store', title: 'Shop', lead: 'Music and merch, straight from the label.',
+    products: 'Products', filter: 'Filter products by category', all: 'All', cart: 'View cart',
+    restock: "Sold out? Get an email when it's back", restockText: "One email when it's in stock again, then your address is deleted. No newsletter.", restockOk: "Done! We'll email you as soon as it's back.",
+    product: 'Product', email: 'Email', yourEmail: 'Your email', tellMe: 'Tell me',
+    shipping: 'Shipping', rates: 'Shipping rates', destination: 'Destination', delivery: 'Delivery', soon: 'Soon',
+    shipsFrom: 'Ships from Luxembourg. One shipping charge per order, however many items you order.',
+    orders: 'Orders & returns', o1: 'Pre-orders ship on or around the release date. Mixed orders ship together.', o2: "You'll receive an order confirmation by email.", o3: 'Returns accepted within 14 days of delivery (EU right of withdrawal). Items must be unused.', questions: 'Questions?',
+    payment: 'Payment', exempt: 'All prices in EUR. No VAT is charged (small business exemption).', withVat: (r: number) => `All prices in EUR, incl. ${r}% Luxembourg VAT. Orders shipped outside the EU are charged without VAT (import taxes may apply).`,
+    payWith: 'Pay with', card: 'card, PayPal, Apple Pay or Google Pay (via Stripe)', crypto: 'crypto (via NOWPayments)', or: ' or ', never: 'Payment details never touch this website.', manual: "After ordering you'll receive a payment request by email.",
+  },
+  fr: {
+    desc: 'Boutique officielle de Maas Flow Records. Musique et merch, directement du label.', eyebrow: 'Boutique officielle', title: 'Boutique', lead: 'Musique et merch, directement du label.',
+    products: 'Produits', filter: 'Filtrer les produits par catégorie', all: 'Tout', cart: 'Voir le panier',
+    restock: 'Épuisé ? Reçois un e-mail quand il revient', restockText: 'Un seul e-mail quand il est de retour en stock, puis ton adresse est supprimée. Pas de newsletter.', restockOk: "C'est noté ! On t'écrit dès qu'il revient.",
+    product: 'Produit', email: 'E-mail', yourEmail: 'Ton e-mail', tellMe: 'Me prévenir',
+    shipping: 'Livraison', rates: 'Frais de livraison', destination: 'Destination', delivery: 'Délai', soon: 'Bientôt',
+    shipsFrom: "Expédié depuis le Luxembourg. Un seul frais de port par commande, quel que soit le nombre d'articles.",
+    orders: 'Commandes & retours', o1: 'Les précommandes sont expédiées autour de la date de sortie. Les commandes mixtes partent ensemble.', o2: 'Tu reçois une confirmation de commande par e-mail.', o3: 'Retours acceptés dans les 14 jours après la livraison (droit de rétractation UE). Les articles doivent être neufs.', questions: 'Des questions ?',
+    payment: 'Paiement', exempt: 'Tous les prix en EUR. Pas de TVA (régime de franchise des petites entreprises).', withVat: (r) => `Tous les prix en EUR, TVA luxembourgeoise de ${r} % incluse. Les commandes livrées hors UE sont facturées sans TVA (des taxes d'importation peuvent s'appliquer).`,
+    payWith: 'Paiement par', card: 'carte, PayPal, Apple Pay ou Google Pay (via Stripe)', crypto: 'crypto (via NOWPayments)', or: ' ou ', never: 'Tes données de paiement ne passent jamais par ce site.', manual: 'Après la commande, tu reçois une demande de paiement par e-mail.',
+  },
+  de: {
+    desc: 'Offizieller Shop von Maas Flow Records. Musik und Merch direkt vom Label.', eyebrow: 'Offizieller Shop', title: 'Shop', lead: 'Musik und Merch, direkt vom Label.',
+    products: 'Produkte', filter: 'Produkte nach Kategorie filtern', all: 'Alle', cart: 'Zum Warenkorb',
+    restock: 'Ausverkauft? Hol dir eine E-Mail, wenn es wieder da ist', restockText: 'Eine einzige E-Mail, wenn es wieder auf Lager ist, danach wird deine Adresse gelöscht. Kein Newsletter.', restockOk: 'Erledigt! Wir schreiben dir, sobald es wieder da ist.',
+    product: 'Produkt', email: 'E-Mail', yourEmail: 'Deine E-Mail', tellMe: 'Benachrichtigen',
+    shipping: 'Versand', rates: 'Versandkosten', destination: 'Ziel', delivery: 'Lieferzeit', soon: 'Bald',
+    shipsFrom: 'Versand aus Luxemburg. Einmal Versandkosten pro Bestellung, egal wie viele Artikel.',
+    orders: 'Bestellungen & Rückgabe', o1: 'Vorbestellungen werden um das Release-Datum herum verschickt. Gemischte Bestellungen gehen zusammen raus.', o2: 'Du bekommst eine Bestellbestätigung per E-Mail.', o3: 'Rückgabe innerhalb von 14 Tagen nach Lieferung (EU-Widerrufsrecht). Die Artikel müssen unbenutzt sein.', questions: 'Fragen?',
+    payment: 'Bezahlung', exempt: 'Alle Preise in EUR. Keine MwSt. (Kleinunternehmerregelung).', withVat: (r) => `Alle Preise in EUR, inkl. ${r} % luxemburgischer MwSt. Bestellungen außerhalb der EU werden ohne MwSt. berechnet (Einfuhrabgaben möglich).`,
+    payWith: 'Bezahlen mit', card: 'Karte, PayPal, Apple Pay oder Google Pay (über Stripe)', crypto: 'Krypto (über NOWPayments)', or: ' oder ', never: 'Deine Zahlungsdaten laufen nie über diese Website.', manual: 'Nach der Bestellung bekommst du eine Zahlungsaufforderung per E-Mail.',
+  },
+});
 
 const jsonLd = !shopOpen ? [] : products.map((p) => ({
   '@context': 'https://schema.org',
@@ -30,8 +70,8 @@ const jsonLd = !shopOpen ? [] : products.map((p) => ({
 }));
 ---
 
-<BaseLayout title="Shop" description="Official Maas Flow Records store. The 2Real4U CD by VIN is coming soon - follow the label to know when the shop opens." jsonLd={jsonLd}>
-  <PageHero eyebrow="Official store" title="Shop" lead="Music and merch, straight from the label." />
+<BaseLayout title={t.title} description={t.desc} jsonLd={jsonLd}>
+  <PageHero eyebrow={t.eyebrow} title={t.title} lead={t.lead} />
 
   {!shopOpen && <ShopComingSoon />}
   {dropAt && <ShopComingSoon dropAt={dropAt} />}
@@ -41,14 +81,14 @@ const jsonLd = !shopOpen ? [] : products.map((p) => ({
   <section class="section">
     <div class="container">
       <div class="section-head">
-        <h2 class="sr-only">Products</h2>
+        <h2 class="sr-only">{t.products}</h2>
         {categories.length > 1 ? (
-          <div class="filters" role="group" aria-label="Filter products by category">
-            <button type="button" class="filter" aria-pressed="true" data-filter="all">All</button>
-            {categories.map((c) => <button type="button" class="filter" aria-pressed="false" data-filter={c}>{c}</button>)}
+          <div class="filters" role="group" aria-label={t.filter}>
+            <button type="button" class="filter" aria-pressed="true" data-filter="all">{t.all}</button>
+            {categories.map((c) => <button type="button" class="filter" aria-pressed="false" data-filter={c}>{categoryLabel(c, lang)}</button>)}
           </div>
-        ) : <span class="eyebrow">CDs</span>}
-        <a href="/cart/" class="link-arrow">View cart</a>
+        ) : <span class="eyebrow">{categories[0] ? categoryLabel(categories[0], lang) : ''}</span>}
+        <a href={L('/cart/')} class="link-arrow">{t.cart}</a>
       </div>
       <div class="grid grid-3" id="product-grid">
         {products.map((p) => <div data-cat={p.category}><ProductCard product={p} /></div>)}
@@ -60,27 +100,27 @@ const jsonLd = !shopOpen ? [] : products.map((p) => ({
     <section class="section" id="restock">
       <div class="container restock">
         <div>
-          <h2 class="h3">Sold out? Get an email when it's back</h2>
-          <p class="muted small">One email when it's in stock again, then your address is deleted. No newsletter.</p>
+          <h2 class="h3">{t.restock}</h2>
+          <p class="muted small">{t.restockText}</p>
         </div>
-        <form class="form" action="/api/restock" method="post" data-ajax data-success="Done! We'll email you as soon as it's back.">
+        <form class="form" action="/api/restock" method="post" data-ajax data-success={t.restockOk}>
           <div class="field">
-            <label for="r-product">Product</label>
+            <label for="r-product">{t.product}</label>
             <select id="r-product" name="product" required>
               {soldOut.map((p) => <option value={p.id}>{p.name}</option>)}
             </select>
           </div>
           <div class="field">
-            <label for="r-email">Email</label>
-            <input id="r-email" name="email" type="email" required maxlength="200" autocomplete="email" placeholder="Your email" />
+            <label for="r-email">{t.email}</label>
+            <input id="r-email" name="email" type="email" required maxlength="200" autocomplete="email" placeholder={t.yourEmail} />
           </div>
           <div class="hp" aria-hidden="true">
-            <label for="r-website">Website</label>
+            <label for="r-website">{ui[lang].form.website}</label>
             <input id="r-website" name="website" tabindex="-1" autocomplete="off" />
           </div>
           <input type="hidden" name="_ts" value="" />
           <Turnstile appearance="interaction-only" />
-          <button class="btn btn-primary" type="submit">Tell me</button>
+          <button class="btn btn-primary" type="submit">{t.tellMe}</button>
           <p class="form-status" role="status" aria-live="polite"></p>
         </form>
       </div>
@@ -90,36 +130,34 @@ const jsonLd = !shopOpen ? [] : products.map((p) => ({
   <section class="section" id="shipping">
     <div class="container info">
       <div>
-        <h2 class="h3">Shipping</h2>
+        <h2 class="h3">{t.shipping}</h2>
         <table class="rates">
-          <caption class="sr-only">Shipping rates</caption>
-          <thead><tr><th scope="col">Destination</th><th scope="col">Shipping</th><th scope="col">Delivery</th></tr></thead>
+          <caption class="sr-only">{t.rates}</caption>
+          <thead><tr><th scope="col">{t.destination}</th><th scope="col">{t.shipping}</th><th scope="col">{t.delivery}</th></tr></thead>
           <tbody>
             {shippingZones.map((z) => (
-              <tr><th scope="row">{z.label}</th><td>{z.price === undefined ? 'Soon' : formatPrice(priceForZone(z.price, z.inEU))}</td><td>{z.estimate}</td></tr>
+              <tr><th scope="row">{zoneText(z.label, lang)}</th><td>{z.price === undefined ? t.soon : formatPrice(priceForZone(z.price, z.inEU), lang)}</td><td>{zoneText(z.estimate, lang)}</td></tr>
             ))}
           </tbody>
         </table>
-        <p class="muted small">Ships from Luxembourg. One shipping charge per order, however many CDs you order.</p>
+        <p class="muted small">{t.shipsFrom}</p>
       </div>
       <div>
-        <h2 class="h3">Orders &amp; returns</h2>
+        <h2 class="h3">{t.orders}</h2>
         <ul class="muted small list">
-          <li>Pre-orders ship on or around the release date. Mixed orders ship together.</li>
-          <li>You'll receive an order confirmation by email.</li>
-          <li>Returns accepted within 14 days of delivery (EU right of withdrawal). Items must be unused.</li>
-          <li>Questions? <Email /></li>
+          <li>{t.o1}</li>
+          <li>{t.o2}</li>
+          <li>{t.o3}</li>
+          <li>{t.questions} <Email /></li>
         </ul>
       </div>
       <div>
-        <h2 class="h3">Payment</h2>
+        <h2 class="h3">{t.payment}</h2>
         <p class="muted small">
-          {vat.mode === 'exempt'
-            ? <>All prices in EUR. No VAT is charged (small business exemption).</>
-            : <>All prices in EUR, incl. {vat.rate}% Luxembourg VAT. Orders shipped outside the EU are charged without VAT (import taxes may apply).</>}
+          {vat.mode === 'exempt' ? t.exempt : t.withVat(vat.rate)}{' '}
           {(paymentMethods.card || paymentMethods.crypto)
-            ? <>Pay with {[paymentMethods.card && 'card, PayPal, Apple Pay or Google Pay (via Stripe)', paymentMethods.crypto && 'crypto (via NOWPayments)'].filter(Boolean).join(' or ')}. Payment details never touch this website.</>
-            : <>After ordering you'll receive a payment request by email.</>}
+            ? <>{t.payWith} {[paymentMethods.card && t.card, paymentMethods.crypto && t.crypto].filter(Boolean).join(t.or)}. {t.never}</>
+            : t.manual}
         </p>
       </div>
     </div>

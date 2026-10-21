@@ -1,0 +1,7 @@
+---
+// French and German version of /music/.
+import Page from '../../music/index.astro';
+export const getStaticPaths = () => [{ params: { lang: 'fr' } }, { params: { lang: 'de' } }];
+---
+
+<Page />

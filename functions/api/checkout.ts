@@ -118,6 +118,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     currency: 'EUR',
     shippingZone: zone.label,
     ...(discount ? { discount } : {}),
+    pagePrefix: ['fr', 'de'].includes(str(fd, 'lang', 2)) ? `/${str(fd, 'lang', 2)}` : '',
     customer,
   };
 

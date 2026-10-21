@@ -14,6 +14,9 @@ interface Props {
   context?: string;
 }
 const { links, variant = 'chips', hideEmpty = false, context = '' } = Astro.props;
+import { getLang, pick } from '../i18n';
+const soonText = pick(getLang(Astro), { en: 'link coming soon', fr: 'lien bientôt disponible', de: 'Link folgt bald' });
+const soonTag = pick(getLang(Astro), { en: 'soon', fr: 'bientôt', de: 'bald' });
 
 const entries = platformOrder
   .filter((id) => id in links)
@@ -33,10 +36,10 @@ const entries = platformOrder
               {variant === 'list' && <span class="go" aria-hidden="true">↗</span>}
             </a>
           ) : (
-            <span class="soon" title={`${e.label} - link coming soon`}>
+            <span class="soon" title={`${e.label} - ${soonText}`}>
               <PlatformIcon id={e.id} size={variant === 'list' ? 26 : 18} />
-              {variant !== 'icons' ? <span class="label">{e.label}</span> : <span class="sr-only">{e.label} (coming soon)</span>}
-              {variant !== 'icons' && <span class="soon-tag">soon</span>}
+              {variant !== 'icons' ? <span class="label">{e.label}</span> : <span class="sr-only">{e.label} ({soonText})</span>}
+              {variant !== 'icons' && <span class="soon-tag">{soonTag}</span>}
             </span>
           )}
         </li>

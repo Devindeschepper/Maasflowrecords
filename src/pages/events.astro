@@ -6,9 +6,16 @@ import EventCard from '../components/EventCard.astro';
 import BookingForm from '../components/BookingForm.astro';
 import { upcomingEvents, pastEvents } from '../data/events';
 import { site } from '../data/site';
+import { getLang, localize, pick } from '../i18n';
 
 const upcoming = upcomingEvents();
 const past = pastEvents();
+const lang = getLang(Astro);
+const t = pick(lang, {
+  en: { desc: 'Concerts, livestreams, performances and label events from Maas Flow Records and VIN.', title: 'Events', lead: 'Shows, livestreams, studio sessions and label events.', upcoming: 'Upcoming', none: 'No upcoming events right now. Follow', none2: 'for announcements.', past: 'Past events', book: 'Book an artist', bookLead: "Want VIN at your show, festival, club night or event? Send the details and we'll get back to you.", email: 'Prefer email?' },
+  fr: { desc: 'Concerts, livestreams, performances et événements du label Maas Flow Records et de VIN.', title: 'Événements', lead: 'Concerts, livestreams, sessions studio et événements du label.', upcoming: 'À venir', none: 'Aucun événement prévu pour le moment. Suis', none2: 'pour les annonces.', past: 'Événements passés', book: 'Booker un artiste', bookLead: 'Tu veux VIN à ton concert, festival, soirée ou événement ? Envoie les détails et on te répond.', email: 'Tu préfères l’e-mail ?' },
+  de: { desc: 'Konzerte, Livestreams, Auftritte und Label-Events von Maas Flow Records und VIN.', title: 'Events', lead: 'Shows, Livestreams, Studio-Sessions und Label-Events.', upcoming: 'Demnächst', none: 'Gerade keine Events geplant. Folge', none2: 'für Ankündigungen.', past: 'Vergangene Events', book: 'Artist buchen', bookLead: 'Du willst VIN bei deiner Show, deinem Festival, deiner Clubnacht oder deinem Event? Schick uns die Details und wir melden uns.', email: 'Lieber per E-Mail?' },
+});
 
 // Only dated, real-world events go into search-engine data.
 const jsonLd = upcoming.filter((e) => e.kind !== 'Release' && e.start).map((e) => ({
@@ -31,17 +38,17 @@ const jsonLd = upcoming.filter((e) => e.kind !== 'Release' && e.start).map((e) =
 }));
 ---
 
-<BaseLayout title="Events" description="Concerts, livestreams, performances and label events from Maas Flow Records and VIN." jsonLd={jsonLd}>
-  <PageHero eyebrow="Live" title="Events" lead="Shows, livestreams, studio sessions and label events." />
+<BaseLayout title={t.title} description={t.desc} jsonLd={jsonLd}>
+  <PageHero eyebrow="Live" title={t.title} lead={t.lead} />
 
   <section class="section">
     <div class="container">
-      <div class="section-head"><h2>Upcoming</h2></div>
+      <div class="section-head"><h2>{t.upcoming}</h2></div>
       {
         upcoming.length ? (
           upcoming.map((e) => <EventCard event={e} />)
         ) : (
-          <p class="empty">No upcoming events right now. Follow <a href="/artists/vin/">VIN</a> for announcements.</p>
+          <p class="empty">{t.none} <a href={localize('/artists/vin/', lang)}>VIN</a> {t.none2}</p>
         )
       }
     </div>
@@ -51,7 +58,7 @@ const jsonLd = upcoming.filter((e) => e.kind !== 'Release' && e.start).map((e) =
     past.length > 0 && (
       <section class="section">
         <div class="container">
-          <div class="section-head"><h2>Past events</h2></div>
+          <div class="section-head"><h2>{t.past}</h2></div>
           {past.map((e) => <EventCard event={e} compact />)}
         </div>
       </section>
@@ -61,9 +68,9 @@ const jsonLd = upcoming.filter((e) => e.kind !== 'Release' && e.start).map((e) =
   <section class="section" id="book">
     <div class="container book">
       <div class="intro">
-        <h2>Book an artist</h2>
-        <p class="lead muted">Want VIN at your show, festival, club night or event? Send the details and we'll get back to you.</p>
-        <p class="muted small">Prefer email? <Email /></p>
+        <h2>{t.book}</h2>
+        <p class="lead muted">{t.bookLead}</p>
+        <p class="muted small">{t.email} <Email /></p>
       </div>
       <BookingForm />
     </div>

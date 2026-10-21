@@ -4,21 +4,27 @@
 import Email from '../components/Email.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { site } from '../data/site';
+import { getLang, localize, pick } from '../i18n';
+
+const lang = getLang(Astro);
+const t = pick(lang, {
+  en: { title: 'Order', thanks: 'Thank you.', processing: "Your payment is being processed. You'll receive a confirmation email as soon as it's confirmed.", crypto: "Crypto payments need a few network confirmations. You'll get a confirmation email once the payment is complete - this can take from a few minutes up to an hour.", number: 'Order number:', questions: 'Questions?', listen: 'Listen to the music', back: 'Back to shop' },
+  fr: { title: 'Commande', thanks: 'Merci.', processing: 'Ton paiement est en cours de traitement. Tu recevras un e-mail de confirmation dès qu’il est validé.', crypto: 'Les paiements en crypto ont besoin de quelques confirmations du réseau. Tu recevras un e-mail de confirmation une fois le paiement terminé - ça peut prendre de quelques minutes à une heure.', number: 'Numéro de commande :', questions: 'Des questions ?', listen: 'Écouter la musique', back: 'Retour à la boutique' },
+  de: { title: 'Bestellung', thanks: 'Danke.', processing: 'Deine Zahlung wird bearbeitet. Du bekommst eine Bestätigungs-E-Mail, sobald sie bestätigt ist.', crypto: 'Krypto-Zahlungen brauchen ein paar Netzwerk-Bestätigungen. Du bekommst eine Bestätigungs-E-Mail, sobald die Zahlung abgeschlossen ist - das kann ein paar Minuten bis zu einer Stunde dauern.', number: 'Bestellnummer:', questions: 'Fragen?', listen: 'Musik anhören', back: 'Zurück zum Shop' },
+});
 ---
 
-<BaseLayout title="Order" noindex>
+<BaseLayout title={t.title} noindex>
   <section class="section">
     <div class="container">
-      <p class="eyebrow"><span class="dot"></span>Order</p>
-      <h1>Thank you.</h1>
-      <p class="lead muted" id="order-msg">
-        Your payment is being processed. You'll receive a confirmation email as soon as it's confirmed.
-      </p>
-      <p class="muted" id="order-ref" hidden>Order number: <strong class="mono" id="order-id"></strong></p>
-      <p class="muted">Questions? <Email /></p>
+      <p class="eyebrow"><span class="dot"></span>{t.title}</p>
+      <h1>{t.thanks}</h1>
+      <p class="lead muted" id="order-msg" data-crypto={t.crypto}>{t.processing}</p>
+      <p class="muted" id="order-ref" hidden>{t.number} <strong class="mono" id="order-id"></strong></p>
+      <p class="muted">{t.questions} <Email /></p>
       <div class="btn-row">
-        <a class="btn btn-primary" href="/music/">Listen to the music</a>
-        <a class="btn btn-ghost" href="/shop/">Back to shop</a>
+        <a class="btn btn-primary" href={localize('/music/', lang)}>{t.listen}</a>
+        <a class="btn btn-ghost" href={localize('/shop/', lang)}>{t.back}</a>
       </div>
     </div>
   </section>
@@ -32,8 +38,8 @@ import { site } from '../data/site';
   if (q.get('status') === 'paid') {
     clearCart();
     if (q.get('method') === 'crypto') {
-      document.getElementById('order-msg')!.textContent =
-        "Crypto payments need a few network confirmations. You'll get a confirmation email once the payment is complete - this can take from a few minutes up to an hour.";
+      const msg = document.getElementById('order-msg')!;
+      msg.textContent = msg.dataset.crypto ?? '';
     }
   }
   if (order && /^[A-Z0-9-]{6,40}$/.test(order)) {

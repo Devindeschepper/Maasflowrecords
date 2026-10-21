@@ -7,6 +7,7 @@ import { labelReleases, isUpcoming } from '../../data/releases';
 import { artists } from '../../data/artists';
 import { beats } from '../../data/services';
 import type { ReleaseType } from '../../data/types';
+import { getLang, localize, pick } from '../../i18n';
 
 const all = labelReleases();
 const upcoming = all.filter(isUpcoming).reverse();
@@ -14,16 +15,22 @@ const out = all.filter((r) => !isUpcoming(r));
 const types: ReleaseType[] = ['Album', 'EP', 'Single', 'Beat Tape'];
 const present = types.filter((t) => out.some((r) => r.type === t));
 const vin = artists[0];
+const lang = getLang(Astro);
+const t = pick(lang, {
+  en: { title: 'Music & Releases', desc: 'Every release on Maas Flow Records: singles and EPs by VIN. Stream on Spotify, Apple Music and YouTube Music.', eyebrow: 'Catalogue', h1: 'Music', lead: 'Every release on Maas Flow Records. Press play.', stream: 'Stream VIN', streamLead: 'Every song, on your favourite platform.', soon: 'Coming soon', out: 'Out now', filter: 'Filter releases by type', all: 'All', first: 'First release coming soon.', beat: 'Need a beat?', beatLead: 'VIN sells leases and exclusive beats on BeatStars. For a custom beat, send a request.', browse: 'Browse beats on BeatStars', custom: 'Custom production' },
+  fr: { title: 'Musique & sorties', desc: 'Toutes les sorties de Maas Flow Records : singles et EPs de VIN. À écouter sur Spotify, Apple Music et YouTube Music.', eyebrow: 'Catalogue', h1: 'Musique', lead: 'Toutes les sorties de Maas Flow Records. Appuie sur play.', stream: 'Écouter VIN', streamLead: 'Tous les sons, sur ta plateforme préférée.', soon: 'Bientôt', out: 'Disponible', filter: 'Filtrer les sorties par type', all: 'Tout', first: 'Première sortie bientôt.', beat: "Besoin d'un beat ?", beatLead: 'VIN vend des leases et des beats exclusifs sur BeatStars. Pour un beat sur mesure, envoie une demande.', browse: 'Voir les beats sur BeatStars', custom: 'Production sur mesure' },
+  de: { title: 'Musik & Releases', desc: 'Alle Releases von Maas Flow Records: Singles und EPs von VIN. Auf Spotify, Apple Music und YouTube Music.', eyebrow: 'Katalog', h1: 'Musik', lead: 'Alle Releases von Maas Flow Records. Drück auf Play.', stream: 'VIN streamen', streamLead: 'Jeder Song, auf deiner Lieblingsplattform.', soon: 'Demnächst', out: 'Jetzt draußen', filter: 'Releases nach Typ filtern', all: 'Alle', first: 'Erstes Release kommt bald.', beat: 'Brauchst du einen Beat?', beatLead: 'VIN verkauft Leases und exklusive Beats auf BeatStars. Für einen Custom-Beat schick eine Anfrage.', browse: 'Beats auf BeatStars ansehen', custom: 'Custom-Produktion' },
+});
 ---
 
-<BaseLayout title="Music & Releases" description="Every release on Maas Flow Records: singles and EPs by VIN. Stream on Spotify, Apple Music and YouTube Music.">
-  <PageHero eyebrow="Catalogue" title="Music" lead="Every release on Maas Flow Records. Press play." />
+<BaseLayout title={t.title} description={t.desc}>
+  <PageHero eyebrow={t.eyebrow} title={t.h1} lead={t.lead} />
 
   <section class="section">
     <div class="container listen">
       <div>
-        <h2>Stream VIN</h2>
-        <p class="lead muted">Every song, on your favourite platform.</p>
+        <h2>{t.stream}</h2>
+        <p class="lead muted">{t.streamLead}</p>
       </div>
       <PlatformLinks links={vin.streaming} variant="list" />
     </div>
@@ -33,7 +40,7 @@ const vin = artists[0];
     upcoming.length > 0 && (
       <section class="section">
         <div class="container">
-          <div class="section-head"><h2>Coming soon</h2></div>
+          <div class="section-head"><h2>{t.soon}</h2></div>
           <div class="grid grid-4">{upcoming.map((r) => <ReleaseCard release={r} />)}</div>
         </div>
       </section>
@@ -43,11 +50,11 @@ const vin = artists[0];
   <section class="section">
     <div class="container">
       <div class="section-head">
-        <h2>Out now</h2>
+        <h2>{t.out}</h2>
         {
           present.length > 1 && (
-            <div class="filters" role="group" aria-label="Filter releases by type">
-              <button type="button" class="filter" aria-pressed="true" data-filter="all">All</button>
+            <div class="filters" role="group" aria-label={t.filter}>
+              <button type="button" class="filter" aria-pressed="true" data-filter="all">{t.all}</button>
               {present.map((t) => <button type="button" class="filter" aria-pressed="false" data-filter={t}>{t}s</button>)}
             </div>
           )
@@ -59,7 +66,7 @@ const vin = artists[0];
             {out.map((r) => <div data-type={r.type}><ReleaseCard release={r} /></div>)}
           </div>
         ) : (
-          <p class="empty">First release coming soon.</p>
+          <p class="empty">{t.first}</p>
         )
       }
     </div>
@@ -68,13 +75,13 @@ const vin = artists[0];
   <section class="section">
     <div class="container beats">
       <div>
-        <h2>Need a beat?</h2>
-        <p class="lead muted">VIN sells leases and exclusive beats on BeatStars. For a custom beat, send a request.</p>
+        <h2>{t.beat}</h2>
+        <p class="lead muted">{t.beatLead}</p>
         <div class="btn-row">
           {beats.beatstars && (
-            <a class="btn btn-primary" href={beats.beatstars} target="_blank" rel="noopener noreferrer">Browse beats on BeatStars</a>
+            <a class="btn btn-primary" href={beats.beatstars} target="_blank" rel="noopener noreferrer">{t.browse}</a>
           )}
-          <a class="btn btn-ghost" href="/services/#request">Custom production</a>
+          <a class="btn btn-ghost" href={localize('/services/#request', lang)}>{t.custom}</a>
         </div>
       </div>
     </div>
