@@ -9,17 +9,22 @@ import { vat } from '../data/vat';
 import { shopOpen, dropAt, shopTestMode, paymentMethods } from '../data/site';
 import { getLang, localize, pick } from '../i18n';
 import { ui } from '../i18n/ui';
-import { zoneText } from '../i18n/shop';
+import { COUNTRY_CODES, countryLabel, zoneIdFor } from '../data/countries';
+import { LOCALES } from '../i18n';
 
 const online = paymentMethods.card || paymentMethods.crypto;
 const lang = getLang(Astro);
 const L = (href: string) => localize(href, lang);
-const zones = orderableZones.map((z) => ({ ...z, label: zoneText(z.label, lang), estimate: zoneText(z.estimate, lang) }));
+// Only what the cart needs to work out shipping; zone names stay out of the page.
+const zones = orderableZones.map(({ id, price, inEU }) => ({ id, price, inEU }));
+// Countries in the page's language, A-Z; those we can't ship to yet can't be picked.
+const countries = COUNTRY_CODES.map((code) => ({ code, name: countryLabel(code, LOCALES[lang]), ok: zones.some((z) => z.id === zoneIdFor(code)) }))
+  .sort((a, b) => a.name.localeCompare(b.name, LOCALES[lang]));
 const t = pick(lang, {
   en: {
     title: 'Cart & Checkout', desc: 'Your Maas Flow Records shopping cart.', eyebrow: 'Shop', h1: 'Cart', items: 'Items', empty: 'Your cart is empty.', goShop: 'Go to the shop',
     checkout: 'Checkout', cancelled: 'Payment cancelled - nothing was charged. You can try again.', noShipping: 'Shipping prices are coming soon - orders open shortly.',
-    shipTo: 'Ship to', code: 'Discount code', apply: 'Apply', discount: 'Discount', subtotal: 'Subtotal', shipping: 'Shipping', total: 'Total',
+    shipTo: 'Country', chooseCountry: 'Choose your country…', notYet: 'no shipping yet', pickCountry: 'Choose your country', code: 'Discount code', apply: 'Apply', discount: 'Discount', subtotal: 'Subtotal', shipping: 'Shipping', total: 'Total',
     details: 'Your details', name: 'Full name', email: 'Email', address: 'Address', zip: 'Postal code', city: 'City', country: 'Country', notes: 'Order notes',
     payment: 'Payment', card: 'Card or PayPal', cardSub: 'Also Apple Pay / Google Pay · secure checkout by Stripe', crypto: 'Crypto', cryptoSub: 'Bitcoin, Ethereum, USDT and more · via NOWPayments',
     agree: 'I agree to the', terms: 'shipping & returns', terms2: 'terms.', pay: 'Continue to payment', place: 'Place order', secure: "You'll be sent to a secure payment page. Payment details never touch this website.",
@@ -28,7 +33,7 @@ const t = pick(lang, {
   fr: {
     title: 'Panier & paiement', desc: 'Ton panier Maas Flow Records.', eyebrow: 'Boutique', h1: 'Panier', items: 'Articles', empty: 'Ton panier est vide.', goShop: 'Aller à la boutique',
     checkout: 'Commande', cancelled: "Paiement annulé - rien n'a été débité. Tu peux réessayer.", noShipping: 'Les frais de livraison arrivent bientôt - les commandes ouvrent sous peu.',
-    shipTo: 'Livrer en', code: 'Code de réduction', apply: 'Appliquer', discount: 'Réduction', subtotal: 'Sous-total', shipping: 'Livraison', total: 'Total',
+    shipTo: 'Pays', chooseCountry: 'Choisis ton pays…', notYet: 'pas encore de livraison', pickCountry: 'Choisis ton pays', code: 'Code de réduction', apply: 'Appliquer', discount: 'Réduction', subtotal: 'Sous-total', shipping: 'Livraison', total: 'Total',
     details: 'Tes coordonnées', name: 'Nom complet', email: 'E-mail', address: 'Adresse', zip: 'Code postal', city: 'Ville', country: 'Pays', notes: 'Remarques sur la commande',
     payment: 'Paiement', card: 'Carte ou PayPal', cardSub: 'Aussi Apple Pay / Google Pay · paiement sécurisé par Stripe', crypto: 'Crypto', cryptoSub: 'Bitcoin, Ethereum, USDT et plus · via NOWPayments',
     agree: "J'accepte les conditions de", terms: 'livraison & retours', terms2: '.', pay: 'Continuer vers le paiement', place: 'Passer la commande', secure: 'Tu seras redirigé vers une page de paiement sécurisée. Tes données de paiement ne passent jamais par ce site.',
@@ -37,7 +42,7 @@ const t = pick(lang, {
   de: {
     title: 'Warenkorb & Kasse', desc: 'Dein Maas Flow Records Warenkorb.', eyebrow: 'Shop', h1: 'Warenkorb', items: 'Artikel', empty: 'Dein Warenkorb ist leer.', goShop: 'Zum Shop',
     checkout: 'Kasse', cancelled: 'Zahlung abgebrochen - es wurde nichts abgebucht. Du kannst es nochmal versuchen.', noShipping: 'Die Versandkosten kommen bald - Bestellungen sind in Kürze möglich.',
-    shipTo: 'Lieferung nach', code: 'Rabattcode', apply: 'Einlösen', discount: 'Rabatt', subtotal: 'Zwischensumme', shipping: 'Versand', total: 'Gesamt',
+    shipTo: 'Land', chooseCountry: 'Wähle dein Land…', notYet: 'noch kein Versand', pickCountry: 'Wähle dein Land', code: 'Rabattcode', apply: 'Einlösen', discount: 'Rabatt', subtotal: 'Zwischensumme', shipping: 'Versand', total: 'Gesamt',
     details: 'Deine Daten', name: 'Vollständiger Name', email: 'E-Mail', address: 'Adresse', zip: 'Postleitzahl', city: 'Stadt', country: 'Land', notes: 'Anmerkungen zur Bestellung',
     payment: 'Bezahlung', card: 'Karte oder PayPal', cardSub: 'Auch Apple Pay / Google Pay · sichere Zahlung über Stripe', crypto: 'Krypto', cryptoSub: 'Bitcoin, Ethereum, USDT und mehr · über NOWPayments',
     agree: 'Ich akzeptiere die', terms: 'Versand- & Rückgabebedingungen', terms2: '.', pay: 'Weiter zur Zahlung', place: 'Bestellung absenden', secure: 'Du wirst zu einer sicheren Zahlungsseite weitergeleitet. Deine Zahlungsdaten laufen nie über diese Website.',
@@ -75,9 +80,10 @@ const catalogue = products.map(({ id, name, price, image, stock, sizeStock, preo
           <input type="hidden" name="lang" value={lang} />
           {zones.length === 0 && <p class="notice">{t.noShipping}</p>}
           <div class="field">
-            <label for="o-zone">{t.shipTo} <span class="req">*</span></label>
-            <select id="o-zone" name="zone" required>
-              {zones.map((z) => <option value={z.id}>{z.label}</option>)}
+            <label for="o-country">{t.shipTo} <span class="req">*</span></label>
+            <select id="o-country" name="country" required autocomplete="country" data-pick-country={t.pickCountry}>
+              <option value="">{t.chooseCountry}</option>
+              {countries.map((c) => <option value={c.code} disabled={!c.ok}>{c.ok ? c.name : `${c.name} (${t.notYet})`}</option>)}
             </select>
           </div>
 
@@ -107,7 +113,6 @@ const catalogue = products.map(({ id, name, price, image, stock, sizeStock, preo
               <div class="field"><label for="o-zip">{t.zip} <span class="req">*</span></label><input id="o-zip" name="postalCode" required maxlength="20" autocomplete="postal-code" /></div>
               <div class="field"><label for="o-city">{t.city} <span class="req">*</span></label><input id="o-city" name="city" required maxlength="100" autocomplete="address-level2" /></div>
             </div>
-            <div class="field"><label for="o-country">{t.country} <span class="req">*</span></label><input id="o-country" name="country" required maxlength="80" autocomplete="country-name" /></div>
             <div class="field"><label for="o-notes">{t.notes}</label><textarea id="o-notes" name="notes" class="short" maxlength="1000" rows="3"></textarea></div>
           </fieldset>
 
@@ -158,6 +163,7 @@ const catalogue = products.map(({ id, name, price, image, stock, sizeStock, preo
 <script>
   import { getCart, setQty, clearCart, onCartChange } from '../scripts/cart';
   import { pageLang, pageLocale, tc } from '../i18n/client';
+  import { zoneIdFor } from '../data/countries';
   const tx = tc();
 
   const catalogueEl = document.getElementById('catalogue');
@@ -168,7 +174,7 @@ const catalogue = products.map(({ id, name, price, image, stock, sizeStock, preo
   type Item = { id: string; name: string; price: number; image: string; stock: number; sizeStock?: Record<string, number>; preorder?: boolean; shippingClass: 'small' | 'standard' };
   // How many of this item (and size) can be ordered.
   const inStock = (item: Item, size?: string) => (item.sizeStock && size ? item.sizeStock[size] ?? 0 : item.stock);
-  type Zone = { id: string; label: string; price: number; estimate: string; inEU: boolean };
+  type Zone = { id: string; price: number; inEU: boolean };
   const { catalogue, zones, vat, max } = JSON.parse(catalogueEl.textContent!) as {
     catalogue: Item[]; zones: Zone[]; vat: { mode: 'included' | 'exempt'; rate: number }; max: number;
   };
@@ -183,7 +189,7 @@ const catalogue = products.map(({ id, name, price, image, stock, sizeStock, preo
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
   const list = $<HTMLUListElement>('cart-lines');
   const form = $<HTMLFormElement>('checkout-form');
-  const zoneSel = $<HTMLSelectElement>('o-zone');
+  const countrySel = $<HTMLSelectElement>('o-country');
   const status = form.querySelector<HTMLElement>('.form-status')!;
   (form.elements.namedItem('_ts') as HTMLInputElement).value = String(Date.now());
 
@@ -240,7 +246,9 @@ const catalogue = products.map(({ id, name, price, image, stock, sizeStock, preo
   }
 
   function totals(ls = lines()) {
-    const zone = zones.find((z) => z.id === zoneSel.value) ?? zones[0];
+    // Until a country is chosen, prices are shown as for the EU and shipping waits for the country.
+    const chosen = countrySel.value ? zones.find((z) => z.id === zoneIdFor(countrySel.value)) : undefined;
+    const zone = chosen ?? zones.find((z) => z.inEU) ?? zones[0];
     if (!zone) return;
     const full = ls.reduce((s, l) => s + forZone(l.item.price, zone) * l.qty, 0);
     const sub = ls.reduce((s, l) => s + off(forZone(l.item.price, zone)) * l.qty, 0);
@@ -248,9 +256,9 @@ const catalogue = products.map(({ id, name, price, image, stock, sizeStock, preo
     $('t-disc-label').textContent = tx.discount(code.name, code.percent);
     $('t-disc').textContent = `−${eur(full - sub)}`;
     const ship = ls.length ? forZone(zone.price, zone) : 0;
-    const total = sub + ship;
+    const total = sub + (chosen ? ship : 0);
     $('t-sub').textContent = eur(sub);
-    $('t-ship').textContent = `${eur(ship)} · ${zone.estimate}`;
+    $('t-ship').textContent = chosen ? eur(ship) : countrySel.dataset.pickCountry ?? '';
     $('t-total').textContent = eur(total);
     const included = vat.mode === 'included' && zone.inEU;
     $('t-vat-note').textContent =
@@ -261,7 +269,7 @@ const catalogue = products.map(({ id, name, price, image, stock, sizeStock, preo
 
   if (new URLSearchParams(location.search).get('payment') === 'cancelled') $('pay-cancelled').hidden = false;
 
-  zoneSel.addEventListener('change', () => totals());
+  countrySel.addEventListener('change', () => totals());
 
   const codeInput = $<HTMLInputElement>('o-code');
   const codeMsg = $('o-code-msg');

@@ -3,15 +3,15 @@ import Email from '../components/Email.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from '../components/PageHero.astro';
 import ProductCard from '../components/ProductCard.astro';
-import { products, shippingZones, formatPrice } from '../data/products';
-import { vat, priceForZone } from '../data/vat';
+import { products, formatPrice } from '../data/products';
+import { vat } from '../data/vat';
 import ShopComingSoon from '../components/ShopComingSoon.astro';
 import TestModeBanner from '../components/TestModeBanner.astro';
 import Turnstile from '../components/Turnstile.astro';
 import { site, shopOpen, dropAt, shopTestMode, paymentMethods } from '../data/site';
 import { getLang, localize, pick } from '../i18n';
 import { ui } from '../i18n/ui';
-import { categoryLabel, zoneText } from '../i18n/shop';
+import { categoryLabel } from '../i18n/shop';
 
 const categories = [...new Set(products.map((p) => p.category))];
 const soldOut = products.filter((p) => p.stock <= 0);
@@ -23,10 +23,10 @@ const t = pick(lang, {
     products: 'Products', filter: 'Filter products by category', all: 'All', cart: 'View cart',
     restock: "Sold out? Get an email when it's back", restockText: "One email when it's in stock again, then your address is deleted. No newsletter.", restockOk: "Done! We'll email you as soon as it's back.",
     product: 'Product', email: 'Email', yourEmail: 'Your email', tellMe: 'Tell me',
-    shipping: 'Shipping', rates: 'Shipping rates', destination: 'Destination', delivery: 'Delivery', soon: 'Soon',
-    shipsFrom: 'Ships from Luxembourg. One shipping charge per order, however many items you order.',
+    shipping: 'Shipping', shippingCart: 'The shipping cost is shown in the cart as soon as you choose your country.', rates: 'Shipping rates', destination: 'Destination', delivery: 'Delivery', soon: 'Soon',
+    shipsFrom: 'One shipping charge per order, however many items you order.',
     orders: 'Orders & returns', o1: 'Pre-orders ship on or around the release date. Mixed orders ship together.', o2: "You'll receive an order confirmation by email.", o3: 'Returns accepted within 14 days of delivery (EU right of withdrawal). Items must be unused.', questions: 'Questions?',
-    payment: 'Payment', exempt: 'All prices in EUR. No VAT is charged (small business exemption).', withVat: (r: number) => `All prices in EUR, incl. ${r}% Luxembourg VAT. Orders shipped outside the EU are charged without VAT (import taxes may apply).`,
+    payment: 'Payment', exempt: 'All prices in EUR. No VAT is charged (small business exemption).', withVat: (r: number) => `All prices in EUR, incl. ${r}% VAT. Orders shipped outside the EU are charged without VAT (import taxes may apply).`,
     payWith: 'Pay with', card: 'card, PayPal, Apple Pay or Google Pay (via Stripe)', crypto: 'crypto (via NOWPayments)', or: ' or ', never: 'Payment details never touch this website.', manual: "After ordering you'll receive a payment request by email.",
   },
   fr: {
@@ -34,10 +34,10 @@ const t = pick(lang, {
     products: 'Produits', filter: 'Filtrer les produits par catégorie', all: 'Tout', cart: 'Voir le panier',
     restock: 'Épuisé ? Reçois un e-mail quand il revient', restockText: 'Un seul e-mail quand il est de retour en stock, puis ton adresse est supprimée. Pas de newsletter.', restockOk: "C'est noté ! On t'écrit dès qu'il revient.",
     product: 'Produit', email: 'E-mail', yourEmail: 'Ton e-mail', tellMe: 'Me prévenir',
-    shipping: 'Livraison', rates: 'Frais de livraison', destination: 'Destination', delivery: 'Délai', soon: 'Bientôt',
-    shipsFrom: "Expédié depuis le Luxembourg. Un seul frais de port par commande, quel que soit le nombre d'articles.",
+    shipping: 'Livraison', shippingCart: 'Les frais de livraison s’affichent dans le panier dès que tu choisis ton pays.', rates: 'Frais de livraison', destination: 'Destination', delivery: 'Délai', soon: 'Bientôt',
+    shipsFrom: "Un seul frais de port par commande, quel que soit le nombre d'articles.",
     orders: 'Commandes & retours', o1: 'Les précommandes sont expédiées autour de la date de sortie. Les commandes mixtes partent ensemble.', o2: 'Tu reçois une confirmation de commande par e-mail.', o3: 'Retours acceptés dans les 14 jours après la livraison (droit de rétractation UE). Les articles doivent être neufs.', questions: 'Des questions ?',
-    payment: 'Paiement', exempt: 'Tous les prix en EUR. Pas de TVA (régime de franchise des petites entreprises).', withVat: (r) => `Tous les prix en EUR, TVA luxembourgeoise de ${r} % incluse. Les commandes livrées hors UE sont facturées sans TVA (des taxes d'importation peuvent s'appliquer).`,
+    payment: 'Paiement', exempt: 'Tous les prix en EUR. Pas de TVA (régime de franchise des petites entreprises).', withVat: (r) => `Tous les prix en EUR, TVA de ${r} % incluse. Les commandes livrées hors UE sont facturées sans TVA (des taxes d'importation peuvent s'appliquer).`,
     payWith: 'Paiement par', card: 'carte, PayPal, Apple Pay ou Google Pay (via Stripe)', crypto: 'crypto (via NOWPayments)', or: ' ou ', never: 'Tes données de paiement ne passent jamais par ce site.', manual: 'Après la commande, tu reçois une demande de paiement par e-mail.',
   },
   de: {
@@ -45,10 +45,10 @@ const t = pick(lang, {
     products: 'Produkte', filter: 'Produkte nach Kategorie filtern', all: 'Alle', cart: 'Zum Warenkorb',
     restock: 'Ausverkauft? Hol dir eine E-Mail, wenn es wieder da ist', restockText: 'Eine einzige E-Mail, wenn es wieder auf Lager ist, danach wird deine Adresse gelöscht. Kein Newsletter.', restockOk: 'Erledigt! Wir schreiben dir, sobald es wieder da ist.',
     product: 'Produkt', email: 'E-Mail', yourEmail: 'Deine E-Mail', tellMe: 'Benachrichtigen',
-    shipping: 'Versand', rates: 'Versandkosten', destination: 'Ziel', delivery: 'Lieferzeit', soon: 'Bald',
-    shipsFrom: 'Versand aus Luxemburg. Einmal Versandkosten pro Bestellung, egal wie viele Artikel.',
+    shipping: 'Versand', shippingCart: 'Die Versandkosten siehst du im Warenkorb, sobald du dein Land wählst.', rates: 'Versandkosten', destination: 'Ziel', delivery: 'Lieferzeit', soon: 'Bald',
+    shipsFrom: 'Einmal Versandkosten pro Bestellung, egal wie viele Artikel.',
     orders: 'Bestellungen & Rückgabe', o1: 'Vorbestellungen werden um das Release-Datum herum verschickt. Gemischte Bestellungen gehen zusammen raus.', o2: 'Du bekommst eine Bestellbestätigung per E-Mail.', o3: 'Rückgabe innerhalb von 14 Tagen nach Lieferung (EU-Widerrufsrecht). Die Artikel müssen unbenutzt sein.', questions: 'Fragen?',
-    payment: 'Bezahlung', exempt: 'Alle Preise in EUR. Keine MwSt. (Kleinunternehmerregelung).', withVat: (r) => `Alle Preise in EUR, inkl. ${r} % luxemburgischer MwSt. Bestellungen außerhalb der EU werden ohne MwSt. berechnet (Einfuhrabgaben möglich).`,
+    payment: 'Bezahlung', exempt: 'Alle Preise in EUR. Keine MwSt. (Kleinunternehmerregelung).', withVat: (r) => `Alle Preise in EUR, inkl. ${r} % MwSt. Bestellungen außerhalb der EU werden ohne MwSt. berechnet (Einfuhrabgaben möglich).`,
     payWith: 'Bezahlen mit', card: 'Karte, PayPal, Apple Pay oder Google Pay (über Stripe)', crypto: 'Krypto (über NOWPayments)', or: ' oder ', never: 'Deine Zahlungsdaten laufen nie über diese Website.', manual: 'Nach der Bestellung bekommst du eine Zahlungsaufforderung per E-Mail.',
   },
 });
@@ -131,16 +131,7 @@ const jsonLd = !shopOpen ? [] : products.map((p) => ({
     <div class="container info">
       <div>
         <h2 class="h3">{t.shipping}</h2>
-        <table class="rates">
-          <caption class="sr-only">{t.rates}</caption>
-          <thead><tr><th scope="col">{t.destination}</th><th scope="col">{t.shipping}</th><th scope="col">{t.delivery}</th></tr></thead>
-          <tbody>
-            {shippingZones.map((z) => (
-              <tr><th scope="row">{zoneText(z.label, lang)}</th><td>{z.price === undefined ? t.soon : formatPrice(priceForZone(z.price, z.inEU), lang)}</td><td>{zoneText(z.estimate, lang)}</td></tr>
-            ))}
-          </tbody>
-        </table>
-        <p class="muted small">{t.shipsFrom}</p>
+        <p class="muted small">{t.shippingCart} {t.shipsFrom}</p>
       </div>
       <div>
         <h2 class="h3">{t.orders}</h2>
