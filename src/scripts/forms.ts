@@ -1,6 +1,6 @@
 // Progressive enhancement for forms marked `data-ajax`.
 // Without JS the form posts normally and the server redirects to /thanks/.
-import { tc } from '../i18n/client';
+import { serverMessage, tc } from '../i18n/client';
 
 declare global {
   interface Window { turnstile?: { reset: (el?: Element | string) => void } }
@@ -41,7 +41,7 @@ export function enhanceForms() {
           headers: { Accept: 'application/json' },
         });
         const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
-        if (!res.ok || !data.ok) throw new Error(data.error || tc().failed);
+        if (!res.ok || !data.ok) throw new Error(data.error ? serverMessage(data.error) : tc().failed);
         form.reset();
         if (started) started.value = String(Date.now());
         setStatus(form.dataset.success ?? tc().sent, 'ok');
