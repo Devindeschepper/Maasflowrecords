@@ -1,6 +1,7 @@
 import type { Env } from '../env';
 import type { OrderLine } from './types';
 import { sendMail } from '../mail';
+import { customerTexts, itemsForCustomer, vatForCustomer, type MailLang } from './customer-texts';
 import { shopTestMode } from '../../../src/data/site';
 
 const test = shopTestMode ? '[TEST] ' : '';
@@ -30,6 +31,8 @@ export interface PaidOrder {
   notes?: string;
   /** Busy hour: no WhatsApp for this sale, it goes into the hourly summary. */
   quiet?: boolean;
+  /** Language for the customer's email. */
+  lang?: MailLang;
 }
 
 /** Emails a confirmed payment to the label and a confirmation to the customer. */
@@ -66,16 +69,18 @@ export async function mailPaidOrder(env: Env, o: PaidOrder): Promise<void> {
   });
 
   if (o.customer.email) {
+    const lang = o.lang ?? 'en';
+    const t = customerTexts(lang);
     await sendMail(env, {
       to: o.customer.email,
-      subject: `${test}Payment received - Maas Flow Records order ${o.orderId}`,
+      subject: `${test}${t.paidSubject(o.orderId)}`,
       fields: [
-        ['Thank you', `${o.customer.name ? `Hi ${o.customer.name}, t` : 'T'}hanks for your order! Your payment was received. Pre-orders ship on or around the release date; you'll get an email when it's on the way.`],
-        ['Order', o.orderId],
-        ['Items', o.items],
-        ['Paid', o.paid],
-        ['VAT', o.vat ?? ''],
-        ['Questions', 'Reply to this email or write to info@maasflowrecords.com'],
+        [t.thanksLabel, t.paidThanks(o.customer.name)],
+        [t.order, o.orderId],
+        [t.items, itemsForCustomer(o.items, lang)],
+        [t.paid, o.paid],
+        [t.vat, vatForCustomer(o.vat ?? '', lang)],
+        [t.questions, t.questionsText],
       ],
     }).catch((err) => console.error('Customer confirmation failed', err));
   }

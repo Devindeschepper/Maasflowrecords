@@ -56,7 +56,15 @@ export interface SaleDetails {
   vatNote?: string;
   shippingZone?: string;
   discount?: { code: string; percent: number; saved: number };
+  /** Language the customer shopped in. */
+  lang?: 'en' | 'fr' | 'de';
   customer?: { name: string; email: string; address: string; postalCode: string; city: string; country: string; notes: string };
+}
+
+/** The language an order was placed in (remembered at checkout for a week). */
+export async function orderLang(env: Env, orderId: string): Promise<'en' | 'fr' | 'de'> {
+  const saved = JSON.parse((await env.STUDIO?.get(`order-${orderId}`).catch(() => null)) ?? '{}') as { details?: SaleDetails };
+  return saved.details?.lang ?? 'en';
 }
 
 export async function rememberOrder(env: Env, order: Order): Promise<void> {
@@ -68,6 +76,7 @@ export async function rememberOrder(env: Env, order: Order): Promise<void> {
     vatNote: order.vatNote,
     shippingZone: order.shippingZone,
     ...(order.discount ? { discount: order.discount } : {}),
+    lang: order.lang ?? 'en',
     customer: order.customer,
   };
   await env.STUDIO?.put(`order-${order.orderId}`, JSON.stringify({ lines, country: countryName(order.customer.country), details }), { expirationTtl: 7 * 86400 });

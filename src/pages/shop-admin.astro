@@ -85,7 +85,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               <label>How many you have<input name="stock" type="number" min="0" step="1" required placeholder="20" /></label>
             </div>
             <label>Description<textarea name="description" rows="3" maxlength="1000" placeholder="Material, size, what makes it special…"></textarea></label>
-            <label>Sizes <span class="muted">(optional, separated by commas: S, M, L or 45 cm, 50 cm)</span><input name="sizes" maxlength="200" /></label>
+            <div class="sizes-box">
+              <span class="sz-title">Sizes <span class="muted">(tap the ones you have · none = one size)</span></span>
+              <div class="sz-chips" data-sz-group="clothes" aria-label="Clothing sizes">
+                {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((v) => <button type="button" class="sz" data-sz={v} aria-pressed="false">{v}</button>)}
+              </div>
+              <div class="sz-chips" data-sz-group="chains" aria-label="Chain lengths">
+                {['40 cm', '45 cm', '50 cm', '55 cm', '60 cm'].map((v) => <button type="button" class="sz" data-sz={v} aria-pressed="false">{v}</button>)}
+              </div>
+              <label>Other sizes <span class="muted">(optional, separated by commas)</span><input name="sizes" maxlength="200" placeholder="e.g. 3XL or 70 cm" /></label>
+            </div>
             <div class="pf-row one">
               <label>Package size<select name="shippingClass"><option value="small">Small (CD, chain, poster)</option><option value="standard">Standard (clothing, vinyl)</option></select></label>
               <label class="check"><input name="preorder" type="checkbox" /> Pre-order (not shipped yet)</label>
@@ -487,9 +496,39 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       f.description.value = p.description ?? ''; f.sizes.value = (p.sizes ?? []).join(', ');
       f.shippingClass.value = p.shippingClass === 'standard' ? 'standard' : 'small'; f.preorder.checked = !!p.preorder;
     }
+    syncSizes();
     pform.hidden = false;
     pform.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+
+  // Size buttons: clothing sizes for shirts and hoodies, lengths for chains (both for "Other"). They add or
+  // remove the size in the "sizes" field, which is what gets saved.
+  const sizesInput = pform.querySelector<HTMLInputElement>('[name="sizes"]')!;
+  const catSelect = pform.querySelector<HTMLSelectElement>('[name="category"]')!;
+  const ORDER = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '40 cm', '45 cm', '50 cm', '55 cm', '60 cm'];
+  const readSizes = () => sizesInput.value.split(',').map((x) => x.trim()).filter(Boolean);
+  function syncSizes() {
+    const cat = catSelect.value;
+    const groups: Record<string, boolean> = { clothes: ['T-Shirt', 'Hoodie', 'Other'].includes(cat), chains: ['Jewellery', 'Other'].includes(cat) };
+    const have = readSizes();
+    pform.querySelectorAll<HTMLElement>('[data-sz-group]').forEach((g) => {
+      // A group stays visible when one of its sizes is already chosen.
+      g.hidden = !groups[g.dataset.szGroup!] && ![...g.querySelectorAll<HTMLElement>('[data-sz]')].some((b) => have.includes(b.dataset.sz!));
+    });
+    pform.querySelectorAll<HTMLButtonElement>('[data-sz]').forEach((b) => b.setAttribute('aria-pressed', String(have.includes(b.dataset.sz!))));
+  }
+  pform.querySelectorAll<HTMLButtonElement>('[data-sz]').forEach((b) =>
+    b.addEventListener('click', () => {
+      const v = b.dataset.sz!;
+      const have = readSizes();
+      const next = have.includes(v) ? have.filter((x) => x !== v) : [...have, v];
+      const rank = (x: string) => (ORDER.includes(x) ? ORDER.indexOf(x) : 100);
+      sizesInput.value = next.sort((a, b2) => rank(a) - rank(b2)).join(', ');
+      syncSizes();
+    }),
+  );
+  sizesInput.addEventListener('input', syncSizes);
+  catSelect.addEventListener('change', syncSizes);
   $('[data-p-add]').addEventListener('click', () => openForm(null));
   $('[data-pf-cancel]').addEventListener('click', () => { pform.hidden = true; });
 
@@ -629,6 +668,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .pform .check input { width: auto; }
   .pf-row { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); align-items: end; }
   .pf-row.one { grid-template-columns: 1fr; }
+  .sizes-box { display: grid; gap: 0.5rem; }
+  .sz-title { font-size: 0.85rem; }
+  .sz-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .sz-chips[hidden] { display: none; }
+  .sz { min-width: 48px; min-height: 40px; padding: 0.3rem 0.7rem; background: none; color: var(--text); border: 1px solid var(--line); font: 600 0.8rem/1 var(--font-mono); cursor: pointer; }
+  .sz[aria-pressed='true'] { background: var(--text); color: var(--bg); border-color: var(--text); }
   .links { display: flex; justify-content: space-between; gap: 1rem; }
   .count:empty { display: none; }
   .pf-actions { display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap; }

@@ -29,6 +29,8 @@ export interface Order {
   shippingZone: string;
   /** '' or '/fr' / '/de': after paying the customer comes back to the pages in their language. */
   pagePrefix?: string;
+  /** The language the customer shopped in (their emails are sent in it). */
+  lang?: 'en' | 'fr' | 'de';
   /** Discount code used (products only, not shipping). saved = cents off. */
   discount?: { code: string; percent: number; saved: number };
   customer: {

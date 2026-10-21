@@ -2,7 +2,7 @@ import type { Env } from '../../_lib/env';
 import { jsonResponse } from '../../_lib/http';
 import { hmacHex, safeEqual } from '../../_lib/sign';
 import { eur, mailPaidOrder } from '../../_lib/payments/notify';
-import { recordSale } from '../../_lib/sales';
+import { orderLang, recordSale } from '../../_lib/sales';
 
 interface Session {
   id: string;
@@ -48,6 +48,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       customer: { name: m.name ?? s.customer_details?.name ?? undefined, email: s.customer_details?.email ?? undefined, address: m.address },
       notes: m.notes,
       quiet,
+      lang: await orderLang(env, m.order_id ?? s.id),
     });
   } catch (err) {
     console.error(err);

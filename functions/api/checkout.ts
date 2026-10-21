@@ -9,6 +9,7 @@ import { priceForZone, vatIn, vatNote } from '../../src/data/vat';
 import { shopOpen, dropStarted, paymentMethods } from '../../src/data/site';
 import { rememberOrder, stockLeft } from '../_lib/sales';
 import { checkCode, discounted } from '../_lib/discounts';
+import { mailLang } from '../_lib/payments/customer-texts';
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   // Checkout is JS-only (the cart lives in the browser), so always answer with JSON.
@@ -119,6 +120,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     shippingZone: zone.label,
     ...(discount ? { discount } : {}),
     pagePrefix: ['fr', 'de'].includes(str(fd, 'lang', 2)) ? `/${str(fd, 'lang', 2)}` : '',
+    lang: mailLang(str(fd, 'lang', 2)),
     customer,
   };
 

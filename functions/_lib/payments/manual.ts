@@ -1,6 +1,7 @@
 import type { PaymentProvider } from './types';
 import { sendMail } from '../mail';
 import { eur, itemsText, vatText } from './notify';
+import { customerTexts, itemsForCustomer, vatForCustomer } from './customer-texts';
 
 /**
  * "Manual" provider — no payment processor needed.
@@ -34,21 +35,21 @@ export const manualProvider: PaymentProvider = {
     });
 
     // Confirmation to the customer.
+    const lang = order.lang ?? 'en';
+    const t = customerTexts(lang);
     await sendMail(env, {
       to: c.email,
-      subject: `Your Maas Flow Records order ${order.orderId}`,
+      subject: t.manualSubject(order.orderId),
       fields: [
-        ['Thank you', `Hi ${c.name}, we received your order. You'll get a payment request from us by email within 1–2 working days. Your order ships after payment.`],
-        ['Order', order.orderId],
-        ['Items', items],
-        ['Total', `${eur(order.total)} (incl. ${eur(order.shipping)} shipping)`],
-        ['VAT', vatText(order)],
-        ['Questions', 'Reply to this email or write to info@maasflowrecords.com'],
+        [t.thanksLabel, t.manualThanks(c.name)],
+        [t.order, order.orderId],
+        [t.items, itemsForCustomer(items, lang)],
+        [t.total, `${eur(order.total)} (${t.inclShipping(eur(order.shipping))})`],
+        [t.vat, vatForCustomer(vatText(order), lang)],
+        [t.questions, t.questionsText],
       ],
     }).catch((err) => console.error('Customer confirmation failed', err));
 
-    return {
-      message: `Order ${order.orderId} received. We'll email you a payment request within 1–2 working days - your order ships after payment.`,
-    };
+    return { message: t.manualMessage(order.orderId) };
   },
 };

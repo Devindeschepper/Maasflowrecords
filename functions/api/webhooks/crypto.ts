@@ -3,7 +3,7 @@ import { jsonResponse, isEmail } from '../../_lib/http';
 import { hmacHex, safeEqual } from '../../_lib/sign';
 import { mailPaidOrder } from '../../_lib/payments/notify';
 import { sendMail } from '../../_lib/mail';
-import { recordSale } from '../../_lib/sales';
+import { orderLang, recordSale } from '../../_lib/sales';
 
 interface Ipn {
   payment_id?: number | string;
@@ -59,6 +59,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         paid,
         customer: { email: isEmail(email) ? email : undefined },
         quiet,
+        lang: await orderLang(env, orderId),
       });
     } else if (body.payment_status === 'partially_paid') {
       await sendMail(env, {
