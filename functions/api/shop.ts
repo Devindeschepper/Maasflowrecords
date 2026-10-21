@@ -12,7 +12,8 @@ import { legal, site } from '../../src/data/site';
 /**
  * Private shop page (/shop-admin/), same password as /studio-stats/:
  *   GET  /api/shop          sales, stock, countries and the orders to ship
- *   POST /api/shop/shipped  { orderId, shipped } ticks an order as shipped (or undoes it)
+ *   POST /api/shop/shipped  { orderId, shipped, tracking? } ticks an order as shipped (or undoes it); the first time,
+ *                           the customer gets a "your order is on the way" email
  *   GET  /api/shop/export   Excel of the orders to ship (packing list with addresses)
  *   GET  /api/shop/manage   shop switches and products (from the repository)
  *   POST /api/shop/settings open/close the shop, plan a timed drop, test mode on/off
@@ -46,10 +47,11 @@ export const onShipped: PagesFunction<Env> = async ({ request, env }) => {
   if (!sameOrigin(request)) return jsonResponse(403, { ok: false, error: 'Forbidden.' });
   const a = await auth(request, env);
   if (a instanceof Response) return a;
-  const body = (await request.json().catch(() => ({}))) as { orderId?: unknown; shipped?: unknown };
+  const body = (await request.json().catch(() => ({}))) as { orderId?: unknown; shipped?: unknown; tracking?: unknown };
   if (typeof body.orderId !== 'string' || body.orderId.length > 100) return jsonResponse(400, { ok: false, error: 'Unknown order.' });
-  const ok = await markShipped(env, body.orderId, body.shipped !== false);
-  return ok ? jsonResponse(200, { ok: true }) : jsonResponse(404, { ok: false, error: 'Unknown order.' });
+  const tracking = typeof body.tracking === 'string' ? body.tracking.replace(/[\r\n]+/g, ' ').trim().slice(0, 100) : '';
+  const done = await markShipped(env, body.orderId, body.shipped !== false, tracking);
+  return done ? jsonResponse(200, { ok: true, mailed: done.mailed }) : jsonResponse(404, { ok: false, error: 'Unknown order.' });
 };
 
 const TZ = 'Europe/Luxembourg';

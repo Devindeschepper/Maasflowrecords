@@ -57,6 +57,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               <button class="btn btn-ghost small" type="button" data-export>Packing list (Excel)</button>
             </div>
           </div>
+          <p class="c-msg" data-ship-msg hidden></p>
           <ol class="orders" data-to-ship></ol>
         </section>
 
@@ -196,6 +197,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <ul class="o-items">${o.items.map((l) => `<li>${l.qty} × ${esc(l.name)}${l.size ? ` (${esc(l.size)})` : ''}</li>`).join('')}</ul>
       <pre class="o-addr">${esc(address)}</pre>
       ${c?.notes ? `<p class="o-notes">Note: ${esc(c.notes)}</p>` : ''}
+      ${!shipped ? `<label class="o-track">Tracking number <span class="muted">(optional, goes in the email to the buyer)</span><input data-track="${esc(o.orderId)}" maxlength="100" autocomplete="off" /></label>` : ''}
       <div class="o-actions">
         ${!shipped && c ? `<button class="btn btn-ghost small" type="button" data-label="${esc(o.orderId)}">Label</button>` : ''}
         ${c?.email ? `<a class="btn btn-ghost small" href="mailto:${esc(c.email)}?subject=${encodeURIComponent(`Your Maas Flow Records order ${o.orderId}`)}">Email</a>` : ''}
@@ -291,10 +293,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const res = await fetch('/api/shop/shipped', {
         method: 'POST',
         headers: { ...headers(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: b.dataset.ship, shipped: b.dataset.mark === '1' }),
+        body: JSON.stringify({
+          orderId: b.dataset.ship,
+          shipped: b.dataset.mark === '1',
+          tracking: panel.querySelector<HTMLInputElement>(`[data-track="${CSS.escape(b.dataset.ship ?? '')}"]`)?.value ?? '',
+        }),
       });
-      const data = (await res.json()) as { ok: boolean; error?: string };
+      const data = (await res.json()) as { ok: boolean; error?: string; mailed?: boolean };
       if (!data.ok) throw new Error(data.error);
+      const msg = $('[data-ship-msg]');
+      msg.textContent = b.dataset.mark !== '1' ? '' : data.mailed ? `✓ ${b.dataset.ship} shipped. The buyer got the “on the way” email.` : `✓ ${b.dataset.ship} shipped.`;
+      msg.hidden = !msg.textContent;
       await load(store.get());
     } catch {
       b.disabled = false;
@@ -717,6 +726,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .orders :global(.o-items) { margin: 0; padding-left: 1.1rem; font-size: 1rem; }
   .orders :global(.o-addr) { margin: 0; font-family: inherit; white-space: pre-wrap; font-size: 0.95rem; padding: 0.6rem 0.75rem; background: rgba(0, 0, 0, 0.25); border: 1px dashed var(--line); user-select: all; }
   .orders :global(.o-notes) { margin: 0; font-size: 0.85rem; color: #e0b44c; }
+  .orders :global(.o-track) { display: grid; gap: 0.3rem; font-size: 0.82rem; }
+  .orders :global(.o-track input) { width: 100%; }
   .orders :global(.o-actions) { display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap; }
   .orders :global(.empty) { padding: 0.5rem 0; }
 

@@ -8,6 +8,10 @@ export const mailLang = (v: unknown): MailLang => (v === 'fr' || v === 'de' ? v 
 const texts = {
   en: {
     paidSubject: (id: string) => `Payment received - Maas Flow Records order ${id}`,
+    shippedSubject: (id: string) => `Your order is on the way - Maas Flow Records ${id}`,
+    shippedText: (name?: string) => `${name ? `Hi ${name}, g` : 'G'}ood news: your order has been packed and is on its way to you. Thanks again for supporting Maas Flow Records!`,
+    tracking: 'Tracking number',
+    shipTo: 'Shipping to',
     thanksLabel: 'Thank you',
     paidThanks: (name?: string) => `${name ? `Hi ${name}, t` : 'T'}hanks for your order! Your payment was received. Pre-orders ship on or around the release date; you'll get an email when it's on the way.`,
     order: 'Order', items: 'Items', paid: 'Paid', total: 'Total', vat: 'VAT', questions: 'Questions',
@@ -24,6 +28,10 @@ const texts = {
   },
   fr: {
     paidSubject: (id: string) => `Paiement reçu - commande Maas Flow Records ${id}`,
+    shippedSubject: (id: string) => `Ta commande est en route - Maas Flow Records ${id}`,
+    shippedText: (name?: string) => `${name ? `Salut ${name}, b` : 'B'}onne nouvelle : ta commande est emballée et en route vers toi. Merci encore de soutenir Maas Flow Records !`,
+    tracking: 'Numéro de suivi',
+    shipTo: 'Livraison à',
     thanksLabel: 'Merci',
     paidThanks: (name?: string) => `${name ? `Salut ${name}, m` : 'M'}erci pour ta commande ! Ton paiement a bien été reçu. Les précommandes sont expédiées autour de la date de sortie ; tu recevras un e-mail quand ton colis part.`,
     order: 'Commande', items: 'Articles', paid: 'Payé', total: 'Total', vat: 'TVA', questions: 'Questions',
@@ -40,6 +48,10 @@ const texts = {
   },
   de: {
     paidSubject: (id: string) => `Zahlung erhalten - Maas Flow Records Bestellung ${id}`,
+    shippedSubject: (id: string) => `Deine Bestellung ist unterwegs - Maas Flow Records ${id}`,
+    shippedText: (name?: string) => `${name ? `Hi ${name}, g` : 'G'}ute Nachricht: Deine Bestellung ist gepackt und auf dem Weg zu dir. Danke nochmal, dass du Maas Flow Records unterstützt!`,
+    tracking: 'Sendungsnummer',
+    shipTo: 'Lieferung an',
     thanksLabel: 'Danke',
     paidThanks: (name?: string) => `${name ? `Hi ${name}, d` : 'D'}anke für deine Bestellung! Deine Zahlung ist angekommen. Vorbestellungen werden um das Release-Datum herum verschickt; du bekommst eine E-Mail, sobald dein Paket unterwegs ist.`,
     order: 'Bestellung', items: 'Artikel', paid: 'Bezahlt', total: 'Gesamt', vat: 'MwSt.', questions: 'Fragen',
