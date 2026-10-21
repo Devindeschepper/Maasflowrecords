@@ -11,7 +11,9 @@ export function enhanceAddToCart() {
       const data = new FormData(form);
       const id = String(data.get('id'));
       const size = data.get('size') ? String(data.get('size')) : undefined;
-      addToCart(id, size, 1, Number(form.dataset.max) || 10);
+      // Products with stock per size carry the limit on the chosen size.
+      const option = form.querySelector<HTMLSelectElement>('select[name="size"]')?.selectedOptions[0];
+      addToCart(id, size, 1, Number(option?.dataset.max ?? form.dataset.max) || 10);
       if (msg) msg.innerHTML = tc().added(here('/cart/'));
     });
   });

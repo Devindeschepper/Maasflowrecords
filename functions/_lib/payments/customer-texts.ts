@@ -17,6 +17,7 @@ const texts = {
     inclShipping: (s: string) => `incl. ${s} shipping`,
     manualMessage: (id: string) => `Order ${id} received. We'll email you a payment request within 1–2 working days - your order ships after payment.`,
     preorder: '[PRE-ORDER]',
+    size: 'size',
     vatIncl: (rate: string) => `Incl. ${rate}% VAT`,
     vatExempt: 'No VAT charged (small business exemption)',
     vatExport: 'No EU VAT (export). Import taxes may apply in your country.',
@@ -32,6 +33,7 @@ const texts = {
     inclShipping: (s: string) => `dont ${s} de livraison`,
     manualMessage: (id: string) => `Commande ${id} reçue. On t'envoie une demande de paiement par e-mail sous 1 à 2 jours ouvrés - ta commande est expédiée après le paiement.`,
     preorder: '[PRÉCOMMANDE]',
+    size: 'taille',
     vatIncl: (rate: string) => `TVA ${rate} % incluse`,
     vatExempt: 'Pas de TVA (régime de franchise des petites entreprises)',
     vatExport: "Pas de TVA UE (export). Des taxes d'importation peuvent s'appliquer dans ton pays.",
@@ -47,6 +49,7 @@ const texts = {
     inclShipping: (s: string) => `inkl. ${s} Versand`,
     manualMessage: (id: string) => `Bestellung ${id} erhalten. Wir schicken dir innerhalb von 1–2 Werktagen eine Zahlungsaufforderung per E-Mail - die Bestellung wird nach der Zahlung verschickt.`,
     preorder: '[VORBESTELLUNG]',
+    size: 'Größe',
     vatIncl: (rate: string) => `Inkl. ${rate} % MwSt.`,
     vatExempt: 'Keine MwSt. (Kleinunternehmerregelung)',
     vatExport: 'Keine EU-MwSt. (Export). In deinem Land können Einfuhrabgaben anfallen.',
@@ -67,4 +70,5 @@ export function vatForCustomer(text: string, lang: MailLang): string {
 }
 
 /** Item lines for the customer: the pre-order tag in their language. */
-export const itemsForCustomer = (items: string, lang: MailLang) => items.split('[PRE-ORDER]').join(texts[lang].preorder);
+export const itemsForCustomer = (items: string, lang: MailLang) =>
+  items.split('[PRE-ORDER]').join(texts[lang].preorder).split('(size ').join(`(${texts[lang].size} `);

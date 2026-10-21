@@ -238,7 +238,15 @@ collections:
               - { name: image, label: Photo, widget: image, media_folder: /public/images/shop, public_folder: /images/shop, hint: "Square, 1200×1200" }
               - { name: stock, label: In stock, widget: number, value_type: int, min: 0, default: 0, hint: "0 = sold out" }
               - { name: preorder, label: Pre-order, widget: boolean, default: false }
-              - { name: sizes, label: Sizes, widget: list, required: false, hint: 'Only for clothing or chains, e.g. S, M, L or 45 cm, 50 cm. Empty = one size.' }
+              - name: sizes
+                label: Sizes
+                label_singular: Size
+                widget: list
+                required: false
+                hint: 'Only for clothing or chains (e.g. M or 50 cm), each with how many you have. Empty = one size (then "In stock" above counts). With sizes, "In stock" is ignored.'
+                fields:
+                  - { name: size, label: Size, widget: string, hint: 'e.g. M or 50 cm' }
+                  - { name: stock, label: How many, widget: number, value_type: int, min: 0, default: 0 }
               - { name: shippingClass, label: Package size, widget: select, default: small, options: [{ label: 'Small (CD, chain, poster)', value: small }, { label: 'Standard (clothing, vinyl)', value: standard }] }
 
       - name: services
