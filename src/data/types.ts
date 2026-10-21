@@ -93,8 +93,8 @@ export interface LabelEvent {
   ticketLabel?: string;
 }
 
-export type ProductCategory = 'CD' | 'Vinyl' | 'T-Shirt' | 'Hoodie' | 'Cap' | 'Poster' | 'Jewellery' | 'Other';
-export const PRODUCT_CATEGORIES: ProductCategory[] = ['CD', 'Vinyl', 'T-Shirt', 'Hoodie', 'Cap', 'Poster', 'Jewellery', 'Other'];
+export type ProductCategory = 'CD' | 'Vinyl' | 'T-Shirt' | 'Hoodie' | 'Cap' | 'Poster' | 'Jewellery' | 'Bundle' | 'Other';
+export const PRODUCT_CATEGORIES: ProductCategory[] = ['CD', 'Vinyl', 'T-Shirt', 'Hoodie', 'Cap', 'Poster', 'Jewellery', 'Bundle', 'Other'];
 
 export interface Product {
   id: string;
@@ -110,6 +110,11 @@ export interface Product {
   sizes?: string[];
   /** Stock per size (only when the product has sizes): { M: 3, L: 0 }. `stock` is then the total. */
   sizeStock?: Record<string, number>;
+  /**
+   * Bundle (e.g. CD + T-shirt for a lower price): the ids of the products inside. Its stock and sizes come from
+   * those products (sizes = the sizes of the one product inside that has sizes), and selling it takes one of each.
+   */
+  bundle?: string[];
   /** Weight class used for shipping. */
   shippingClass: 'small' | 'standard';
 }

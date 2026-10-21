@@ -3,8 +3,8 @@ import type { ProductCategory } from '../data/types';
 
 /** Product categories as shown to visitors (the stored value stays English). */
 const CATEGORIES: Record<Exclude<Lang, 'en'>, Record<ProductCategory, string>> = {
-  fr: { CD: 'CD', Vinyl: 'Vinyle', 'T-Shirt': 'T-shirt', Hoodie: 'Hoodie', Cap: 'Casquette', Poster: 'Poster', Jewellery: 'Bijoux', Other: 'Autre' },
-  de: { CD: 'CD', Vinyl: 'Vinyl', 'T-Shirt': 'T-Shirt', Hoodie: 'Hoodie', Cap: 'Cap', Poster: 'Poster', Jewellery: 'Schmuck', Other: 'Sonstiges' },
+  fr: { CD: 'CD', Vinyl: 'Vinyle', 'T-Shirt': 'T-shirt', Hoodie: 'Hoodie', Cap: 'Casquette', Poster: 'Poster', Jewellery: 'Bijoux', Bundle: 'Pack', Other: 'Autre' },
+  de: { CD: 'CD', Vinyl: 'Vinyl', 'T-Shirt': 'T-Shirt', Hoodie: 'Hoodie', Cap: 'Cap', Poster: 'Poster', Jewellery: 'Schmuck', Bundle: 'Bundle', Other: 'Sonstiges' },
 };
 export const categoryLabel = (c: ProductCategory, lang: Lang) => (lang === 'en' ? c : CATEGORIES[lang][c] ?? c);
 

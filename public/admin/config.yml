@@ -232,12 +232,17 @@ collections:
                 pattern: ['^[a-z0-9-]+$', 'Lowercase letters, numbers and - only']
                 hint: Unique, e.g. 2real4u-cd — don't change it once the shop is open.
               - { name: name, label: Name, widget: string }
-              - { name: category, label: Category, widget: select, default: CD, options: [CD, Vinyl, T-Shirt, Hoodie, Cap, Poster, Jewellery, Other] }
+              - { name: category, label: Category, widget: select, default: CD, options: [CD, Vinyl, T-Shirt, Hoodie, Cap, Poster, Jewellery, Bundle, Other] }
               - { name: description, label: Description, widget: text, required: false }
               - { name: price, label: Price (€), widget: number, value_type: float, min: 0, step: 0.01 }
               - { name: image, label: Photo, widget: image, media_folder: /public/images/shop, public_folder: /images/shop, hint: "Square, 1200×1200" }
               - { name: stock, label: In stock, widget: number, value_type: int, min: 0, default: 0, hint: "0 = sold out" }
               - { name: preorder, label: Pre-order, widget: boolean, default: false }
+              - name: bundle
+                label: Products in the bundle (only for category Bundle)
+                widget: list
+                required: false
+                hint: 'The codes of the products inside, e.g. 2real4u-cd and mfr-tee. Stock and sizes come from those products. Easier on the shop page (/shop-admin/).'
               - name: sizes
                 label: Sizes
                 label_singular: Size

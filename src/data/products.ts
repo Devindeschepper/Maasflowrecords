@@ -32,7 +32,7 @@ function readSizes(raw: unknown): { sizes?: string[]; sizeStock?: Record<string,
   return { sizes, sizeStock: Object.fromEntries(sizes.map((s) => [s, entries.find((e) => e.size === s)!.stock!])) };
 }
 
-export const products: Product[] = (data.products as RawProduct[])
+const singles: Product[] = (data.products as RawProduct[])
   .map((p): Product => {
     const { sizes, sizeStock } = readSizes(p.sizes);
     return {
@@ -48,9 +48,36 @@ export const products: Product[] = (data.products as RawProduct[])
       sizes,
       ...(sizeStock ? { sizeStock } : {}),
       shippingClass: p.shippingClass === 'standard' ? 'standard' : 'small',
+      ...(p.category === 'Bundle' ? { bundle: (Array.isArray(p.bundle) ? p.bundle : []).map((x) => String(x)) } : {}),
     };
   })
   .filter((p) => opt(p.id) && opt(p.name));
+
+/**
+ * A bundle's stock comes from the products inside it: as many as the scarcest one allows. When one product
+ * inside has sizes, the bundle has those sizes too (stock per size). Bundles without (valid) products are left out.
+ */
+export function bundleStock(items: Product[], left: (p: Product, size?: string) => number): { stock: number; sizes?: string[]; sizeStock?: Record<string, number> } {
+  const sized = items.find((x) => x.sizes?.length);
+  const others = items.filter((x) => x !== sized);
+  const min = (extra: number[]) => Math.max(0, Math.min(...extra, ...others.map((x) => left(x))));
+  if (!sized) return { stock: items.length ? min([]) : 0 };
+  const sizeStock = Object.fromEntries(sized.sizes!.map((s) => [s, min([left(sized, s)])]));
+  // All sizes together can't go past the other products (2 M + 3 L would need 5 CDs).
+  const total = Math.min(Object.values(sizeStock).reduce((a, b) => a + b, 0), min([Infinity]));
+  return { stock: total, sizes: sized.sizes, sizeStock };
+}
+
+const buildLeft = (p: Product, size?: string) => (size && p.sizeStock ? p.sizeStock[size] ?? 0 : p.stock);
+
+export const products: Product[] = singles
+  .map((p): Product => {
+    if (!p.bundle) return p;
+    const items = p.bundle.map((id) => singles.find((x) => x.id === id && !x.bundle)).filter((x): x is Product => !!x);
+    const { stock, sizes, sizeStock } = bundleStock(items, buildLeft);
+    return { ...p, bundle: items.map((x) => x.id), stock, sizes, ...(sizeStock ? { sizeStock } : { sizeStock: undefined }) };
+  })
+  .filter((p) => !p.bundle || p.bundle.length >= 2);
 
 /** Shipping from Luxembourg — edited in the admin panel (Site → Shipping & VAT). Prices in € there, cents here. */
 export const shippingZones: ShippingZone[] = (shop.shipping as Record<string, unknown>[])
