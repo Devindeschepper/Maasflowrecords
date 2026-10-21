@@ -2,10 +2,18 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PageHero from '../../components/PageHero.astro';
 import { artists } from '../../data/artists';
+import { getLang, localize, pick } from '../../i18n';
+
+const lang = getLang(Astro);
+const t = pick(lang, {
+  en: { title: 'Artists', desc: 'The Maas Flow Records roster: VIN, producer and rapper from Rotterdam.', eyebrow: 'Roster', lead: 'Independent, hands-on, always learning.', join: 'Want to work with the label?', send: 'Send us your music' },
+  fr: { title: 'Artistes', desc: 'Les artistes de Maas Flow Records : VIN, producteur et rappeur de Rotterdam.', eyebrow: 'Roster', lead: 'Indépendants, impliqués, toujours en train d’apprendre.', join: 'Tu veux travailler avec le label ?', send: 'Envoie-nous ta musique' },
+  de: { title: 'Artists', desc: 'Die Artists von Maas Flow Records: VIN, Producer und Rapper aus Rotterdam.', eyebrow: 'Roster', lead: 'Unabhängig, hands-on, immer am Lernen.', join: 'Du willst mit dem Label arbeiten?', send: 'Schick uns deine Musik' },
+});
 ---
 
-<BaseLayout title="Artists" description="The Maas Flow Records roster: VIN, producer and rapper from Rotterdam.">
-  <PageHero eyebrow="Roster" title="Artists" lead="Independent, hands-on, always learning." />
+<BaseLayout title={t.title} description={t.desc}>
+  <PageHero eyebrow={t.eyebrow} title={t.title} lead={t.lead} />
 
   <section class="section">
     <div class="container">
@@ -13,7 +21,7 @@ import { artists } from '../../data/artists';
         {
           artists.map((a, i) => (
             <li>
-              <a href={`/artists/${a.slug}/`} class="row">
+              <a href={localize(`/artists/${a.slug}/`, lang)} class="row">
                 <span class="mono muted num">{String(i + 1).padStart(2, '0')}</span>
                 <img src={a.image} alt={a.imageAlt} width="360" height="450" loading="lazy" />
                 <span class="text">
@@ -28,7 +36,7 @@ import { artists } from '../../data/artists';
         }
       </ul>
       <p class="muted join">
-        Want to work with the label? <a href="/casting/">Send us your music</a>.
+        {t.join} <a href={localize('/casting/', lang)}>{t.send}</a>.
       </p>
     </div>
   </section>

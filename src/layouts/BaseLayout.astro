@@ -7,6 +7,8 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Newsletter from '../components/Newsletter.astro';
 import { site, labelSocials, turnstileSiteKey } from '../data/site';
+import { getLang, LANGS, stripLang, switchLang } from '../i18n';
+import { ui } from '../i18n/ui';
 
 interface Props {
   title?: string;
@@ -22,10 +24,17 @@ interface Props {
   noFooter?: boolean;
 }
 
-const { title, description = site.description, image = site.ogImage, type = 'website', noindex = false, jsonLd = [], bare = false, noFooter = false } = Astro.props;
+const { title, description: desc, image = site.ogImage, type = 'website', noindex = false, jsonLd = [], bare = false, noFooter = false } = Astro.props;
 
-const fullTitle = title ? `${title} - ${site.name}` : `${site.name} - Independent Music Label`;
+const lang = getLang(Astro);
+const t = ui[lang];
+const description = desc ?? (lang === 'en' ? site.description : t.description);
+const fullTitle = title ? `${title} - ${site.name}` : `${site.name} - ${t.tagline}`;
 const canonical = new URL(Astro.url.pathname, site.url).href;
+// The same page in the other languages (only for pages that are translated).
+const path = Astro.url.pathname;
+const alternates = LANGS.map((l) => ({ lang: l, href: switchLang(path, l) }));
+const translated = alternates.some((a) => a.lang !== 'en' && a.href !== stripLang(path));
 const ogImage = new URL(image, site.url).href;
 
 const orgLd = {
@@ -39,13 +48,15 @@ const orgLd = {
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {translated && alternates.map((a) => <link rel="alternate" hreflang={a.lang} href={new URL(a.href, site.url).href} />)}
+    {translated && <link rel="alternate" hreflang="x-default" href={new URL(stripLang(path), site.url).href} />}
     {noindex && <meta name="robots" content="noindex" />}
     <meta name="theme-color" content="#0a0a0a" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -61,7 +72,7 @@ const orgLd = {
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={ogImage} />
     {image === site.ogImage && <><meta property="og:image:width" content="1200" /><meta property="og:image:height" content="630" /></>}
-    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale" content={{ en: 'en_US', fr: 'fr_FR', de: 'de_DE' }[lang]} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={fullTitle} />
     <meta name="twitter:description" content={description} />
@@ -75,7 +86,7 @@ const orgLd = {
     <slot name="head" />
   </head>
   <body>
-    <a class="skip-link" href="#main">Skip to content</a>
+    <a class="skip-link" href="#main">{t.skip}</a>
     {!bare && <Header />}
     <main id="main">
       <slot />

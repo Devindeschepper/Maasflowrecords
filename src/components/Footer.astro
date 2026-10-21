@@ -2,6 +2,13 @@
 import { site, nav, labelSocials, shopOpen } from '../data/site';
 import Logo from './Logo.astro';
 import PlatformLinks from './PlatformLinks.astro';
+import { getLang, localize } from '../i18n';
+import { ui } from '../i18n/ui';
+
+const lang = getLang(Astro);
+const t = ui[lang].footer;
+const nl = ui[lang].nav;
+const L = (href: string) => localize(href, lang);
 
 const year = new Date().getFullYear();
 ---
@@ -11,31 +18,31 @@ const year = new Date().getFullYear();
     <div class="top">
       <div class="brand">
         <Logo size="lg" />
-        <p class="muted">Independent music label.</p>
-        <p><a class="btn btn-ghost contact-btn" href="/contact/">Contact &amp; bookings</a></p>
+        <p class="muted">{t.label}</p>
+        <p><a class="btn btn-ghost contact-btn" href={L('/contact/')}>{t.contactBtn}</a></p>
       </div>
 
-      <nav aria-label="Footer">
+      <nav aria-label={t.nav}>
         <ul class="links">
-          {nav.map((i) => <li><a href={i.href}>{i.label}</a></li>)}
-          <li><a href="/#label">About</a></li>
-          <li><a href="/press/">Press</a></li>
-          <li><a href="/contact/">Contact</a></li>
-          {shopOpen && <li><a href="/cart/">Cart</a></li>}
-          {shopOpen && <li><a href="/shop/#shipping">Shipping &amp; returns</a></li>}
-          <li><a href="/terms/">Terms</a></li>
-          <li><a href="/privacy/">Privacy</a></li>
+          {nav.map((i) => <li><a href={L(i.href)}>{nl[i.href] ?? i.label}</a></li>)}
+          <li><a href={L('/#label')}>{t.about}</a></li>
+          <li><a href={L('/press/')}>{t.press}</a></li>
+          <li><a href={L('/contact/')}>{t.contact}</a></li>
+          {shopOpen && <li><a href={L('/cart/')}>{t.cart}</a></li>}
+          {shopOpen && <li><a href={L('/shop/#shipping')}>{t.shipping}</a></li>}
+          <li><a href="/terms/" hreflang="en">{t.terms}</a></li>
+          <li><a href="/privacy/" hreflang="en">{t.privacy}</a></li>
         </ul>
       </nav>
 
       <div class="social">
-        <p class="eyebrow">Follow</p>
-        <PlatformLinks links={labelSocials} variant="icons" context="Maas Flow Records on" />
+        <p class="eyebrow">{t.follow}</p>
+        <PlatformLinks links={labelSocials} variant="icons" context={t.onSocial} />
       </div>
     </div>
 
     <div class="bottom mono">
-      <span>© {year} {site.name}. All rights reserved.</span>
+      <span>© {year} {site.name}. {t.rights}</span>
     </div>
   </div>
 </footer>

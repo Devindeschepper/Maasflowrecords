@@ -2,17 +2,25 @@
 // Fallback confirmation page for visitors without JavaScript
 // (the form functions redirect here after a plain HTML POST).
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { getLang, localize, pick } from '../i18n';
+
+const lang = getLang(Astro);
+const t = pick(lang, {
+  en: { title: 'Thank you', received: 'Received', thanks: 'Thank you.', text: "Your message was sent to Maas Flow Records. We'll get back to you as soon as we can.", home: 'Back home', listen: 'Listen to the music' },
+  fr: { title: 'Merci', received: 'Reçu', thanks: 'Merci.', text: 'Ton message a été envoyé à Maas Flow Records. On te répond dès que possible.', home: "Retour à l'accueil", listen: 'Écouter la musique' },
+  de: { title: 'Danke', received: 'Angekommen', thanks: 'Danke.', text: 'Deine Nachricht wurde an Maas Flow Records gesendet. Wir melden uns so schnell wie möglich.', home: 'Zur Startseite', listen: 'Musik anhören' },
+});
 ---
 
-<BaseLayout title="Thank you" noindex>
+<BaseLayout title={t.title} noindex>
   <section class="section">
     <div class="container">
-      <p class="eyebrow"><span class="dot"></span>Received</p>
-      <h1>Thank you.</h1>
-      <p class="lead muted">Your message was sent to Maas Flow Records. We'll get back to you as soon as we can.</p>
+      <p class="eyebrow"><span class="dot"></span>{t.received}</p>
+      <h1>{t.thanks}</h1>
+      <p class="lead muted">{t.text}</p>
       <div class="btn-row">
-        <a class="btn btn-primary" href="/">Back home</a>
-        <a class="btn btn-ghost" href="/music/">Listen to the music</a>
+        <a class="btn btn-primary" href={localize('/', lang)}>{t.home}</a>
+        <a class="btn btn-ghost" href={localize('/music/', lang)}>{t.listen}</a>
       </div>
     </div>
   </section>

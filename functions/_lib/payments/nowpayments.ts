@@ -31,8 +31,8 @@ export const nowPaymentsProvider: PaymentProvider = {
         order_description: `Maas Flow Records - ${order.lines.map((l) => `${l.qty}× ${l.name}`).join(', ')}`.slice(0, 200),
         // The customer's email rides along so the confirmation can be sent when the payment lands.
         ipn_callback_url: `${origin}/api/webhooks/crypto?e=${encodeURIComponent(c.email)}`,
-        success_url: `${origin}/order/?status=paid&method=crypto&order=${encodeURIComponent(order.orderId)}`,
-        cancel_url: `${origin}/cart/?payment=cancelled`,
+        success_url: `${origin}${order.pagePrefix ?? ''}/order/?status=paid&method=crypto&order=${encodeURIComponent(order.orderId)}`,
+        cancel_url: `${origin}${order.pagePrefix ?? ''}/cart/?payment=cancelled`,
       }),
     });
     const data = (await res.json().catch(() => ({}))) as { id?: string; invoice_url?: string; message?: string };

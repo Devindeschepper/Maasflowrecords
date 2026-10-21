@@ -9,6 +9,7 @@ import SpotifyPlayer from '../../components/SpotifyPlayer.astro';
 import { releases, isUpcoming, releasesByArtist } from '../../data/releases';
 import { site } from '../../data/site';
 import { artistNames, releaseMeta, releaseDateLabel } from '../../lib/format';
+import { getLang, localize, pick } from '../../i18n';
 import type { Release } from '../../data/types';
 
 export function getStaticPaths() {
@@ -20,6 +21,13 @@ const upcoming = isUpcoming(r);
 const hasLinks = Object.keys(r.links).length > 0;
 // "More music" = other releases by the same artist(s).
 const more = releasesByArtist(r.artists[0]).filter((x) => x.slug !== r.slug).slice(0, 4);
+const lang = getLang(Astro);
+const L = (href: string) => localize(href, lang);
+const t = pick(lang, {
+  en: { by: 'by', on: 'on', cover: 'cover art', upcoming: ' · Upcoming', releaseDate: 'Release date', released: 'Released', soon: 'Coming soon', presave: 'Pre-save / follow', listenOn: 'Listen on', linksSoon: 'Streaming links will appear here on release day.', credits: 'Credits', mixing: 'Mixing & mastering for your music →', tracklist: 'Tracklist', more: 'More music', all: 'All releases' },
+  fr: { by: 'de', on: 'sur', cover: 'pochette', upcoming: ' · À venir', releaseDate: 'Date de sortie', released: 'Sorti le', soon: 'Bientôt', presave: 'Pre-save / suivre', listenOn: 'Écouter sur', linksSoon: 'Les liens de streaming apparaîtront ici le jour de la sortie.', credits: 'Crédits', mixing: 'Mix & mastering pour ta musique →', tracklist: 'Tracklist', more: 'Plus de musique', all: 'Toutes les sorties' },
+  de: { by: 'von', on: 'auf', cover: 'Cover', upcoming: ' · Demnächst', releaseDate: 'Release-Datum', released: 'Erschienen', soon: 'Demnächst', presave: 'Pre-Save / Folgen', listenOn: 'Anhören auf', linksSoon: 'Die Streaming-Links erscheinen hier am Release-Tag.', credits: 'Credits', mixing: 'Mixing & Mastering für deine Musik →', tracklist: 'Tracklist', more: 'Mehr Musik', all: 'Alle Releases' },
+});
 
 const jsonLd = [
   {
@@ -36,32 +44,32 @@ const jsonLd = [
 ];
 ---
 
-<BaseLayout title={`${r.title} - ${artistNames(r)}`} description={`${r.type} by ${artistNames(r)} on ${site.name}. ${r.description}`} image={r.cover} type={r.type === 'Single' ? 'music.song' : 'music.album'} jsonLd={jsonLd}>
+<BaseLayout title={`${r.title} - ${artistNames(r)}`} description={`${r.type} ${t.by} ${artistNames(r)} ${t.on} ${site.name}. ${r.description}`} image={r.cover} type={r.type === 'Single' ? 'music.song' : 'music.album'} jsonLd={jsonLd}>
   <section class="release-hero">
     <div class="container layout">
       <div class="cover">
-        <img src={r.cover} srcset={photoSrcset(r.cover)} sizes="(max-width: 800px) 100vw, 600px" alt={`${r.title} cover art`} width="800" height="800" fetchpriority="high" />
+        <img src={r.cover} srcset={photoSrcset(r.cover)} sizes="(max-width: 800px) 100vw, 600px" alt={`${r.title} ${t.cover}`} width="800" height="800" fetchpriority="high" />
       </div>
       <div class="info">
-        <p class="eyebrow"><span class="dot"></span>{releaseMeta(r)}{upcoming && ' · Upcoming'}</p>
+        <p class="eyebrow"><span class="dot"></span>{releaseMeta(r)}{upcoming && t.upcoming}</p>
         <h1>{r.title}</h1>
         <p class="by">{artistNames(r)}</p>
-        <p class="mono muted">{upcoming ? 'Release date' : 'Released'}: {r.releaseDate ? <time datetime={r.releaseDate}>{releaseDateLabel(r)}</time> : 'Coming soon'}</p>
+        <p class="mono muted">{upcoming ? t.releaseDate : t.released}: {r.releaseDate ? <time datetime={r.releaseDate}>{releaseDateLabel(r, lang)}</time> : t.soon}</p>
         {upcoming && r.releaseDate && <Countdown date={r.releaseDate} tentative={r.dateTentative} />}
         <p class="lead">{r.description}</p>
 
         {r.preview && <PreviewButton src={r.preview} title={r.title} size="lg" />}
 
-        <h2 class="h-small">{upcoming ? 'Pre-save / follow' : 'Listen on'}</h2>
-        {hasLinks ? <PlatformLinks links={r.links} variant="chips" /> : <p class="muted">Streaming links will appear here on release day.</p>}
+        <h2 class="h-small">{upcoming ? t.presave : t.listenOn}</h2>
+        {hasLinks ? <PlatformLinks links={r.links} variant="chips" /> : <p class="muted">{t.linksSoon}</p>}
         {!upcoming && r.links.spotify && <div class="player"><SpotifyPlayer url={r.links.spotify} title={r.title} /></div>}
 
         {
           r.credits && (
             <>
-              <h2 class="h-small">Credits</h2>
+              <h2 class="h-small">{t.credits}</h2>
               <p class="credits">{r.credits}</p>
-              <p class="muted small"><a href="/services/">Mixing &amp; mastering for your music →</a></p>
+              <p class="muted small"><a href={L('/services/')}>{t.mixing}</a></p>
             </>
           )
         }
@@ -69,7 +77,7 @@ const jsonLd = [
         {
           r.tracks && (
             <>
-              <h2 class="h-small">Tracklist</h2>
+              <h2 class="h-small">{t.tracklist}</h2>
               <ol class="tracks">
                 {r.tracks.map((t, i) => (
                   <li><span class="mono muted">{String(i + 1).padStart(2, '0')}</span> {t}</li>
@@ -87,8 +95,8 @@ const jsonLd = [
       <section class="section">
         <div class="container">
           <div class="section-head">
-            <h2>More music</h2>
-            <a class="link-arrow" href="/music/">All releases</a>
+            <h2>{t.more}</h2>
+            <a class="link-arrow" href={L('/music/')}>{t.all}</a>
           </div>
           <div class="grid grid-4">{more.map((x) => <ReleaseCard release={x} />)}</div>
         </div>

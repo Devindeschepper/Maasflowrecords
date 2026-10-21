@@ -8,6 +8,7 @@ import { artists } from '../../data/artists';
 import { releasesByArtist } from '../../data/releases';
 import { site } from '../../data/site';
 import type { Artist } from '../../data/types';
+import { getLang, localize, pick } from '../../i18n';
 
 export function getStaticPaths() {
   return artists.map((artist) => ({ params: { slug: artist.slug }, props: { artist } }));
@@ -15,6 +16,13 @@ export function getStaticPaths() {
 
 const { artist: a } = Astro.props as { artist: Artist };
 const music = releasesByArtist(a.slug);
+const lang = getLang(Astro);
+const L = (href: string) => localize(href, lang);
+const t = pick(lang, {
+  en: { from: 'from', on: 'on', bio: 'Read full bio', book: 'Book', music: 'Music', beats: 'Buy beats', listen: 'Listen', follow: 'Follow', releases: 'Releases', catalogue: 'Full catalogue', none: 'No releases yet.' },
+  fr: { from: 'de', on: 'sur', bio: 'Lire la bio complète', book: 'Booker', music: 'Musique', beats: 'Acheter des beats', listen: 'Écouter', follow: 'Suivre', releases: 'Sorties', catalogue: 'Tout le catalogue', none: 'Pas encore de sorties.' },
+  de: { from: 'aus', on: 'bei', bio: 'Ganze Bio lesen', book: 'Buchen:', music: 'Musik', beats: 'Beats kaufen', listen: 'Anhören', follow: 'Folgen', releases: 'Releases', catalogue: 'Ganzer Katalog', none: 'Noch keine Releases.' },
+});
 
 const jsonLd = [
   {
@@ -31,7 +39,7 @@ const jsonLd = [
 ];
 ---
 
-<BaseLayout title={a.name} description={`${a.name} - ${a.roles.join(', ').toLowerCase()} from ${a.origin}, on ${site.name}. ${a.tagline}`} image={a.image} type="profile" jsonLd={jsonLd}>
+<BaseLayout title={a.name} description={`${a.name} - ${a.roles.join(', ').toLowerCase()} ${t.from} ${a.origin}, ${t.on} ${site.name}. ${a.tagline}`} image={a.image} type="profile" jsonLd={jsonLd}>
   <section class="artist-hero">
     <div class="container grid-hero">
       <div class="photo">
@@ -43,10 +51,10 @@ const jsonLd = [
         <p class="lead">{a.tagline}</p>
         <p class="muted">{a.description}</p>
         <div class="btn-row">
-          <a class="btn btn-primary" href={a.bioHref}>Read full bio</a>
-          <a class="btn btn-ghost" href={`/events/?artist=${a.slug}#book`}>Book {a.name}</a>
-          <a class="btn btn-ghost" href="#music">Music</a>
-          {a.streaming.beatstars && <a class="btn btn-ghost" href={a.streaming.beatstars} target="_blank" rel="noopener noreferrer">Buy beats</a>}
+          <a class="btn btn-primary" href={L(a.bioHref)}>{t.bio}</a>
+          <a class="btn btn-ghost" href={L(`/events/?artist=${a.slug}#book`)}>{t.book} {a.name}</a>
+          <a class="btn btn-ghost" href="#music">{t.music}</a>
+          {a.streaming.beatstars && <a class="btn btn-ghost" href={a.streaming.beatstars} target="_blank" rel="noopener noreferrer">{t.beats}</a>}
         </div>
       </div>
     </div>
@@ -55,12 +63,12 @@ const jsonLd = [
   <section class="section">
     <div class="container two-col">
       <div>
-        <h2>Listen</h2>
+        <h2>{t.listen}</h2>
         {a.streaming.spotify && <div class="player"><SpotifyPlayer url={a.streaming.spotify} title={a.name} /></div>}
         <PlatformLinks links={a.streaming} variant="list" />
       </div>
       <div>
-        <h2>Follow</h2>
+        <h2>{t.follow}</h2>
         <PlatformLinks links={a.socials} variant="list" />
       </div>
     </div>
@@ -69,10 +77,10 @@ const jsonLd = [
   <section class="section" id="music">
     <div class="container">
       <div class="section-head">
-        <h2>Releases</h2>
-        <a class="link-arrow" href="/music/">Full catalogue</a>
+        <h2>{t.releases}</h2>
+        <a class="link-arrow" href={L('/music/')}>{t.catalogue}</a>
       </div>
-      {music.length ? <div class="grid grid-4">{music.map((r) => <ReleaseCard release={r} />)}</div> : <p class="empty">No releases yet.</p>}
+      {music.length ? <div class="grid grid-4">{music.map((r) => <ReleaseCard release={r} />)}</div> : <p class="empty">{t.none}</p>}
     </div>
   </section>
 </BaseLayout>

@@ -10,40 +10,79 @@ import { artists } from '../data/artists';
 import { labelReleases } from '../data/releases';
 import { labelSocials } from '../data/site';
 import press from '../content/press.json';
+import { getLang, localize, pick } from '../i18n';
 
 const vin = artists[0];
 const releases = labelReleases();
 
+const lang = getLang(Astro);
+const L = (href: string) => localize(href, lang);
+const t = pick(lang, {
+  en: {
+    title: 'Press kit', desc: 'Press kit for Maas Flow Records and VIN: bios, facts, press photos, releases and contact for press, radio and promoters.',
+    h1: 'Press', lead: 'Bios, photos, music and contact for press, radio, curators and promoters.', kitText: 'Everything in one download: bios, facts, links, press photos and logos.',
+    download: 'Download press kit (ZIP)', logoLight: 'Maas Flow Records logo, light version', logoDark: 'Maas Flow Records logo, dark version', forDark: 'Logo · for dark backgrounds', forLight: 'Logo · for light backgrounds',
+    facts: 'Quick facts', factLabels: ['Label', 'Founder', 'Main artist', 'From', 'Genre', 'Website'], independent: 'independent',
+    bios: 'Bios', free: 'Free to copy and use.', vinShort: 'VIN - short bio', fullBio: 'Full bio', labelShort: 'Maas Flow Records - short bio',
+    photos: 'Press photos', photosText: 'Free to use for articles, posts and event promotion about VIN. Click a photo to download it.', dl: 'Download',
+    photoLabels: ['Black and white', 'Blue, staircase', 'Blue, street'], streetAlt: 'VIN on the street, blue tones',
+    releases: 'Releases', listen: 'Listen & follow', vinStreaming: 'VIN - streaming', vinSocials: 'VIN - socials', labelSocials: 'Maas Flow Records - socials',
+    contact: 'Contact', contactLead: 'Interviews, radio, playlists, features and bookings:', showEmail: 'show email', form: 'Contact form', book: 'Book VIN',
+  },
+  fr: {
+    title: 'Kit presse', desc: 'Kit presse de Maas Flow Records et VIN : bios, infos clés, photos presse, sorties et contact pour la presse, la radio et les promoteurs.',
+    h1: 'Presse', lead: 'Bios, photos, musique et contact pour la presse, la radio, les curateurs et les promoteurs.', kitText: 'Tout en un seul téléchargement : bios, infos, liens, photos presse et logos.',
+    download: 'Télécharger le kit presse (ZIP)', logoLight: 'Logo Maas Flow Records, version claire', logoDark: 'Logo Maas Flow Records, version foncée', forDark: 'Logo · pour fonds foncés', forLight: 'Logo · pour fonds clairs',
+    facts: "L'essentiel", factLabels: ['Label', 'Fondateur', 'Artiste principal', 'Origine', 'Genre', 'Site web'], independent: 'indépendant',
+    bios: 'Bios', free: 'Libres de copie et d’utilisation.', vinShort: 'VIN - bio courte', fullBio: 'Bio complète', labelShort: 'Maas Flow Records - bio courte',
+    photos: 'Photos presse', photosText: 'Libres d’utilisation pour des articles, posts et la promo d’événements autour de VIN. Clique sur une photo pour la télécharger.', dl: 'Télécharger',
+    photoLabels: ['Noir et blanc', 'Bleu, escalier', 'Bleu, rue'], streetAlt: 'VIN dans la rue, tons bleus',
+    releases: 'Sorties', listen: 'Écouter & suivre', vinStreaming: 'VIN - streaming', vinSocials: 'VIN - réseaux', labelSocials: 'Maas Flow Records - réseaux',
+    contact: 'Contact', contactLead: 'Interviews, radio, playlists, feats et bookings :', showEmail: "afficher l'e-mail", form: 'Formulaire de contact', book: 'Booker VIN',
+  },
+  de: {
+    title: 'Pressekit', desc: 'Pressekit von Maas Flow Records und VIN: Bios, Fakten, Pressefotos, Releases und Kontakt für Presse, Radio und Veranstalter.',
+    h1: 'Presse', lead: 'Bios, Fotos, Musik und Kontakt für Presse, Radio, Kuratoren und Veranstalter.', kitText: 'Alles in einem Download: Bios, Fakten, Links, Pressefotos und Logos.',
+    download: 'Pressekit herunterladen (ZIP)', logoLight: 'Maas Flow Records Logo, helle Version', logoDark: 'Maas Flow Records Logo, dunkle Version', forDark: 'Logo · für dunkle Hintergründe', forLight: 'Logo · für helle Hintergründe',
+    facts: 'Kurz & knapp', factLabels: ['Label', 'Gründer', 'Hauptartist', 'Herkunft', 'Genre', 'Website'], independent: 'unabhängig',
+    bios: 'Bios', free: 'Frei zum Kopieren und Verwenden.', vinShort: 'VIN - Kurzbio', fullBio: 'Ganze Bio', labelShort: 'Maas Flow Records - Kurzbio',
+    photos: 'Pressefotos', photosText: 'Frei nutzbar für Artikel, Posts und Event-Promo rund um VIN. Klick auf ein Foto, um es herunterzuladen.', dl: 'Download',
+    photoLabels: ['Schwarz-Weiß', 'Blau, Treppe', 'Blau, Straße'], streetAlt: 'VIN auf der Straße, Blautöne',
+    releases: 'Releases', listen: 'Anhören & folgen', vinStreaming: 'VIN - Streaming', vinSocials: 'VIN - Socials', labelSocials: 'Maas Flow Records - Socials',
+    contact: 'Kontakt', contactLead: 'Interviews, Radio, Playlists, Features und Bookings:', showEmail: 'E-Mail anzeigen', form: 'Kontaktformular', book: 'VIN buchen',
+  },
+});
+
 const photos = [
-  { src: vin.image, alt: vin.imageAlt, label: 'Black and white' },
-  ...(vin.bioPhoto ? [{ src: vin.bioPhoto, alt: vin.bioPhotoAlt ?? vin.imageAlt, label: 'Blue, staircase' }] : []),
-  { src: '/images/artists/vin-street-blue.jpg', alt: 'VIN on the street, blue tones', label: 'Blue, street' },
+  { src: vin.image, alt: vin.imageAlt, label: t.photoLabels[0] },
+  ...(vin.bioPhoto ? [{ src: vin.bioPhoto, alt: vin.bioPhotoAlt ?? vin.imageAlt, label: t.photoLabels[1] }] : []),
+  { src: '/images/artists/vin-street-blue.jpg', alt: t.streetAlt, label: t.photoLabels[2] },
 ];
 
 const facts = [
-  ['Label', 'Maas Flow Records (independent)'],
-  ['Founder', 'VIN'],
-  ['Main artist', `${vin.name} - ${vin.roles.join(', ').toLowerCase()}`],
-  ['From', vin.origin],
-  ['Genre', 'Hip-hop / rap'],
-  ['Website', 'maasflowrecords.com'],
-];
+  `Maas Flow Records (${t.independent})`,
+  'VIN',
+  `${vin.name} - ${vin.roles.join(', ').toLowerCase()}`,
+  vin.origin,
+  'Hip-hop / rap',
+  'maasflowrecords.com',
+].map((v, i) => [t.factLabels[i], v]);
 ---
 
-<BaseLayout title="Press kit" description="Press kit for Maas Flow Records and VIN: bios, facts, press photos, releases and contact for press, radio and promoters.">
-  <PageHero eyebrow="Press kit" title="Press" lead="Bios, photos, music and contact for press, radio, curators and promoters." />
+<BaseLayout title={t.title} description={t.desc}>
+  <PageHero eyebrow={t.title} title={t.h1} lead={t.lead} />
 
   <section class="section kit">
     <div class="container two">
       <div>
-        <h2>Press kit</h2>
-        <p class="muted small">Everything in one download: bios, facts, links, press photos and logos.</p>
+        <h2>{t.title}</h2>
+        <p class="muted small">{t.kitText}</p>
       </div>
       <div class="kit-box">
-        <a class="btn btn-primary" href="/press/maas-flow-records-press-kit.zip" download>Download press kit (ZIP)</a>
+        <a class="btn btn-primary" href="/press/maas-flow-records-press-kit.zip" download>{t.download}</a>
         <div class="logos">
-          <a href="/press/mfr-logo-light.png" download class="logo-dl on-dark"><img src="/images/press/mfr-logo-light.webp" alt="Maas Flow Records logo, light version" width="230" height="86" /><span class="mono muted">Logo · for dark backgrounds</span></a>
-          <a href="/press/mfr-logo-dark.png" download class="logo-dl on-light"><img src="/images/press/mfr-logo-dark.webp" alt="Maas Flow Records logo, dark version" width="230" height="86" /><span class="mono muted">Logo · for light backgrounds</span></a>
+          <a href="/press/mfr-logo-light.png" download class="logo-dl on-dark"><img src="/images/press/mfr-logo-light.webp" alt={t.logoLight} width="230" height="86" /><span class="mono muted">{t.forDark}</span></a>
+          <a href="/press/mfr-logo-dark.png" download class="logo-dl on-light"><img src="/images/press/mfr-logo-dark.webp" alt={t.logoDark} width="230" height="86" /><span class="mono muted">{t.forLight}</span></a>
         </div>
       </div>
     </div>
@@ -52,7 +91,7 @@ const facts = [
   <section class="section">
     <div class="container two">
       <div>
-        <h2>Quick facts</h2>
+        <h2>{t.facts}</h2>
       </div>
       <dl class="facts">
         {facts.map(([k, v]) => (
@@ -65,17 +104,17 @@ const facts = [
   <section class="section">
     <div class="container two">
       <div>
-        <h2>Bios</h2>
-        <p class="muted small">Free to copy and use.</p>
+        <h2>{t.bios}</h2>
+        <p class="muted small">{t.free}</p>
       </div>
       <div class="bios">
         <article class="bio-box">
-          <p class="mono muted">VIN - short bio</p>
+          <p class="mono muted">{t.vinShort}</p>
           <p>{vin.description}</p>
-          <p><a class="link-arrow" href="/bio/#vin">Full bio</a></p>
+          <p><a class="link-arrow" href={L('/bio/#vin')}>{t.fullBio}</a></p>
         </article>
         <article class="bio-box">
-          <p class="mono muted">Maas Flow Records - short bio</p>
+          <p class="mono muted">{t.labelShort}</p>
           <p>{press.labelBio}</p>
         </article>
       </div>
@@ -84,13 +123,13 @@ const facts = [
 
   <section class="section">
     <div class="container">
-      <h2>Press photos</h2>
-      <p class="muted small">Free to use for articles, posts and event promotion about VIN. Click a photo to download it.</p>
+      <h2>{t.photos}</h2>
+      <p class="muted small">{t.photosText}</p>
       <div class="photos">
         {photos.map((p) => (
           <a href={p.src} download class="photo">
             <img src={p.src} alt={p.alt} width="480" height="600" loading="lazy" />
-            <span class="mono muted">{p.label} · Download</span>
+            <span class="mono muted">{p.label} · {t.dl}</span>
           </a>
         ))}
       </div>
@@ -99,7 +138,7 @@ const facts = [
 
   <section class="section">
     <div class="container">
-      <h2>Releases</h2>
+      <h2>{t.releases}</h2>
       <div class="grid grid-4">{releases.map((r) => <ReleaseCard release={r} />)}</div>
     </div>
   </section>
@@ -107,14 +146,14 @@ const facts = [
   <section class="section">
     <div class="container two">
       <div>
-        <h2>Listen &amp; follow</h2>
+        <h2>{t.listen}</h2>
       </div>
       <div class="links">
-        <p class="mono muted">VIN - streaming</p>
+        <p class="mono muted">{t.vinStreaming}</p>
         <PlatformLinks links={vin.streaming} variant="chips" hideEmpty />
-        <p class="mono muted">VIN - socials</p>
+        <p class="mono muted">{t.vinSocials}</p>
         <PlatformLinks links={vin.socials} variant="chips" hideEmpty />
-        <p class="mono muted">Maas Flow Records - socials</p>
+        <p class="mono muted">{t.labelSocials}</p>
         <PlatformLinks links={labelSocials} variant="chips" hideEmpty />
       </div>
     </div>
@@ -123,13 +162,13 @@ const facts = [
   <section class="section">
     <div class="container two">
       <div>
-        <h2>Contact</h2>
+        <h2>{t.contact}</h2>
       </div>
       <div>
-        <p class="lead">Interviews, radio, playlists, features and bookings: <Email label="show email" />.</p>
+        <p class="lead">{t.contactLead} <Email label={t.showEmail} />.</p>
         <div class="btn-row">
-          <a class="btn btn-primary" href="/contact/">Contact form</a>
-          <a class="btn btn-ghost" href="/events/#book">Book VIN</a>
+          <a class="btn btn-primary" href={L('/contact/')}>{t.form}</a>
+          <a class="btn btn-ghost" href={L('/events/#book')}>{t.book}</a>
         </div>
       </div>
     </div>

@@ -1,0 +1,7 @@
+---
+// French and German version of /cart/ (same page, texts picked by the URL).
+import Page from '../cart.astro';
+export const getStaticPaths = () => [{ params: { lang: 'fr' } }, { params: { lang: 'de' } }];
+---
+
+<Page />

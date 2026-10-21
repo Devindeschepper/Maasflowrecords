@@ -1,3 +1,4 @@
+import { LOCALES, type Lang } from '../i18n';
 import type { Product, ProductCategory, ShippingZone } from './types';
 import data from '../content/products.json';
 import shop from '../content/shop.json';
@@ -51,5 +52,5 @@ export const MAX_QTY_PER_ITEM = 10;
 
 export const getProduct = (id: string) => products.find((p) => p.id === id);
 
-export const formatPrice = (cents: number) =>
-  new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' }).format(cents / 100);
+export const formatPrice = (cents: number, lang: Lang = 'en') =>
+  new Intl.NumberFormat(lang === 'en' ? 'en-IE' : LOCALES[lang], { style: 'currency', currency: 'EUR' }).format(cents / 100);

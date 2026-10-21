@@ -1,24 +1,27 @@
 ---
 import type { Release } from '../data/types';
 import { isUpcoming } from '../data/releases';
-import { artistNames, releaseMeta, releaseDateLabel } from '../lib/format';
+import { artistNames, outLabel, releaseMeta, releaseDateLabel } from '../lib/format';
+import { getLang, localize, pick } from '../i18n';
 import PreviewButton from './PreviewButton.astro';
 
 interface Props { release: Release; headingLevel?: 'h2' | 'h3' }
 const { release: r, headingLevel: H = 'h3' } = Astro.props;
 const upcoming = isUpcoming(r);
+const lang = getLang(Astro);
+const t = pick(lang, { en: { upcoming: 'Upcoming', cover: 'cover art' }, fr: { upcoming: 'À venir', cover: 'pochette' }, de: { upcoming: 'Demnächst', cover: 'Cover' } });
 ---
 
 <article class="release">
-  <a href={`/music/${r.slug}/`} class="cover-link">
+  <a href={localize(`/music/${r.slug}/`, lang)} class="cover-link">
     <div class="cover">
-      <img src={r.cover} alt={`${r.title} cover art`} width="600" height="600" loading="lazy" decoding="async" />
-      {upcoming && <span class="tag tag-accent badge">Upcoming</span>}
+      <img src={r.cover} alt={`${r.title} ${t.cover}`} width="600" height="600" loading="lazy" decoding="async" />
+      {upcoming && <span class="tag tag-accent badge">{t.upcoming}</span>}
     </div>
     <div class="meta">
       <p class="mono muted">{releaseMeta(r)}</p>
       <H class="title">{r.title}</H>
-      <p class="sub">{artistNames(r)} <span class="muted">- {upcoming && r.releaseDate && !r.dateTentative ? 'Out ' : ''}{releaseDateLabel(r)}</span></p>
+      <p class="sub">{artistNames(r)} <span class="muted">- {upcoming ? outLabel(r, lang) : releaseDateLabel(r, lang)}</span></p>
     </div>
   </a>
   {r.preview && <div class="play"><PreviewButton src={r.preview} title={r.title} /></div>}

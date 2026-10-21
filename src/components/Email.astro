@@ -3,12 +3,13 @@
 // can't pick it up. The address is stored scrambled and put back together in
 // the browser.
 import { site } from '../data/site';
+import { getLang, pick } from '../i18n';
 
 interface Props {
   class?: string;
   label?: string;
 }
-const { class: className, label = 'Show email' } = Astro.props;
+const { class: className, label = pick(getLang(Astro), { en: 'Show email', fr: "Afficher l'e-mail", de: 'E-Mail anzeigen' }) } = Astro.props;
 
 const scrambled = btoa(site.email.split('').reverse().join(''));
 ---

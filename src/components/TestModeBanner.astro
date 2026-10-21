@@ -1,12 +1,19 @@
 ---
 // Shown on the shop and cart while test mode is on (admin panel → Settings).
 import { paymentMethods } from '../data/site';
+import { getLang, pick } from '../i18n';
+
+const t = pick(getLang(Astro), {
+  en: { test: 'Test shop', none: '- no real payments, nothing is charged or shipped.', card: 'Test card:', any: ', any future date, any CVC.' },
+  fr: { test: 'Boutique test', none: "- pas de vrais paiements, rien n'est débité ni envoyé.", card: 'Carte test :', any: ', une date future, n’importe quel CVC.' },
+  de: { test: 'Test-Shop', none: '- keine echten Zahlungen, nichts wird abgebucht oder verschickt.', card: 'Testkarte:', any: ', beliebiges zukünftiges Datum, beliebiger CVC.' },
+});
 ---
 
 <div class="container">
   <p class="test" role="note">
-    <strong>Test shop</strong> - no real payments, nothing is charged or shipped.
-    {paymentMethods.card && <> Test card: <span class="mono">4242 4242 4242 4242</span>, any future date, any CVC.</>}
+    <strong>{t.test}</strong> {t.none}
+    {paymentMethods.card && <> {t.card} <span class="mono">4242 4242 4242 4242</span>{t.any}</>}
   </p>
 </div>
 

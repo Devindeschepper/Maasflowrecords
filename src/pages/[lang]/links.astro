@@ -1,0 +1,7 @@
+---
+// French and German version of /links/ (same page, texts picked by the URL).
+import Page from '../links.astro';
+export const getStaticPaths = () => [{ params: { lang: 'fr' } }, { params: { lang: 'de' } }];
+---
+
+<Page />

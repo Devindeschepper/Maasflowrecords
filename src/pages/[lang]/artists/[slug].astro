@@ -1,0 +1,7 @@
+---
+// French and German version of /artists/<slug>/.
+import Page, { getStaticPaths as paths } from '../../artists/[slug].astro';
+export const getStaticPaths = () => ['fr', 'de'].flatMap((lang) => paths().map((p) => ({ ...p, params: { ...p.params, lang } })));
+---
+
+<Page {...Astro.props} />

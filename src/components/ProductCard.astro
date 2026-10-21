@@ -1,6 +1,8 @@
 ---
 import type { Product } from '../data/types';
 import { formatPrice } from '../data/products';
+import { getLang, pick } from '../i18n';
+import { categoryLabel } from '../i18n/shop';
 
 interface Props {
   product: Product;
@@ -10,7 +12,13 @@ interface Props {
 const { product: p, comingSoon = false } = Astro.props;
 const soldOut = p.stock <= 0;
 const low = !soldOut && p.stock <= 5;
-const stockLabel = comingSoon ? 'Coming soon' : soldOut ? 'Sold out' : p.preorder ? 'Pre-order' : low ? `Only ${p.stock} left` : 'In stock';
+const lang = getLang(Astro);
+const t = pick(lang, {
+  en: { soon: 'Coming soon', soldOut: 'Sold out', preorder: 'Pre-order', only: (n: number) => `Only ${n} left`, inStock: 'In stock', size: 'Size', chooseSize: 'Choose size', add: 'Add to cart', back: "Tell me when it's back" },
+  fr: { soon: 'Bientôt', soldOut: 'Épuisé', preorder: 'Précommande', only: (n) => `Plus que ${n}`, inStock: 'En stock', size: 'Taille', chooseSize: 'Choisir la taille', add: 'Ajouter au panier', back: 'Me prévenir du retour' },
+  de: { soon: 'Demnächst', soldOut: 'Ausverkauft', preorder: 'Vorbestellen', only: (n) => `Nur noch ${n}`, inStock: 'Auf Lager', size: 'Größe', chooseSize: 'Größe wählen', add: 'In den Warenkorb', back: 'Benachrichtigen, wenn wieder da' },
+});
+const stockLabel = comingSoon ? t.soon : soldOut ? t.soldOut : p.preorder ? t.preorder : low ? t.only(p.stock) : t.inStock;
 ---
 
 <article class="product" data-product-id={p.id}>
@@ -19,14 +27,14 @@ const stockLabel = comingSoon ? 'Coming soon' : soldOut ? 'Sold out' : p.preorde
     <span class:list={['tag', 'stock', { 'tag-accent': comingSoon || low || p.preorder }]}>{stockLabel}</span>
   </div>
   <div class="info">
-    <p class="mono muted cat">{p.category}</p>
+    <p class="mono muted cat">{categoryLabel(p.category, lang)}</p>
     <h3>{p.name}</h3>
-    {!comingSoon && <p class="price">{formatPrice(p.price)}</p>}
+    {!comingSoon && <p class="price">{formatPrice(p.price, lang)}</p>}
     <p class="desc muted">{p.description}</p>
 
     {comingSoon ? (
       <div class="add">
-        <button class="btn" type="button" disabled>Coming soon</button>
+        <button class="btn" type="button" disabled>{t.soon}</button>
       </div>
     ) : (
       <form class="add" data-add-to-cart data-max={Math.min(10, p.stock)}>
@@ -34,18 +42,18 @@ const stockLabel = comingSoon ? 'Coming soon' : soldOut ? 'Sold out' : p.preorde
         {
           p.sizes && (
             <div class="field">
-              <label for={`size-${p.id}`}>Size</label>
+              <label for={`size-${p.id}`}>{t.size}</label>
               <select id={`size-${p.id}`} name="size" required disabled={soldOut}>
-                <option value="">Choose size</option>
+                <option value="">{t.chooseSize}</option>
                 {p.sizes.map((s) => <option value={s}>{s}</option>)}
               </select>
             </div>
           )
         }
         <button class="btn btn-primary" type="submit" disabled={soldOut}>
-          {soldOut ? 'Sold out' : p.preorder ? 'Pre-order' : 'Add to cart'}
+          {soldOut ? t.soldOut : p.preorder ? t.preorder : t.add}
         </button>
-        {soldOut && <a class="btn btn-ghost" href="#restock" data-restock={p.id}>Tell me when it's back</a>}
+        {soldOut && <a class="btn btn-ghost" href="#restock" data-restock={p.id}>{t.back}</a>}
         <p class="added mono" role="status" aria-live="polite"></p>
       </form>
     )}

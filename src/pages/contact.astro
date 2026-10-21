@@ -4,81 +4,126 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from '../components/PageHero.astro';
 import Turnstile from '../components/Turnstile.astro';
 import { site, shopOpen } from '../data/site';
+import { getLang, localize, pick } from '../i18n';
+import { ui } from '../i18n/ui';
 
-// Keep in sync with TOPICS in functions/api/contact.ts
-const topics = [
-  { value: 'general', label: 'General', text: 'Questions and feedback.' },
-  { value: 'artists', label: 'Artists', text: 'Features, collabs and artist questions.' },
-  { value: 'beats', label: 'Beats, mixing & mastering', text: 'Leases, custom beats and mix requests - see Services.', href: '/services/' },
-  { value: 'casting', label: 'Join the label', text: 'Musicians - use the join form.', href: '/casting/' },
-  { value: 'business', label: 'Business', text: 'Licensing, sync, partnerships.' },
-  { value: 'events', label: 'Booking', text: 'Book an artist - use the booking form.', href: '/events/#book' },
-  { value: 'press', label: 'Press', text: 'Interviews and media.' },
-  ...(shopOpen ? [{ value: 'shop', label: 'Shop & orders', text: 'Order questions, returns.' }] : []),
-  { value: 'other', label: 'Other', text: 'Anything that doesn\'t fit above.' },
-];
+// Keep in sync with TOPICS in functions/api/contact.ts (the values stay the same in every language).
+const lang = getLang(Astro);
+const L = (href: string) => localize(href, lang);
+type Topic = { value: string; label: string; text: string; href?: string };
+const t = pick(lang, {
+  en: {
+    desc: 'Contact Maas Flow Records - general questions, artists, business and press.', eyebrow: 'Get in touch', title: 'Contact', show: 'Show email address',
+    who: 'Who to contact', reply: 'We usually reply within a few working days.', success: "Thanks - your message was sent. We'll get back to you soon.",
+    name: 'Name', email: 'Email', topic: 'Topic', subject: 'Subject', message: 'Message', send: 'Send message',
+    topics: [
+      { value: 'general', label: 'General', text: 'Questions and feedback.' },
+      { value: 'artists', label: 'Artists', text: 'Features, collabs and artist questions.' },
+      { value: 'beats', label: 'Beats, mixing & mastering', text: 'Leases, custom beats and mix requests - see Services.', href: '/services/' },
+      { value: 'casting', label: 'Join the label', text: 'Musicians - use the join form.', href: '/casting/' },
+      { value: 'business', label: 'Business', text: 'Licensing, sync, partnerships.' },
+      { value: 'events', label: 'Booking', text: 'Book an artist - use the booking form.', href: '/events/#book' },
+      ...(shopOpen ? [{ value: 'shop', label: 'Shop & orders', text: 'Order questions, returns.' }] : []),
+      { value: 'press', label: 'Press', text: 'Interviews and media.' },
+      { value: 'other', label: 'Other', text: "Anything that doesn't fit above." },
+    ] as Topic[],
+  },
+  fr: {
+    desc: 'Contacter Maas Flow Records - questions générales, artistes, business et presse.', eyebrow: 'Nous écrire', title: 'Contact', show: "Afficher l'adresse e-mail",
+    who: 'Qui contacter', reply: 'On répond généralement en quelques jours ouvrés.', success: 'Merci - ton message a été envoyé. On te répond vite.',
+    name: 'Nom', email: 'E-mail', topic: 'Sujet', subject: 'Objet', message: 'Message', send: 'Envoyer le message',
+    topics: [
+      { value: 'general', label: 'Général', text: 'Questions et retours.' },
+      { value: 'artists', label: 'Artistes', text: 'Feats, collabs et questions pour les artistes.' },
+      { value: 'beats', label: 'Beats, mix & mastering', text: 'Leases, beats sur mesure et demandes de mix - voir Services.', href: '/services/' },
+      { value: 'casting', label: 'Rejoindre le label', text: 'Musiciens - utilise le formulaire « Nous rejoindre ».', href: '/casting/' },
+      { value: 'business', label: 'Business', text: 'Licences, sync, partenariats.' },
+      { value: 'events', label: 'Booking', text: 'Booker un artiste - utilise le formulaire de booking.', href: '/events/#book' },
+      ...(shopOpen ? [{ value: 'shop', label: 'Boutique & commandes', text: 'Questions sur une commande, retours.' }] : []),
+      { value: 'press', label: 'Presse', text: 'Interviews et médias.' },
+      { value: 'other', label: 'Autre', text: 'Tout le reste.' },
+    ] as Topic[],
+  },
+  de: {
+    desc: 'Kontakt zu Maas Flow Records - allgemeine Fragen, Artists, Business und Presse.', eyebrow: 'Schreib uns', title: 'Kontakt', show: 'E-Mail-Adresse anzeigen',
+    who: 'Wen kontaktieren', reply: 'Wir antworten meistens innerhalb weniger Werktage.', success: 'Danke - deine Nachricht wurde gesendet. Wir melden uns bald.',
+    name: 'Name', email: 'E-Mail', topic: 'Thema', subject: 'Betreff', message: 'Nachricht', send: 'Nachricht senden',
+    topics: [
+      { value: 'general', label: 'Allgemein', text: 'Fragen und Feedback.' },
+      { value: 'artists', label: 'Artists', text: 'Features, Collabs und Fragen an die Artists.' },
+      { value: 'beats', label: 'Beats, Mixing & Mastering', text: 'Leases, Custom-Beats und Mix-Anfragen - siehe Services.', href: '/services/' },
+      { value: 'casting', label: 'Zum Label kommen', text: 'Musiker - nutzt das Mitmach-Formular.', href: '/casting/' },
+      { value: 'business', label: 'Business', text: 'Lizenzen, Sync, Partnerschaften.' },
+      { value: 'events', label: 'Booking', text: 'Artist buchen - nutz das Booking-Formular.', href: '/events/#book' },
+      ...(shopOpen ? [{ value: 'shop', label: 'Shop & Bestellungen', text: 'Fragen zu Bestellungen, Rückgaben.' }] : []),
+      { value: 'press', label: 'Presse', text: 'Interviews und Medien.' },
+      { value: 'other', label: 'Sonstiges', text: 'Alles andere.' },
+    ] as Topic[],
+  },
+});
+const topics = t.topics;
 ---
 
-<BaseLayout title="Contact" description={`Contact Maas Flow Records - general questions, artists, business and press.`}>
-  <PageHero eyebrow="Get in touch" title="Contact">
+<BaseLayout title={t.title} description={t.desc}>
+  <PageHero eyebrow={t.eyebrow} title={t.title}>
     <p class="lead">
-      <Email class="mail" label="Show email address" />
+      <Email class="mail" label={t.show} />
     </p>
   </PageHero>
 
   <section class="section">
     <div class="container contact">
       <aside>
-        <h2 class="h3">Who to contact</h2>
+        <h2 class="h3">{t.who}</h2>
         <ul class="topics">
           {
-            topics.map((t) => (
+            topics.map((x) => (
               <li>
-                {t.href ? <a href={t.href}><strong>{t.label}</strong></a> : <strong>{t.label}</strong>}
-                <span class="muted">{t.text}</span>
+                {x.href ? <a href={L(x.href)}><strong>{x.label}</strong></a> : <strong>{x.label}</strong>}
+                <span class="muted">{x.text}</span>
               </li>
             ))
           }
         </ul>
-        <p class="muted small">We usually reply within a few working days.</p>
+        <p class="muted small">{t.reply}</p>
       </aside>
 
-      <form class="form card pad" action="/api/contact" method="post" data-ajax data-success="Thanks - your message was sent. We'll get back to you soon.">
+      <form class="form card pad" action="/api/contact" method="post" data-ajax data-success={t.success}>
         <div class="form-row">
           <div class="field">
-            <label for="f-name">Name <span class="req">*</span></label>
+            <label for="f-name">{t.name} <span class="req">*</span></label>
             <input id="f-name" name="name" required maxlength="100" autocomplete="name" />
           </div>
           <div class="field">
-            <label for="f-email">Email <span class="req">*</span></label>
+            <label for="f-email">{t.email} <span class="req">*</span></label>
             <input id="f-email" name="email" type="email" required maxlength="200" autocomplete="email" />
           </div>
         </div>
         <div class="form-row">
           <div class="field">
-            <label for="f-topic">Topic <span class="req">*</span></label>
+            <label for="f-topic">{t.topic} <span class="req">*</span></label>
             <select id="f-topic" name="topic" required>
-              {topics.filter((t) => !t.href).map((t) => <option value={t.value}>{t.label}</option>)}
+              {topics.filter((x) => !x.href).map((x) => <option value={x.value}>{x.label}</option>)}
             </select>
           </div>
           <div class="field">
-            <label for="f-subject">Subject <span class="req">*</span></label>
+            <label for="f-subject">{t.subject} <span class="req">*</span></label>
             <input id="f-subject" name="subject" required maxlength="150" />
           </div>
         </div>
         <div class="field">
-          <label for="f-msg">Message <span class="req">*</span></label>
+          <label for="f-msg">{t.message} <span class="req">*</span></label>
           <textarea id="f-msg" name="message" required maxlength="5000"></textarea>
         </div>
 
         <div class="hp" aria-hidden="true">
-          <label for="f-website">Website</label>
+          <label for="f-website">{ui[lang].form.website}</label>
           <input id="f-website" name="website" tabindex="-1" autocomplete="off" />
         </div>
         <input type="hidden" name="_ts" value="" />
 
         <Turnstile />
-        <button class="btn btn-primary" type="submit">Send message</button>
+        <button class="btn btn-primary" type="submit">{t.send}</button>
         <p class="form-status" role="status" aria-live="polite"></p>
       </form>
     </div>
