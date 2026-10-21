@@ -86,7 +86,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               <label data-stock-field>How many you have<input name="stock" type="number" min="0" step="1" required placeholder="20" /></label>
             </div>
             <label>Description<textarea name="description" rows="3" maxlength="1000" placeholder="Material, size, what makes it special…"></textarea></label>
-            <div class="sizes-box">
+            <div class="bundle-box" data-bundle-box hidden>
+              <span class="sz-title">What's in the bundle <span class="muted">(pick 2 or more · stock and sizes come from these)</span></span>
+              <div class="bundle-list" data-bundle-list></div>
+            </div>
+            <div class="sizes-box" data-sizes-box>
               <span class="sz-title">Sizes <span class="muted">(tap the ones you have · none = one size)</span></span>
               <div class="sz-chips" data-sz-group="clothes" aria-label="Clothing sizes">
                 {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((v) => <button type="button" class="sz" data-sz={v} aria-pressed="false">{v}</button>)}
@@ -161,7 +165,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       open: boolean; drop: string | null; test: boolean;
       month: { orders: number; revenue: number; best: { name: string; qty: number } | null };
       all: { orders: number; revenue: number };
-      stock: { id: string; name: string; stock: number; sold: number; left: number; low: boolean; sizes?: Record<string, { stock: number; sold: number; left: number }> }[];
+      stock: { id: string; name: string; stock: number; sold: number; left: number; low: boolean; bundle?: boolean; sizes?: Record<string, { stock: number; sold: number; left: number }> }[];
       countries: { name: string; orders: number }[];
     } | null;
     toShip: Order[]; shipped: Order[];
@@ -219,7 +223,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     // To do: what needs VIN's attention right now, most important first.
     const todo: string[] = [];
     if (d.toShip.length) todo.push(`📦 <b>${plural(d.toShip.length, 'order')} to ship.</b> Pack them, then tap “Shipped ✓”.`);
-    for (const p of s?.stock ?? []) {
+    for (const p of (s?.stock ?? []).filter((x) => !x.bundle)) { // a bundle runs out when a product inside does
       const waiting = manage?.waiting?.[p.id] ?? 0;
       if (p.left === 0) todo.push(`❌ <b>${esc(p.name)} is sold out.</b>${waiting ? ` ${plural(waiting, 'person')} want${waiting === 1 ? 's' : ''} an email when it’s back.` : ''} Got more? Tap “Edit” on it under Products and put the new number.`);
       else if (p.low) todo.push(`⚠️ <b>Only ${p.left} × ${esc(p.name)} left.</b> Order more, or post “last copies”.`);
@@ -401,7 +405,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   });
 
   // ---- Managing the shop: open/close, test mode, products (saved on GitHub, live after ~2 minutes) ----
-  type RawProduct = { id: string; name: string; category: string; description?: string; price: number; image: string; stock: number; preorder?: boolean; sizes?: (string | { size: string; stock: number })[]; shippingClass?: string };
+  type RawProduct = { id: string; name: string; category: string; description?: string; price: number; image: string; stock: number; preorder?: boolean; sizes?: (string | { size: string; stock: number })[]; shippingClass?: string; bundle?: string[] };
   type Manage = { ok: boolean; error?: string; github: boolean; categories?: string[]; shopOpen?: boolean; shopTestMode?: boolean; dropAt?: string | null; products?: RawProduct[]; waiting?: Record<string, number> };
   let manage: Manage | null = null;
   let editing: RawProduct | null = null;
@@ -446,6 +450,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     $('[data-c-drop-cancel]').hidden = !m.dropAt;
     const waiting = (id: string) => m.waiting?.[id] ? ` · ${m.waiting[id]} waiting` : '';
     const stockText = (p: RawProduct) => {
+      if (p.category === 'Bundle') return `Bundle: ${(p.bundle ?? []).map((id) => esc(m.products!.find((x) => x.id === id)?.name ?? id)).join(' + ')}`;
       const per = (p.sizes ?? []).filter((x): x is { size: string; stock: number } => typeof x === 'object');
       return per.length ? per.map((x) => `${esc(x.size)}: ${x.stock}`).join(' · ') : `${p.stock} in stock`;
     };
@@ -505,10 +510,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   // Numbers typed per size (kept while sizes are switched on and off).
   let sizeCounts: Record<string, string> = {};
+  let bundleChosen: string[] = [];
   function openForm(p: RawProduct | null) {
     editing = p;
     pform.reset();
     sizeCounts = {};
+    bundleChosen = [...(p?.bundle ?? [])];
     say($('[data-pf-msg]'), '');
     $('[data-pf-title]').textContent = p ? `Edit: ${p.name}` : 'New product';
     $('[data-pf-remove]').hidden = !p;
@@ -534,6 +541,24 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   const readSizes = () => sizesInput.value.split(',').map((x) => x.trim()).filter(Boolean);
   function syncSizes() {
     const cat = catSelect.value;
+    // Bundle: pick the products inside instead of sizes and a stock number.
+    const isBundle = cat === 'Bundle';
+    $('[data-bundle-box]').hidden = !isBundle;
+    $('[data-sizes-box]').hidden = isBundle;
+    if (isBundle) {
+      const chosen = new Set(bundleChosen);
+      $('[data-bundle-list]').innerHTML = (manage?.products ?? [])
+        .filter((x) => x.category !== 'Bundle' && x.id !== editing?.id)
+        .map((x) => `<label class="check"><input type="checkbox" data-bundle-id="${esc(x.id)}" ${chosen.has(x.id) ? 'checked' : ''} /> ${esc(x.name)}${(x.sizes ?? []).length ? ' <span class="muted">(has sizes)</span>' : ''}</label>`)
+        .join('') || '<p class="muted">Add the products first, then make the bundle.</p>';
+      pform.querySelectorAll<HTMLInputElement>('[data-bundle-id]').forEach((i) => i.addEventListener('change', () => {
+        bundleChosen = [...pform.querySelectorAll<HTMLInputElement>('[data-bundle-id]:checked')].map((x) => x.dataset.bundleId!);
+      }));
+      const stockField = pform.querySelector<HTMLElement>('[data-stock-field]')!;
+      stockField.hidden = true;
+      stockField.querySelector('input')!.required = false;
+      return;
+    }
     const groups: Record<string, boolean> = { clothes: ['T-Shirt', 'Hoodie', 'Other'].includes(cat), chains: ['Jewellery', 'Other'].includes(cat) };
     const have = readSizes();
     pform.querySelectorAll<HTMLElement>('[data-sz-group]').forEach((g) => {
@@ -594,7 +619,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         product: {
           isNew: !editing, id: editing?.id, name: f.name.value, category: f.category.value, price: Number(f.price.value), stock: Number(f.stock.value),
           description: f.description.value,
-          sizes: readSizes().map((size) => ({ size, stock: Number(sizeCounts[size] ?? 0) })),
+          sizes: f.category.value === 'Bundle' ? [] : readSizes().map((size) => ({ size, stock: Number(sizeCounts[size] ?? 0) })),
+          bundle: f.category.value === 'Bundle' ? bundleChosen : undefined,
           shippingClass: f.shippingClass.value, preorder: f.preorder.checked,
         },
         image: file ? await photoData(file) : undefined,
@@ -708,6 +734,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .sz-title { font-size: 0.85rem; }
   .sz-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
   .sz-chips[hidden] { display: none; }
+  .bundle-box { display: grid; gap: 0.5rem; }
+  .bundle-list { display: grid; gap: 0.4rem; }
   .sz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 0.5rem; }
   .sz-grid :global(label) { display: grid; gap: 0.25rem; font: 600 0.8rem var(--font-mono); }
   .sz-grid :global(input) { width: 100%; }

@@ -98,11 +98,11 @@ export const onDiscounts: PagesFunction<Env> = async ({ request, env }) => {
 
 type RawProduct = {
   id: string; name: string; category: string; description?: string; price: number; image: string;
-  stock: number; preorder?: boolean; sizes?: (string | { size: string; stock: number })[]; shippingClass?: string;
+  stock: number; preorder?: boolean; sizes?: (string | { size: string; stock: number })[]; shippingClass?: string; bundle?: string[];
 };
 type Settings = { shopOpen?: boolean; shopTestMode?: boolean; dropAt?: string; legalName?: string; legalAddress?: string } & Record<string, unknown>;
 
-const CATEGORIES = ['CD', 'Vinyl', 'T-Shirt', 'Hoodie', 'Cap', 'Poster', 'Jewellery', 'Other'];
+const CATEGORIES = ['CD', 'Vinyl', 'T-Shirt', 'Hoodie', 'Cap', 'Poster', 'Jewellery', 'Bundle', 'Other'];
 const SETTINGS = 'src/content/settings.json';
 const PRODUCTS = 'src/content/products.json';
 const SHOP = 'src/content/shop.json';
@@ -207,7 +207,11 @@ export const onProducts: PagesFunction<Env> = async ({ request, env }) => {
   try {
     if (body.action === 'remove') {
       if (typeof body.id !== 'string') return jsonResponse(400, { ok: false, error: 'Unknown product.' });
-      await updateJson<{ products: RawProduct[] }>(env, PRODUCTS, `Shop: remove product ${body.id} (from the shop page)`, (d) => ({ ...d, products: d.products.filter((p) => p.id !== body.id) }));
+      await updateJson<{ products: RawProduct[] }>(env, PRODUCTS, `Shop: remove product ${body.id} (from the shop page)`, (d) => ({
+        ...d,
+        // Also take it out of any bundle it was in (a bundle with fewer than 2 products left disappears from the shop).
+        products: d.products.filter((p) => p.id !== body.id).map((p) => (p.bundle ? { ...p, bundle: p.bundle.filter((id) => id !== body.id) } : p)),
+      }));
       return jsonResponse(200, { ok: true });
     }
 
@@ -228,7 +232,17 @@ export const onProducts: PagesFunction<Env> = async ({ request, env }) => {
       if (!Number.isFinite(n) || n < 0 || n > 100000) return jsonResponse(400, { ok: false, error: `Enter how many you have in size ${size} (0 or more).` });
       sizes.push({ size, stock: n });
     }
-    const stock = sizes.length ? sizes.reduce((a, s) => a + s.stock, 0) : Math.floor(Number(p.stock));
+    // A bundle has no stock or sizes of its own: they come from the products inside it.
+    let bundle: string[] | undefined;
+    if (category === 'Bundle') {
+      const all = (JSON.parse((await readFile(env, PRODUCTS))?.text ?? '{"products":[]}') as { products: RawProduct[] }).products;
+      const inside = [...new Set((Array.isArray(p.bundle) ? p.bundle : []).map(String))].map((id) => all.find((x) => x.id === id && x.category !== 'Bundle')).filter((x): x is RawProduct => !!x);
+      if (inside.length < 2) return jsonResponse(400, { ok: false, error: 'Pick at least 2 products to put in the bundle.' });
+      if (inside.filter((x) => (x.sizes ?? []).length > 0).length > 1) return jsonResponse(400, { ok: false, error: 'Only one product with sizes can be in a bundle (e.g. a CD + one T-shirt).' });
+      bundle = inside.map((x) => x.id);
+      sizes.length = 0;
+    }
+    const stock = bundle ? 0 : sizes.length ? sizes.reduce((a, s) => a + s.stock, 0) : Math.floor(Number(p.stock));
     if (!Number.isFinite(stock) || stock < 0 || stock > 100000) return jsonResponse(400, { ok: false, error: 'Enter how many you have (0 or more).' });
 
     let image: string | undefined;
@@ -253,6 +267,7 @@ export const onProducts: PagesFunction<Env> = async ({ request, env }) => {
         preorder: p.preorder === true,
         sizes,
         shippingClass: p.shippingClass === 'standard' ? 'standard' : 'small',
+        ...(bundle ? { bundle } : {}),
       };
       const products = existing ? d.products.map((x) => (x.id === id ? next : x)) : [...d.products, next];
       return { ...d, products };

@@ -1,6 +1,6 @@
 ---
 import type { Product } from '../data/types';
-import { formatPrice } from '../data/products';
+import { formatPrice, products } from '../data/products';
 import { getLang, pick } from '../i18n';
 import { categoryLabel } from '../i18n/shop';
 
@@ -14,10 +14,13 @@ const soldOut = p.stock <= 0;
 const low = !soldOut && p.stock <= 5;
 const lang = getLang(Astro);
 const t = pick(lang, {
-  en: { soon: 'Coming soon', soldOut: 'Sold out', preorder: 'Pre-order', only: (n: number) => `Only ${n} left`, sizeOut: 'sold out', inStock: 'In stock', size: 'Size', chooseSize: 'Choose size', add: 'Add to cart', back: "Tell me when it's back" },
-  fr: { soon: 'Bientôt', soldOut: 'Épuisé', preorder: 'Précommande', only: (n) => `Plus que ${n}`, sizeOut: 'épuisé', inStock: 'En stock', size: 'Taille', chooseSize: 'Choisir la taille', add: 'Ajouter au panier', back: 'Me prévenir du retour' },
-  de: { soon: 'Demnächst', soldOut: 'Ausverkauft', preorder: 'Vorbestellen', only: (n) => `Nur noch ${n}`, sizeOut: 'ausverkauft', inStock: 'Auf Lager', size: 'Größe', chooseSize: 'Größe wählen', add: 'In den Warenkorb', back: 'Benachrichtigen, wenn wieder da' },
+  en: { soon: 'Coming soon', soldOut: 'Sold out', preorder: 'Pre-order', only: (n: number) => `Only ${n} left`, includes: 'Includes:', save: (x: string) => `Save ${x}`, sizeOut: 'sold out', inStock: 'In stock', size: 'Size', chooseSize: 'Choose size', add: 'Add to cart', back: "Tell me when it's back" },
+  fr: { soon: 'Bientôt', soldOut: 'Épuisé', preorder: 'Précommande', only: (n) => `Plus que ${n}`, includes: 'Contient :', save: (x) => `${x} d'économie`, sizeOut: 'épuisé', inStock: 'En stock', size: 'Taille', chooseSize: 'Choisir la taille', add: 'Ajouter au panier', back: 'Me prévenir du retour' },
+  de: { soon: 'Demnächst', soldOut: 'Ausverkauft', preorder: 'Vorbestellen', only: (n) => `Nur noch ${n}`, includes: 'Enthält:', save: (x) => `Du sparst ${x}`, sizeOut: 'ausverkauft', inStock: 'Auf Lager', size: 'Größe', chooseSize: 'Größe wählen', add: 'In den Warenkorb', back: 'Benachrichtigen, wenn wieder da' },
 });
+// Bundle: what's inside, and how much cheaper it is than buying them one by one.
+const inside = (p.bundle ?? []).map((id) => products.find((x) => x.id === id)).filter((x) => !!x);
+const saving = inside.length ? inside.reduce((a, x) => a + x!.price, 0) - p.price : 0;
 // With stock per size, a sold-out size can't be chosen.
 const sizeLeft = (size: string) => p.sizeStock?.[size];
 const stockLabel = comingSoon ? t.soon : soldOut ? t.soldOut : p.preorder ? t.preorder : low ? t.only(p.stock) : t.inStock;
@@ -31,7 +34,8 @@ const stockLabel = comingSoon ? t.soon : soldOut ? t.soldOut : p.preorder ? t.pr
   <div class="info">
     <p class="mono muted cat">{categoryLabel(p.category, lang)}</p>
     <h3>{p.name}</h3>
-    {!comingSoon && <p class="price">{formatPrice(p.price, lang)}</p>}
+    {!comingSoon && <p class="price">{formatPrice(p.price, lang)}{saving > 0 && <span class="save">{t.save(formatPrice(saving, lang))}</span>}</p>}
+    {inside.length > 0 && <p class="incl mono">{t.includes} {inside.map((x) => x!.name).join(' + ')}</p>}
     <p class="desc muted">{p.description}</p>
 
     {comingSoon ? (
@@ -72,6 +76,8 @@ const stockLabel = comingSoon ? t.soon : soldOut ? t.soldOut : p.preorder ? t.pr
   h3 { margin-bottom: 0.4rem; }
   .price { font-weight: 600; margin: 0 0 0.6rem; }
   .desc { font-size: 0.88rem; }
+  .save { margin-left: 0.6rem; font-size: 0.75rem; color: var(--accent); font-weight: 600; }
+  .incl { margin: -0.3rem 0 0.6rem; font-size: 0.72rem; color: var(--muted); }
   .add { margin-top: auto; display: grid; gap: 0.75rem; }
   .add .btn { width: 100%; }
   .add .btn:disabled { opacity: 0.6; cursor: not-allowed; }

@@ -4,7 +4,7 @@ import { db } from './studio';
 import { countUse } from './discounts';
 import { sendMail } from './mail';
 import { customerTexts, itemsForCustomer } from './payments/customer-texts';
-import { products } from '../../src/data/products';
+import { bundleStock, products } from '../../src/data/products';
 import { dropAt, shopOpen, shopTestMode } from '../../src/data/site';
 
 /**
@@ -175,15 +175,29 @@ export async function stockLeft(env: Env, now: number): Promise<Map<string, Prod
     const sold = sales.filter((s) => s.at >= base!.at).reduce((n, s) => n + s.lines.filter(match).reduce((m, l) => m + l.qty, 0), 0);
     return { stock, sold, left: Math.max(0, stock - sold) };
   };
+  // A bundle sold = one of each product inside it sold (for the product with sizes: in the chosen size).
+  const inBundle = (l: Line, id: string) => !!products.find((b) => b.id === l.id)?.bundle?.includes(id);
   for (const p of products) {
+    if (p.bundle) continue; // worked out below from the products inside
     if (p.sizeStock) {
       const sizes: Record<string, StockLine> = {};
-      for (const [size, n] of Object.entries(p.sizeStock)) sizes[size] = await count(`stock-base-${p.id}::${size}`, n, (l) => l.id === p.id && l.size === size);
+      for (const [size, n] of Object.entries(p.sizeStock)) sizes[size] = await count(`stock-base-${p.id}::${size}`, n, (l) => (l.id === p.id || inBundle(l, p.id)) && l.size === size);
       const all = Object.values(sizes);
       out.set(p.id, { stock: p.stock, sold: all.reduce((a, x) => a + x.sold, 0), left: all.reduce((a, x) => a + x.left, 0), sizes });
     } else {
-      out.set(p.id, await count(`stock-base-${p.id}`, p.stock, (l) => l.id === p.id));
+      out.set(p.id, await count(`stock-base-${p.id}`, p.stock, (l) => l.id === p.id || inBundle(l, p.id)));
     }
+  }
+  for (const b of products) {
+    if (!b.bundle) continue;
+    const items = b.bundle.map((id) => products.find((x) => x.id === id)!).filter(Boolean);
+    const leftOf = (x: (typeof products)[number], size?: string) => (size ? out.get(x.id)?.sizes?.[size]?.left ?? 0 : out.get(x.id)?.left ?? 0);
+    const now = bundleStock(items, leftOf);
+    const sold = sales.reduce((n, s) => n + s.lines.filter((l) => l.id === b.id).reduce((m, l) => m + l.qty, 0), 0);
+    out.set(b.id, {
+      stock: now.stock, sold, left: now.stock,
+      ...(now.sizeStock ? { sizes: Object.fromEntries(Object.entries(now.sizeStock).map(([size, n]) => [size, { stock: n, sold: 0, left: n }])) } : {}),
+    });
   }
   return out;
 }
@@ -195,7 +209,7 @@ export interface ShopStats {
   test: boolean;
   month: { orders: number; revenue: number; best: { name: string; qty: number } | null };
   all: { orders: number; revenue: number };
-  stock: { id: string; name: string; stock: number; sold: number; left: number; low: boolean; sizes?: Record<string, StockLine> }[];
+  stock: { id: string; name: string; stock: number; sold: number; left: number; low: boolean; bundle?: boolean; sizes?: Record<string, StockLine> }[];
   /** All-time orders per country, most first. */
   countries: { name: string; orders: number }[];
 }
@@ -218,7 +232,7 @@ export async function shopStats(env: Env, now: number, monthStart: number): Prom
   const left = await stockLeft(env, now);
   const stock = products.map((p) => {
     const st = left.get(p.id)!;
-    return { id: p.id, name: p.name, ...st, low: st.left <= LOW };
+    return { id: p.id, name: p.name, ...st, low: st.left <= LOW, ...(p.bundle ? { bundle: true } : {}) };
   });
 
   const byCountry = new Map<string, number>();
