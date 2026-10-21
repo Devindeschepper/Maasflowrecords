@@ -10,6 +10,7 @@ import { shopOpen, dropStarted, paymentMethods } from '../../src/data/site';
 import { rememberOrder, stockLeft } from '../_lib/sales';
 import { checkCode, discounted } from '../_lib/discounts';
 import { mailLang } from '../_lib/payments/customer-texts';
+import { countryLabel, isCountryCode, zoneIdFor } from '../../src/data/countries';
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   // Checkout is JS-only (the cart lives in the browser), so always answer with JSON.
@@ -30,8 +31,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (spam) return json(400, { ok: false, error: spam });
 
   // ---- destination (prices depend on it: no EU VAT outside the EU) ----
-  const zone = orderableZones.find((z) => z.id === str(fd, 'zone', 20));
-  if (!zone) return json(400, { ok: false, error: 'Please choose a shipping destination.' });
+  // ---- destination: the customer picks a country; the shipping zone (and price) follows from it ----
+  const countryCode = str(fd, 'country', 2).toUpperCase();
+  if (!isCountryCode(countryCode)) return json(400, { ok: false, error: 'Please choose your country.' });
+  const zone = orderableZones.find((z) => z.id === zoneIdFor(countryCode));
+  if (!zone) return json(400, { ok: false, error: "Sorry, we can't ship to this country yet." });
 
   // ---- cart: re-price every line from the catalogue ----
   let raw: unknown;
@@ -89,7 +93,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     address: str(fd, 'address', 200),
     postalCode: str(fd, 'postalCode', 20),
     city: str(fd, 'city', 100),
-    country: str(fd, 'country', 80),
+    country: countryLabel(countryCode, 'en'),
     notes: str(fd, 'notes', 1000),
   };
   if (!customer.name || !customer.address || !customer.postalCode || !customer.city || !customer.country) {

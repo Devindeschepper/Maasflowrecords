@@ -23,7 +23,7 @@ export const stripeProvider: PaymentProvider = {
       success_url: `${origin}${order.pagePrefix ?? ''}/order/?status=paid&order=${encodeURIComponent(order.orderId)}`,
       cancel_url: `${origin}${order.pagePrefix ?? ''}/cart/?payment=cancelled`,
       'shipping_options[0][shipping_rate_data][type]': 'fixed_amount',
-      'shipping_options[0][shipping_rate_data][display_name]': `Shipping - ${order.shippingZone}`,
+      'shipping_options[0][shipping_rate_data][display_name]': 'Shipping',
       'shipping_options[0][shipping_rate_data][fixed_amount][amount]': String(order.shipping),
       'shipping_options[0][shipping_rate_data][fixed_amount][currency]': 'eur',
       'payment_intent_data[metadata][order_id]': order.orderId,
