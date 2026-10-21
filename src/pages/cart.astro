@@ -26,7 +26,7 @@ const t = pick(lang, {
     checkout: 'Checkout', cancelled: 'Payment cancelled - nothing was charged. You can try again.', noShipping: 'Shipping prices are coming soon - orders open shortly.',
     shipTo: 'Country', chooseCountry: 'Choose your country…', notYet: 'no shipping yet', pickCountry: 'Choose your country', code: 'Discount code', apply: 'Apply', discount: 'Discount', subtotal: 'Subtotal', shipping: 'Shipping', total: 'Total',
     details: 'Your details', name: 'Full name', email: 'Email', address: 'Address', zip: 'Postal code', city: 'City', country: 'Country', notes: 'Order notes',
-    payment: 'Payment', card: 'Card or PayPal', cardSub: 'Also Apple Pay / Google Pay · secure checkout by Stripe', crypto: 'Crypto', cryptoSub: 'Bitcoin, Ethereum, USDT and more · via NOWPayments',
+    payment: 'Payment', card: 'Card, PayPal, Apple Pay, Google Pay', cardSub: 'Secure payment by Stripe · Apple Pay and Google Pay show up on phones that have them', crypto: 'Crypto', cryptoSub: 'Bitcoin, Ethereum, USDT and more · via NOWPayments',
     agree: 'I agree to the', terms: 'shipping & returns', terms2: 'terms.', pay: 'Continue to payment', place: 'Place order', secure: "You'll be sent to a secure payment page. Payment details never touch this website.",
     thanks: 'Thank you', back: 'Back to shop',
   },
@@ -35,7 +35,7 @@ const t = pick(lang, {
     checkout: 'Commande', cancelled: "Paiement annulé - rien n'a été débité. Tu peux réessayer.", noShipping: 'Les frais de livraison arrivent bientôt - les commandes ouvrent sous peu.',
     shipTo: 'Pays', chooseCountry: 'Choisis ton pays…', notYet: 'pas encore de livraison', pickCountry: 'Choisis ton pays', code: 'Code de réduction', apply: 'Appliquer', discount: 'Réduction', subtotal: 'Sous-total', shipping: 'Livraison', total: 'Total',
     details: 'Tes coordonnées', name: 'Nom complet', email: 'E-mail', address: 'Adresse', zip: 'Code postal', city: 'Ville', country: 'Pays', notes: 'Remarques sur la commande',
-    payment: 'Paiement', card: 'Carte ou PayPal', cardSub: 'Aussi Apple Pay / Google Pay · paiement sécurisé par Stripe', crypto: 'Crypto', cryptoSub: 'Bitcoin, Ethereum, USDT et plus · via NOWPayments',
+    payment: 'Paiement', card: 'Carte, PayPal, Apple Pay, Google Pay', cardSub: 'Paiement sécurisé par Stripe · Apple Pay et Google Pay apparaissent sur les téléphones qui les ont', crypto: 'Crypto', cryptoSub: 'Bitcoin, Ethereum, USDT et plus · via NOWPayments',
     agree: "J'accepte les conditions de", terms: 'livraison & retours', terms2: '.', pay: 'Continuer vers le paiement', place: 'Passer la commande', secure: 'Tu seras redirigé vers une page de paiement sécurisée. Tes données de paiement ne passent jamais par ce site.',
     thanks: 'Merci', back: 'Retour à la boutique',
   },
@@ -44,7 +44,7 @@ const t = pick(lang, {
     checkout: 'Kasse', cancelled: 'Zahlung abgebrochen - es wurde nichts abgebucht. Du kannst es nochmal versuchen.', noShipping: 'Die Versandkosten kommen bald - Bestellungen sind in Kürze möglich.',
     shipTo: 'Land', chooseCountry: 'Wähle dein Land…', notYet: 'noch kein Versand', pickCountry: 'Wähle dein Land', code: 'Rabattcode', apply: 'Einlösen', discount: 'Rabatt', subtotal: 'Zwischensumme', shipping: 'Versand', total: 'Gesamt',
     details: 'Deine Daten', name: 'Vollständiger Name', email: 'E-Mail', address: 'Adresse', zip: 'Postleitzahl', city: 'Stadt', country: 'Land', notes: 'Anmerkungen zur Bestellung',
-    payment: 'Bezahlung', card: 'Karte oder PayPal', cardSub: 'Auch Apple Pay / Google Pay · sichere Zahlung über Stripe', crypto: 'Krypto', cryptoSub: 'Bitcoin, Ethereum, USDT und mehr · über NOWPayments',
+    payment: 'Bezahlung', card: 'Karte, PayPal, Apple Pay, Google Pay', cardSub: 'Sichere Zahlung über Stripe · Apple Pay und Google Pay erscheinen auf Handys, die sie haben', crypto: 'Krypto', cryptoSub: 'Bitcoin, Ethereum, USDT und mehr · über NOWPayments',
     agree: 'Ich akzeptiere die', terms: 'Versand- & Rückgabebedingungen', terms2: '.', pay: 'Weiter zur Zahlung', place: 'Bestellung absenden', secure: 'Du wirst zu einer sicheren Zahlungsseite weitergeleitet. Deine Zahlungsdaten laufen nie über diese Website.',
     thanks: 'Danke', back: 'Zurück zum Shop',
   },
@@ -97,7 +97,6 @@ const catalogue = products.map(({ id, name, price, image, stock, sizeStock, preo
                 {countries.map((c) => <option value={c.code} disabled={!c.ok}>{c.ok ? c.name : `${c.name} (${t.notYet})`}</option>)}
               </select>
             </div>
-            <div class="field"><label for="o-notes">{t.notes}</label><textarea id="o-notes" name="notes" class="short" maxlength="1000" rows="3"></textarea></div>
           </fieldset>
 
           {online && (
