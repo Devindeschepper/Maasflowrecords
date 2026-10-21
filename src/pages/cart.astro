@@ -45,7 +45,17 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
             </select>
           </div>
 
+          <div class="field">
+            <label for="o-code">Discount code</label>
+            <div class="code-row">
+              <input id="o-code" name="discount" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+              <button class="btn btn-ghost" type="button" id="o-code-apply">Apply</button>
+            </div>
+            <p class="code-msg" id="o-code-msg" role="status" aria-live="polite"></p>
+          </div>
+
           <dl class="totals">
+            <div class="disc" id="t-disc-row" hidden><dt id="t-disc-label">Discount</dt><dd id="t-disc">-</dd></div>
             <div><dt>Subtotal</dt><dd id="t-sub">-</dd></div>
             <div><dt>Shipping</dt><dd id="t-ship">-</dd></div>
             <div class="grand"><dt>Total</dt><dd id="t-total">-</dd></div>
@@ -125,6 +135,9 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
   // Same rules as src/data/vat.ts (the server recalculates everything at checkout).
   const exVat = (gross: number) => Math.round((gross * 100) / (100 + vat.rate));
   const forZone = (gross: number, z: Zone) => (vat.mode === 'included' && !z.inEU ? exVat(gross) : gross);
+  // Discount code (products only): same rounding as functions/_lib/discounts.ts.
+  let code = { name: '', percent: 0 };
+  const off = (cents: number) => Math.round((cents * (100 - code.percent)) / 100);
 
   const eur = (c: number) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' }).format(c / 100);
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -189,7 +202,11 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
   function totals(ls = lines()) {
     const zone = zones.find((z) => z.id === zoneSel.value) ?? zones[0];
     if (!zone) return;
-    const sub = ls.reduce((s, l) => s + forZone(l.item.price, zone) * l.qty, 0);
+    const full = ls.reduce((s, l) => s + forZone(l.item.price, zone) * l.qty, 0);
+    const sub = ls.reduce((s, l) => s + off(forZone(l.item.price, zone)) * l.qty, 0);
+    $('t-disc-row').hidden = !code.percent;
+    $('t-disc-label').textContent = `Discount ${code.name} (-${code.percent}%)`;
+    $('t-disc').textContent = `−${eur(full - sub)}`;
     const ship = ls.length ? forZone(zone.price, zone) : 0;
     const total = sub + ship;
     $('t-sub').textContent = eur(sub);
@@ -205,6 +222,38 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
   if (new URLSearchParams(location.search).get('payment') === 'cancelled') $('pay-cancelled').hidden = false;
 
   zoneSel.addEventListener('change', () => totals());
+
+  const codeInput = $<HTMLInputElement>('o-code');
+  const codeMsg = $('o-code-msg');
+  const applyBtn = $<HTMLButtonElement>('o-code-apply');
+  async function applyCode() {
+    const value = codeInput.value.trim();
+    code = { name: '', percent: 0 };
+    codeMsg.dataset.state = '';
+    codeMsg.textContent = '';
+    totals();
+    if (!value) return;
+    applyBtn.disabled = true;
+    try {
+      const res = await fetch('/api/discount', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ code: value }) });
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string; code?: string; percent?: number };
+      if (!data.ok) throw new Error(data.error || 'This discount code does not work.');
+      code = { name: data.code!, percent: data.percent! };
+      codeInput.value = data.code!;
+      codeMsg.dataset.state = 'ok';
+      codeMsg.textContent = `✓ ${data.percent}% off`;
+      totals();
+    } catch (err) {
+      codeMsg.dataset.state = 'error';
+      codeMsg.textContent = (err as Error).message;
+    } finally {
+      applyBtn.disabled = false;
+    }
+  }
+  applyBtn.addEventListener('click', applyCode);
+  codeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyCode(); } });
+  // Changing the code removes the discount until it is applied again.
+  codeInput.addEventListener('input', () => { if (code.percent) { code = { name: '', percent: 0 }; codeMsg.textContent = ''; totals(); } });
   onCartChange(render);
   render();
 
@@ -256,6 +305,13 @@ const catalogue = products.map(({ id, name, price, image, stock, preorder, shipp
   .lines :global(.qbtn:disabled) { opacity: 0.4; cursor: not-allowed; }
   .lines :global(.qn) { min-width: 2.2rem; text-align: center; }
   .lines :global(.rm) { margin-left: auto; background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; font-size: 0.82rem; min-height: 40px; }
+  .code-row { display: flex; gap: 0.5rem; }
+  .code-row input { flex: 1; min-width: 0; text-transform: uppercase; }
+  .code-msg { margin: 0.3rem 0 0; font-size: 0.82rem; min-height: 1.1em; }
+  .code-msg[data-state='ok'] { color: var(--ok); }
+  .code-msg[data-state='error'] { color: var(--accent); }
+  .totals .disc dd { color: var(--ok); }
+  .totals div[hidden] { display: none; }
   .summary, .done { padding: clamp(1.1rem, 4vw, 1.75rem); }
   .h3 { font-size: clamp(1.35rem, 3vw, 1.75rem); }
   .totals { margin: 0; display: grid; gap: 0.5rem; padding: 1rem 0; border-block: 1px solid var(--line); }

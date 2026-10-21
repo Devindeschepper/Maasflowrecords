@@ -8,6 +8,8 @@ export interface OrderLine {
   /** euro cents */
   unitPrice: number;
   preorder: boolean;
+  /** Discount code applied to this line, e.g. "-10% MAAS10" (unitPrice is already discounted). */
+  discount?: string;
 }
 
 export type PaymentMethod = 'card' | 'crypto' | 'manual';
@@ -25,6 +27,8 @@ export interface Order {
   vatNote: string;
   currency: 'EUR';
   shippingZone: string;
+  /** Discount code used (products only, not shipping). saved = cents off. */
+  discount?: { code: string; percent: number; saved: number };
   customer: {
     name: string;
     email: string;

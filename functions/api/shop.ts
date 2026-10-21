@@ -6,6 +6,8 @@ import { markShipped, shopOrders, shopStats, type ShopOrder } from '../_lib/sale
 import { toBase64, xlsx } from '../_lib/xlsx';
 import { githubConfigured, readFile, updateJson, writeFile } from '../_lib/github';
 import { restockWaiting } from '../_lib/restock';
+import { CODE_PATTERN, cleanCode, deleteCode, listCodes, saveCode } from '../_lib/discounts';
+import { legal, site } from '../../src/data/site';
 
 /**
  * Private shop page (/shop-admin/), same password as /studio-stats/:
@@ -15,6 +17,7 @@ import { restockWaiting } from '../_lib/restock';
  *   GET  /api/shop/manage   shop switches and products (from the repository)
  *   POST /api/shop/settings open/close the shop, plan a timed drop, test mode on/off
  *   POST /api/shop/products add, edit or remove a product (with photo)
+ *   POST /api/shop/discounts add, change or delete a discount code
  */
 async function auth(request: Request, env: Env): Promise<Response | D1Database> {
   const d = await db(env);
@@ -31,7 +34,12 @@ export const onShop: PagesFunction<Env> = async ({ request, env }) => {
   const a = await auth(request, env);
   if (a instanceof Response) return a;
   const now = Date.now();
-  return jsonResponse(200, { ok: true, stats: await shopStats(env, now, monthStartNow(now)), ...(await shopOrders(env)) });
+  return jsonResponse(200, {
+    ok: true, stats: await shopStats(env, now, monthStartNow(now)), ...(await shopOrders(env)),
+    discounts: await listCodes(env),
+    // Sender on the package labels.
+    sender: { name: legal.name || site.name, address: legal.address },
+  });
 };
 
 export const onShipped: PagesFunction<Env> = async ({ request, env }) => {
@@ -58,6 +66,28 @@ export const onExport: PagesFunction<Env> = async ({ request, env }) => {
   ];
   const file = xlsx([{ name: 'To ship', rows }]);
   return jsonResponse(200, { ok: true, filename: `orders-to-ship-${when(Date.now()).slice(0, 10)}.xlsx`, content: toBase64(file), count: toShip.length });
+};
+
+/** POST /api/shop/discounts { action: 'save', code, percent, maxUses?, endsAt? } or { action: 'remove', code } */
+export const onDiscounts: PagesFunction<Env> = async ({ request, env }) => {
+  if (!sameOrigin(request)) return jsonResponse(403, { ok: false, error: 'Forbidden.' });
+  const a = await auth(request, env);
+  if (a instanceof Response) return a;
+  const body = (await request.json().catch(() => ({}))) as { action?: unknown; code?: unknown; percent?: unknown; maxUses?: unknown; endsAt?: unknown };
+  const code = cleanCode(body.code);
+  if (!CODE_PATTERN.test(code)) return jsonResponse(400, { ok: false, error: 'The code needs 3 to 20 letters or numbers (no spaces), e.g. MAAS10.' });
+  if (body.action === 'remove') {
+    await deleteCode(env, code);
+    return jsonResponse(200, { ok: true, discounts: await listCodes(env) });
+  }
+  const percent = Number(body.percent);
+  if (!Number.isInteger(percent) || percent < 1 || percent > 90) return jsonResponse(400, { ok: false, error: 'The discount must be between 1 and 90 %.' });
+  const maxUses = body.maxUses === null || body.maxUses === '' || body.maxUses === undefined ? null : Number(body.maxUses);
+  if (maxUses !== null && (!Number.isInteger(maxUses) || maxUses < 1 || maxUses > 100000)) return jsonResponse(400, { ok: false, error: 'How many times: leave empty for unlimited, or a number from 1.' });
+  const endsAt = body.endsAt === null || body.endsAt === '' || body.endsAt === undefined ? null : Date.parse(String(body.endsAt));
+  if (endsAt !== null && (!Number.isFinite(endsAt) || endsAt < Date.now())) return jsonResponse(400, { ok: false, error: 'The end date must be in the future.' });
+  await saveCode(env, { code, percent, maxUses, endsAt });
+  return jsonResponse(200, { ok: true, discounts: await listCodes(env) });
 };
 
 // ---- Managing the shop from the page: open/close, test mode, products ----------------------------------------

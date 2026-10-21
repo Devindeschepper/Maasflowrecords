@@ -32,7 +32,7 @@ export const stripeProvider: PaymentProvider = {
       p.set(`line_items[${i}][quantity]`, String(l.qty));
       p.set(`line_items[${i}][price_data][currency]`, 'eur');
       p.set(`line_items[${i}][price_data][unit_amount]`, String(l.unitPrice));
-      p.set(`line_items[${i}][price_data][product_data][name]`, `${l.name}${l.size ? ` (${l.size})` : ''}${l.preorder ? ' - pre-order' : ''}`);
+      p.set(`line_items[${i}][price_data][product_data][name]`, `${l.name}${l.size ? ` (${l.size})` : ''}${l.discount ? ` (${l.discount})` : ''}${l.preorder ? ' - pre-order' : ''}`);
     });
     // Everything needed to ship the order travels with the payment (max 500 chars per value).
     const meta: Record<string, string> = {
