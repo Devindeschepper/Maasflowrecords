@@ -80,22 +80,6 @@ const catalogue = products.map(({ id, name, price, image, stock, sizeStock, preo
           <input type="hidden" name="lang" value={lang} />
           {zones.length === 0 && <p class="notice">{t.noShipping}</p>}
 
-          <div class="field">
-            <label for="o-code">{t.code}</label>
-            <div class="code-row">
-              <input id="o-code" name="discount" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false" />
-              <button class="btn btn-ghost" type="button" id="o-code-apply">{t.apply}</button>
-            </div>
-            <p class="code-msg" id="o-code-msg" role="status" aria-live="polite"></p>
-          </div>
-
-          <dl class="totals">
-            <div class="disc" id="t-disc-row" hidden><dt id="t-disc-label">{t.discount}</dt><dd id="t-disc">-</dd></div>
-            <div><dt>{t.subtotal}</dt><dd id="t-sub">-</dd></div>
-            <div><dt>{t.shipping}</dt><dd id="t-ship">-</dd></div>
-            <div class="grand"><dt>{t.total}</dt><dd id="t-total">-</dd></div>
-            <div class="vat"><dt id="t-vat-note">-</dt><dd id="t-vat"></dd></div>
-          </dl>
 
           <fieldset class="fs">
             <legend>{t.details}</legend>
@@ -133,6 +117,23 @@ const catalogue = products.map(({ id, name, price, image, stock, sizeStock, preo
               )}
             </fieldset>
           )}
+
+          <div class="field">
+            <label for="o-code">{t.code}</label>
+            <div class="code-row">
+              <input id="o-code" name="discount" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+              <button class="btn btn-ghost" type="button" id="o-code-apply">{t.apply}</button>
+            </div>
+            <p class="code-msg" id="o-code-msg" role="status" aria-live="polite"></p>
+          </div>
+
+          <dl class="totals">
+            <div class="disc" id="t-disc-row" hidden><dt id="t-disc-label">{t.discount}</dt><dd id="t-disc">-</dd></div>
+            <div><dt>{t.subtotal}</dt><dd id="t-sub">-</dd></div>
+            <div><dt>{t.shipping}</dt><dd id="t-ship">-</dd></div>
+            <div class="grand"><dt>{t.total}</dt><dd id="t-total">-</dd></div>
+            <div class="vat"><dt id="t-vat-note">-</dt><dd id="t-vat"></dd></div>
+          </dl>
 
           <div class="hp" aria-hidden="true"><label for="o-website">{ui[lang].form.website}</label><input id="o-website" name="website" tabindex="-1" autocomplete="off" /></div>
           <input type="hidden" name="_ts" value="" />
