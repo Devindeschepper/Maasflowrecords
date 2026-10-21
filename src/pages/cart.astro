@@ -162,7 +162,7 @@ const catalogue = products.map(({ id, name, price, image, stock, sizeStock, preo
 
 <script>
   import { getCart, setQty, clearCart, onCartChange } from '../scripts/cart';
-  import { pageLang, pageLocale, tc } from '../i18n/client';
+  import { pageLang, pageLocale, serverMessage, tc } from '../i18n/client';
   import { zoneIdFor } from '../data/countries';
   const tx = tc();
 
@@ -285,7 +285,7 @@ const catalogue = products.map(({ id, name, price, image, stock, sizeStock, preo
     try {
       const res = await fetch('/api/discount', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ code: value }) });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string; code?: string; percent?: number };
-      if (!data.ok) throw new Error(data.error || tx.codeBad);
+      if (!data.ok) throw new Error(data.error ? serverMessage(data.error) : tx.codeBad);
       code = { name: data.code!, percent: data.percent! };
       codeInput.value = data.code!;
       codeMsg.dataset.state = 'ok';
@@ -317,7 +317,7 @@ const catalogue = products.map(({ id, name, price, image, stock, sizeStock, preo
     try {
       const res = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string; redirectUrl?: string; message?: string };
-      if (!res.ok || !data.ok) throw new Error(data.error || tx.checkoutFailed);
+      if (!res.ok || !data.ok) throw new Error(data.error ? serverMessage(data.error) : tx.checkoutFailed);
       if (data.redirectUrl) {
         // Hosted payment page (Stripe / NOWPayments). The cart is cleared on /order/ after paying.
         location.href = data.redirectUrl;
