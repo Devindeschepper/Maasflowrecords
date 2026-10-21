@@ -243,8 +243,10 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     }
     .nav a:hover { color: var(--text); }
     .nav a[aria-current='page'] { color: var(--text); border-bottom-color: var(--accent); }
-    .nav { display: flex; align-items: center; gap: 1.6rem; }
-    .nav .langs { margin: 0; gap: 0.1rem; }
+    /* Links in the middle, language switch on the right next to the studio sign. */
+    .nav { display: flex; align-items: center; flex: 1; margin-left: 2rem; }
+    .nav > ul:first-child { margin: 0 auto; }
+    .nav .langs { margin: 0 1.5rem 0 0; gap: 0.1rem; }
     .nav .langs a { padding: 0.35rem 0.4rem; font-size: 0.66rem; border: 0; }
     .nav .langs a[aria-current='true'] { color: var(--text); background: none; border-bottom: 1px solid var(--accent); }
   }
