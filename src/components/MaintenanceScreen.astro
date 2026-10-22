@@ -1,0 +1,41 @@
+---
+import { labelSocials, site } from '../data/site';
+import { platforms } from '../data/platforms';
+import { getLang, pick } from '../i18n';
+
+/**
+ * "Back soon" over the whole page while maintenance is on (see `maintenance` in src/data/site.ts).
+ * A phone logged in to VIN's private pages (same key as /shop-admin/) skips it and gets a small reminder instead.
+ */
+const t = pick(getLang(Astro), {
+  en: { title: 'Back soon', text: 'We are working on the website. Check back in a little while.', owner: 'Maintenance is on: only you see the website.' },
+  fr: { title: 'De retour bientôt', text: 'On travaille sur le site. Reviens un peu plus tard.', owner: 'Maintenance activée : toi seul vois le site.' },
+  de: { title: 'Bald zurück', text: 'Wir arbeiten an der Website. Schau später wieder vorbei.', owner: 'Wartung ist an: nur du siehst die Website.' },
+});
+const socials = Object.entries(labelSocials).filter(([, url]) => !!url);
+---
+
+<script is:inline>
+  try { if (localStorage.getItem('mfr-studio-token')) document.documentElement.classList.add('mfr-owner'); } catch {}
+</script>
+<div class="maint" role="dialog" aria-modal="true" aria-labelledby="maint-title">
+  <div class="maint-box">
+    <p class="mono muted">{site.name}</p>
+    <h1 id="maint-title">{t.title}</h1>
+    <p>{t.text}</p>
+    {socials.length > 0 && <p class="maint-links">{socials.map(([name, url]) => <a href={url} rel="noopener" target="_blank">{platforms[name as keyof typeof platforms]?.label ?? name}</a>)}</p>}
+  </div>
+</div>
+<p class="maint-owner mono">{t.owner}</p>
+
+<style>
+  .maint { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 16px; background: var(--bg); text-align: center; }
+  .maint-box { max-width: 28rem; }
+  .maint-box h1 { margin: 0.4rem 0 0.8rem; }
+  .maint-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; margin-top: 1.5rem; }
+  .maint-links a { color: var(--accent); }
+  .maint-owner { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000; margin: 0; padding: 0.5rem 1rem; background: var(--accent); color: #fff; font-size: 0.75rem; text-align: center; }
+  :global(html.mfr-owner) .maint { display: none; }
+  :global(html.mfr-owner) .maint-owner { display: block; }
+  :global(html:not(.mfr-owner)) :global(body) { overflow: hidden; }
+</style>

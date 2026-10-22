@@ -181,6 +181,12 @@ const jsonLd = !shopOpen ? [] : products.map((p) => ({
     })
     .catch(() => {});
 
+  // "New" tag for 14 days after a product was added (checked here, so it goes away without a rebuild).
+  document.querySelectorAll<HTMLElement>('[data-new]').forEach((tag) => {
+    const age = Date.now() - Date.parse(`${tag.dataset.new}T00:00:00`);
+    tag.hidden = !(age >= -86400000 && age < 14 * 86400000);
+  });
+
   const buttons = document.querySelectorAll<HTMLButtonElement>('.filter');
   const items = document.querySelectorAll<HTMLElement>('#product-grid > [data-cat]');
   buttons.forEach((b) =>

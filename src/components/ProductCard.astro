@@ -14,9 +14,9 @@ const soldOut = p.stock <= 0;
 const low = !soldOut && p.stock <= 5;
 const lang = getLang(Astro);
 const t = pick(lang, {
-  en: { soon: 'Coming soon', soldOut: 'Sold out', preorder: 'Pre-order', only: (n: number) => `Only ${n} left`, includes: 'Includes:', save: (x: string) => `Save ${x}`, sizeOut: 'sold out', inStock: 'In stock', best: '🔥 Best seller', size: 'Size', chooseSize: 'Choose size', add: 'Add to cart', back: "Tell me when it's back" },
-  fr: { soon: 'Bientôt', soldOut: 'Épuisé', preorder: 'Précommande', only: (n) => `Plus que ${n}`, includes: 'Contient :', save: (x) => `${x} d'économie`, sizeOut: 'épuisé', inStock: 'En stock', best: '🔥 Meilleure vente', size: 'Taille', chooseSize: 'Choisir la taille', add: 'Ajouter au panier', back: 'Me prévenir du retour' },
-  de: { soon: 'Demnächst', soldOut: 'Ausverkauft', preorder: 'Vorbestellen', only: (n) => `Nur noch ${n}`, includes: 'Enthält:', save: (x) => `Du sparst ${x}`, sizeOut: 'ausverkauft', inStock: 'Auf Lager', best: '🔥 Bestseller', size: 'Größe', chooseSize: 'Größe wählen', add: 'In den Warenkorb', back: 'Benachrichtigen, wenn wieder da' },
+  en: { soon: 'Coming soon', soldOut: 'Sold out', preorder: 'Pre-order', only: (n: number) => `Only ${n} left`, includes: 'Includes:', save: (x: string) => `Save ${x}`, sizeOut: 'sold out', inStock: 'In stock', best: '🔥 Best seller', new: 'New', size: 'Size', chooseSize: 'Choose size', add: 'Add to cart', back: "Tell me when it's back" },
+  fr: { soon: 'Bientôt', soldOut: 'Épuisé', preorder: 'Précommande', only: (n) => `Plus que ${n}`, includes: 'Contient :', save: (x) => `${x} d'économie`, sizeOut: 'épuisé', inStock: 'En stock', best: '🔥 Meilleure vente', new: 'Nouveau', size: 'Taille', chooseSize: 'Choisir la taille', add: 'Ajouter au panier', back: 'Me prévenir du retour' },
+  de: { soon: 'Demnächst', soldOut: 'Ausverkauft', preorder: 'Vorbestellen', only: (n) => `Nur noch ${n}`, includes: 'Enthält:', save: (x) => `Du sparst ${x}`, sizeOut: 'ausverkauft', inStock: 'Auf Lager', best: '🔥 Bestseller', new: 'Neu', size: 'Größe', chooseSize: 'Größe wählen', add: 'In den Warenkorb', back: 'Benachrichtigen, wenn wieder da' },
 });
 // Bundle: what's inside, and how much cheaper it is than buying them one by one.
 const inside = (p.bundle ?? []).map((id) => products.find((x) => x.id === id)).filter((x) => !!x);
@@ -30,7 +30,12 @@ const stockLabel = comingSoon ? t.soon : soldOut ? t.soldOut : p.preorder ? t.pr
   <div class="img">
     <img src={p.image} alt={p.name} width="600" height="600" loading="lazy" decoding="async" />
     <span class:list={['tag', 'stock', { 'tag-accent': comingSoon || low || p.preorder }]}>{stockLabel}</span>
-    {!comingSoon && <span class="tag tag-accent best" data-best hidden>{t.best}</span>}
+    {!comingSoon && (
+      <div class="tags-r">
+        <span class="tag tag-accent" data-best hidden>{t.best}</span>
+        {p.added && <span class="tag tag-accent" data-new={p.added} hidden>{t.new}</span>}
+      </div>
+    )}
   </div>
   <div class="info">
     <p class="mono muted cat">{categoryLabel(p.category, lang)}</p>
@@ -72,8 +77,9 @@ const stockLabel = comingSoon ? t.soon : soldOut ? t.soldOut : p.preorder ? t.pr
   .img { position: relative; aspect-ratio: 1; background: var(--surface-2); overflow: hidden; }
   .img img { width: 100%; height: 100%; object-fit: cover; }
   .stock { position: absolute; top: 0.75rem; left: 0.75rem; background: var(--bg); }
-  .best { position: absolute; top: 0.75rem; right: 0.75rem; background: var(--bg); }
-  .best[hidden] { display: none; }
+  .tags-r { position: absolute; top: 0.75rem; right: 0.75rem; display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem; }
+  .tags-r .tag { background: var(--bg); }
+  .tags-r .tag[hidden] { display: none; }
   .info { display: flex; flex-direction: column; flex: 1; padding: 1.1rem; }
   .cat { margin: 0 0 0.4rem; font-size: 0.68rem; }
   h3 { margin-bottom: 0.4rem; }

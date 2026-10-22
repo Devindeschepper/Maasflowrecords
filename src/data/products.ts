@@ -48,6 +48,7 @@ const singles: Product[] = (data.products as RawProduct[])
       sizes,
       ...(sizeStock ? { sizeStock } : {}),
       shippingClass: p.shippingClass === 'standard' ? 'standard' : 'small',
+      ...(/^\d{4}-\d\d-\d\d/.test(String(p.added ?? '')) ? { added: String(p.added).slice(0, 10) } : {}),
       ...(p.category === 'Bundle' ? { bundle: (Array.isArray(p.bundle) ? p.bundle : []).map((x) => String(x)) } : {}),
     };
   })

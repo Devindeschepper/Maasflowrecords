@@ -249,6 +249,7 @@ collections:
               - { name: image, label: Photo, widget: image, media_folder: /public/images/shop, public_folder: /images/shop, hint: "Square, 1200×1200. Max 3 MB." }
               - { name: stock, label: In stock, widget: number, value_type: int, min: 0, default: 0, hint: "0 = sold out" }
               - { name: preorder, label: Pre-order, widget: boolean, default: false }
+              - { name: added, label: Added on, widget: datetime, required: false, format: 'YYYY-MM-DD', date_format: 'YYYY-MM-DD', time_format: false, default: '{{now}}', hint: 'Shows a "New" tag on the shop for 14 days after this day.' }
               - name: bundle
                 label: Products in the bundle (only for category Bundle)
                 widget: list
@@ -341,6 +342,12 @@ collections:
             widget: boolean
             default: false
             hint: 'On = a "test shop" banner shows, Stripe only works with TEST keys (sk_test_…) and crypto uses the NOWPayments sandbox. Turn OFF (and use live keys) to sell for real.'
+          - { name: twitchUsername, label: Twitch username, widget: string, required: false, hint: 'Your channel name (twitch.tv/NAME), for the follower count on /studio-stats/. Also needs the Cloudflare secrets TWITCH_CLIENT_ID and TWITCH_CLIENT_SECRET.' }
+          - name: maintenance
+            label: Maintenance (website shows “Back soon”)
+            widget: boolean
+            default: false
+            hint: On = every page shows “Back soon”. You still see the site on a phone where you are logged in to /shop-admin/. Also on /shop-admin/.
           - name: acceptCard
             label: 'Accept card / PayPal (Stripe)'
             widget: boolean
