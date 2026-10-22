@@ -18,12 +18,23 @@
       "streaming": {
         "spotify": "https://open.spotify.com/artist/5bDu5EvUNqdhJfVXYcQiXK",
         "appleMusic": "https://music.apple.com/us/artist/vin/1717180938",
-        "youtubeMusic": "https://music.youtube.com/channel/UC8dDWNLNjAxwDzcRoadqSvg"
+        "youtube": "",
+        "youtubeMusic": "https://music.youtube.com/channel/UC8dDWNLNjAxwDzcRoadqSvg",
+        "soundcloud": "",
+        "deezer": "",
+        "tidal": "",
+        "amazonMusic": "",
+        "bandcamp": "",
+        "beatstars": "",
+        "youtubeBeats": ""
       },
       "socials": {
         "instagram": "https://www.instagram.com/vintheartist/",
         "tiktok": "https://www.tiktok.com/@vintheartist010",
-        "youtube": "https://www.youtube.com/channel/UC8dDWNLNjAxwDzcRoadqSvg"
+        "youtube": "https://www.youtube.com/channel/UC8dDWNLNjAxwDzcRoadqSvg",
+        "facebook": "",
+        "x": "",
+        "twitch": "https://www.twitch.tv/vintheartist010"
       }
     }
   ]
