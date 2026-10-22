@@ -36,6 +36,27 @@ async function helix(env: Env, path: string): Promise<Record<string, unknown>> {
   return (await res.json()) as Record<string, unknown>;
 }
 
+/**
+ * The channel link while VIN is streaming, otherwise null (for the studio sign in the header).
+ * Every visitor's header asks, so the answer is kept in KV for a minute. Never throws.
+ */
+export async function twitchLive(env: Env): Promise<string | null> {
+  if (!twitchConfigured(env) || !env.STUDIO) return null;
+  const url = `https://www.twitch.tv/${twitchUser}`;
+  try {
+    let live = await env.STUDIO.get('twitch-live');
+    if (live === null) {
+      const streams = (await helix(env, `streams?user_login=${encodeURIComponent(twitchUser)}&first=1`)).data as unknown[] | undefined;
+      live = streams?.length ? '1' : '0';
+      await env.STUDIO.put('twitch-live', live, { expirationTtl: 60 });
+    }
+    return live === '1' ? url : null;
+  } catch (err) {
+    console.error('Twitch live check failed', err);
+    return null;
+  }
+}
+
 export async function twitchFollowers(env: Env): Promise<number> {
   let id = await env.STUDIO?.get(`twitch-id-${twitchUser}`);
   if (!id) {
