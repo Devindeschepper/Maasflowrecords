@@ -117,6 +117,8 @@ export interface Product {
   bundle?: string[];
   /** Weight class used for shipping. */
   shippingClass: 'small' | 'standard';
+  /** Day it was added (YYYY-MM-DD): shows a "New" tag on the shop for 14 days. */
+  added?: string;
 }
 
 export interface ShippingZone {

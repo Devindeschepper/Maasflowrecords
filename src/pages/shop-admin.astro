@@ -33,6 +33,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <div><b>Test mode</b><span class="muted" data-c-test-text></span></div>
             <button class="btn btn-ghost small" type="button" data-c-test></button>
           </div>
+          <div class="ctrl">
+            <div><b>Maintenance</b><span class="muted" data-c-maint-text></span></div>
+            <button class="btn btn-ghost small" type="button" data-c-maint></button>
+          </div>
           <div class="ctrl" data-c-drop-row>
             <div><b>Timed drop</b><span class="muted" data-c-drop-text></span></div>
             <div class="drop-set" data-c-drop-set>
@@ -406,7 +410,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   // ---- Managing the shop: open/close, test mode, products (saved on GitHub, live after ~2 minutes) ----
   type RawProduct = { id: string; name: string; category: string; description?: string; price: number; image: string; stock: number; preorder?: boolean; sizes?: (string | { size: string; stock: number })[]; shippingClass?: string; bundle?: string[] };
-  type Manage = { ok: boolean; error?: string; github: boolean; categories?: string[]; shopOpen?: boolean; shopTestMode?: boolean; dropAt?: string | null; products?: RawProduct[]; waiting?: Record<string, number> };
+  type Manage = { ok: boolean; error?: string; github: boolean; categories?: string[]; shopOpen?: boolean; shopTestMode?: boolean; maintenance?: boolean; dropAt?: string | null; products?: RawProduct[]; waiting?: Record<string, number> };
   let manage: Manage | null = null;
   let editing: RawProduct | null = null;
   let liveOpen: boolean | null = null;
@@ -441,6 +445,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     open.className = `btn small ${m.shopOpen ? 'btn-ghost' : 'btn-primary'}`;
     $('[data-c-test-text]').textContent = m.shopTestMode ? 'On: only test payments, no real money.' : 'Off: real payments.';
     $('[data-c-test]').textContent = m.shopTestMode ? 'Turn test mode off' : 'Turn test mode on';
+    $('[data-c-maint-text]').textContent = m.maintenance ? 'On: visitors see “Back soon”. You still see the site on this phone.' : 'Off: the website is visible to everyone.';
+    $('[data-c-maint]').textContent = m.maintenance ? 'Turn maintenance off' : 'Turn maintenance on';
     // Timed drop: only while the shop is closed. The time is typed in this phone's time zone.
     $('[data-c-drop-row]').hidden = !!m.shopOpen;
     $('[data-c-drop-text]').textContent = m.dropAt
@@ -497,6 +503,24 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     toggle(e.currentTarget as HTMLButtonElement, { shopOpen: opening });
   });
   $('[data-c-test]').addEventListener('click', (e) => toggle(e.currentTarget as HTMLButtonElement, { shopTestMode: !manage?.shopTestMode }));
+  $('[data-c-maint]').addEventListener('click', async (e) => {
+    const btn = e.currentTarget as HTMLButtonElement;
+    const on = !manage?.maintenance;
+    if (on && !confirm('Show “Back soon” on the whole website? You can turn it off here anytime.')) return;
+    const msg = $('[data-c-msg]');
+    btn.disabled = true;
+    say(msg, 'Saving…');
+    try {
+      const data = (await post('/api/shop/settings', { maintenance: on })) as unknown as { maintenance: boolean };
+      manage = { ...manage!, maintenance: data.maintenance };
+      renderManage();
+      say(msg, LIVE_NOTE);
+    } catch (err) {
+      say(msg, err instanceof Error ? err.message : 'Could not save.', true);
+    } finally {
+      btn.disabled = false;
+    }
+  });
   $('[data-c-drop]').addEventListener('click', (e) => {
     const value = $<HTMLInputElement>('[data-c-drop-input]').value;
     if (!value) return say($('[data-c-msg]'), 'Pick a day and time first.', true);

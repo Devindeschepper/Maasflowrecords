@@ -6,7 +6,8 @@ import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Newsletter from '../components/Newsletter.astro';
-import { site, labelSocials, turnstileSiteKey } from '../data/site';
+import MaintenanceScreen from '../components/MaintenanceScreen.astro';
+import { site, labelSocials, turnstileSiteKey, maintenance } from '../data/site';
 import { getLang, LANGS, stripLang, switchLang } from '../i18n';
 import { ui } from '../i18n/ui';
 
@@ -28,6 +29,8 @@ const { title, description: desc, image = site.ogImage, type = 'website', noinde
 
 const lang = getLang(Astro);
 const t = ui[lang];
+// Maintenance: not on VIN's private pages, nor on the page buyers come back to after paying.
+const showMaintenance = maintenance && !/^\/(shop-admin|studio-stats|order)\//.test(stripLang(Astro.url.pathname));
 const description = desc ?? (lang === 'en' ? site.description : t.description);
 const fullTitle = title ? `${title} - ${site.name}` : `${site.name} - ${t.tagline}`;
 const canonical = new URL(Astro.url.pathname, site.url).href;
@@ -93,5 +96,6 @@ const orgLd = {
     </main>
     {!bare && !noFooter && <Newsletter />}
     {!bare && !noFooter && <Footer />}
+    {showMaintenance && <MaintenanceScreen />}
   </body>
 </html>

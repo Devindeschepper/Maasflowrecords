@@ -34,6 +34,7 @@ function fixHint(platform: string, ref: string, error: string): string {
   if (platform === 'tiktok') {
     return error === NOT_CONNECTED ? 'Fix: tap Connect on maasflowrecords.com/studio-stats/' : 'It is retried every hour.';
   }
+  if (platform === 'twitch') return 'Fix: check TWITCH_CLIENT_ID / TWITCH_CLIENT_SECRET in Cloudflare and the Twitch username in /admin → Settings.';
   if (platform === 'instagram') return `Fix: probably a new Instagram token is needed (Cloudflare secret INSTAGRAM_TOKEN_${ref}).`;
   return 'Fix: check YOUTUBE_API_KEY in Cloudflare.';
 }

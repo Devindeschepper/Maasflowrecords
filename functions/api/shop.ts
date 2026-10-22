@@ -98,9 +98,9 @@ export const onDiscounts: PagesFunction<Env> = async ({ request, env }) => {
 
 type RawProduct = {
   id: string; name: string; category: string; description?: string; price: number; image: string;
-  stock: number; preorder?: boolean; sizes?: (string | { size: string; stock: number })[]; shippingClass?: string; bundle?: string[];
+  stock: number; preorder?: boolean; sizes?: (string | { size: string; stock: number })[]; shippingClass?: string; bundle?: string[]; added?: string;
 };
-type Settings = { shopOpen?: boolean; shopTestMode?: boolean; dropAt?: string; legalName?: string; legalAddress?: string } & Record<string, unknown>;
+type Settings = { shopOpen?: boolean; shopTestMode?: boolean; maintenance?: boolean; dropAt?: string; legalName?: string; legalAddress?: string } & Record<string, unknown>;
 
 const CATEGORIES = ['CD', 'Vinyl', 'T-Shirt', 'Hoodie', 'Cap', 'Poster', 'Jewellery', 'Bundle', 'Other'];
 const SETTINGS = 'src/content/settings.json';
@@ -135,7 +135,7 @@ export const onManage: PagesFunction<Env> = async ({ request, env }) => {
     const products = JSON.parse((await readFile(env, PRODUCTS))!.text) as { products: RawProduct[] };
     return jsonResponse(200, {
       ok: true, github: true, categories: CATEGORIES,
-      shopOpen: settings.shopOpen === true, shopTestMode: settings.shopTestMode === true,
+      shopOpen: settings.shopOpen === true, shopTestMode: settings.shopTestMode === true, maintenance: settings.maintenance === true,
       dropAt: settings.shopOpen !== true && settings.dropAt ? settings.dropAt : null,
       products: products.products,
       waiting: await restockWaiting(env).catch(() => ({})),
@@ -147,7 +147,7 @@ export const onManage: PagesFunction<Env> = async ({ request, env }) => {
 };
 
 /**
- * POST /api/shop/settings { shopOpen?, shopTestMode?, dropAt? }
+ * POST /api/shop/settings { shopOpen?, shopTestMode?, dropAt? } or { maintenance }
  * dropAt: an ISO date to open the shop by itself at that moment (null = cancel the drop). Opening or closing
  * the shop by hand also cancels a planned drop.
  */
@@ -156,8 +156,14 @@ export const onSettings: PagesFunction<Env> = async ({ request, env }) => {
   const a = await auth(request, env);
   if (a instanceof Response) return a;
   if (!githubConfigured(env)) return noGithub();
-  const body = (await request.json().catch(() => ({}))) as { shopOpen?: unknown; shopTestMode?: unknown; dropAt?: unknown };
+  const body = (await request.json().catch(() => ({}))) as { shopOpen?: unknown; shopTestMode?: unknown; dropAt?: unknown; maintenance?: unknown };
   try {
+    // Maintenance switch: the whole site shows "Back soon" (except for VIN, see MaintenanceScreen.astro).
+    if (typeof body.maintenance === 'boolean') {
+      const on = body.maintenance;
+      await updateJson<Settings>(env, SETTINGS, `Site: maintenance ${on ? 'on' : 'off'} (from the shop page)`, (s) => ({ ...s, maintenance: on }));
+      return jsonResponse(200, { ok: true, maintenance: on });
+    }
     const current = JSON.parse((await readFile(env, SETTINGS))!.text) as Settings;
     const open = typeof body.shopOpen === 'boolean' ? body.shopOpen : current.shopOpen === true;
     const test = typeof body.shopTestMode === 'boolean' ? body.shopTestMode : current.shopTestMode === true;
@@ -268,6 +274,8 @@ export const onProducts: PagesFunction<Env> = async ({ request, env }) => {
         sizes,
         shippingClass: p.shippingClass === 'standard' ? 'standard' : 'small',
         ...(bundle ? { bundle } : {}),
+        // When it was first added, for the "New" tag on the shop (14 days).
+        ...(existing ? (existing.added ? { added: existing.added } : {}) : { added: new Date().toISOString().slice(0, 10) }),
       };
       const products = existing ? d.products.map((x) => (x.id === id ? next : x)) : [...d.products, next];
       return { ...d, products };

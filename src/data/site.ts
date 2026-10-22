@@ -78,3 +78,9 @@ export const nav = [
   ...(shopOpen ? [{ href: '/shop/', label: 'Shop' }] : []),
   { href: '/casting/', label: 'Join' },
 ];
+
+/**
+ * Maintenance switch (/shop-admin/ or admin panel → Settings): every public page shows "Back soon".
+ * VIN still sees the site on a phone where he is logged in to /shop-admin/ or /studio-stats/.
+ */
+export const maintenance: boolean = (settings as { maintenance?: unknown }).maintenance === true;

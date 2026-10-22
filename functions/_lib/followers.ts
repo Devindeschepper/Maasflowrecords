@@ -1,6 +1,7 @@
 import type { Env } from './env';
 import { db } from './studio';
 import { tiktokConfigured, tiktokFollowers } from './tiktok';
+import { twitchConfigured, twitchFollowers, twitchUser } from './twitch';
 
 /**
  * Follower counts for the private stats page (not sent on WhatsApp).
@@ -13,13 +14,14 @@ import { tiktokConfigured, tiktokFollowers } from './tiktok';
  *   INSTAGRAM_TOKEN_VIN / INSTAGRAM_TOKEN_MFR - Instagram API (Instagram Login) user tokens; refreshed
  *                                             automatically and the newest copy kept in KV
  *   TIKTOK_CLIENT_KEY / TIKTOK_CLIENT_SECRET  - TikTok app; VIN connects once on the page (see ./tiktok.ts)
+ *   TWITCH_CLIENT_ID / TWITCH_CLIENT_SECRET   - Twitch app + the channel name in /admin → Settings (see ./twitch.ts)
  */
 interface Source {
   key: string;
   label: string;
   /** For WhatsApp messages. */
   short: string;
-  platform: 'instagram' | 'youtube' | 'tiktok';
+  platform: 'instagram' | 'youtube' | 'tiktok' | 'twitch';
   /** YouTube: channel id (UC…) or handle (@…). Instagram: which token. TikTok: which connected account. */
   ref: string;
 }
@@ -32,6 +34,7 @@ export const SOURCES: Source[] = [
   { key: 'yt-beats', label: 'YouTube · VIN Beats', short: 'YouTube VIN Beats', platform: 'youtube', ref: '@VINBeats1' },
   { key: 'tt-vin', label: 'TikTok · VIN', short: 'TikTok VIN', platform: 'tiktok', ref: 'VIN' },
   { key: 'tt-mfr', label: 'TikTok · Maas Flow Records', short: 'TikTok MFR', platform: 'tiktok', ref: 'MFR' },
+  ...(twitchUser ? [{ key: 'tw-vin', label: `Twitch · ${twitchUser}`, short: 'Twitch', platform: 'twitch' as const, ref: twitchUser }] : []),
 ];
 
 const DAY = 24 * 3600 * 1000;
@@ -92,6 +95,7 @@ export async function refreshInstagramTokens(env: Env): Promise<void> {
 export function configured(env: Env, s: Source): boolean {
   if (s.platform === 'youtube') return !!env.YOUTUBE_API_KEY?.trim();
   if (s.platform === 'tiktok') return tiktokConfigured(env);
+  if (s.platform === 'twitch') return twitchConfigured(env);
   return !!(s.ref === 'VIN' ? env.INSTAGRAM_TOKEN_VIN : env.INSTAGRAM_TOKEN_MFR)?.trim();
 }
 
@@ -111,6 +115,7 @@ export async function snapshotFollowers(env: Env, now = Date.now(), only?: strin
       const n =
         s.platform === 'youtube' ? await youtube(env, s.ref)
         : s.platform === 'tiktok' ? await tiktokFollowers(env, s.ref, now)
+        : s.platform === 'twitch' ? await twitchFollowers(env)
         : await instagram(env, s.ref);
       await d.prepare('INSERT INTO follower_snapshots (source, at, count) VALUES (?1, ?2, ?3)').bind(s.key, now, n).run();
     } catch (err) {
