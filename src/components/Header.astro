@@ -95,23 +95,36 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     clearTimeout(toastTimer);
     toastTimer = window.setTimeout(() => (toast.hidden = true), 4000);
   };
+  // While VIN streams on Twitch, the sign says "Live on Twitch" and opens the stream instead of knocking.
+  const long = light?.querySelector<HTMLElement>('.long');
+  const short = light?.querySelector<HTMLElement>('.short');
+  const studioText = [long?.textContent ?? '', short?.textContent ?? ''];
+  let twitch: string | null = null;
   const setLive = (live: boolean) => {
     if (!light) return;
-    light.classList.toggle('is-live', live);
-    light.disabled = !live;
-    light.title = live ? tx.knockLive : tx.knockOff;
-    light.setAttribute('aria-label', live ? tx.knockLiveLabel : tx.knockOffLabel);
+    light.classList.toggle('is-live', live || !!twitch);
+    light.classList.toggle('is-twitch', !!twitch);
+    light.disabled = !live && !twitch;
+    if (long) long.textContent = twitch ? tx.twitchLong : studioText[0];
+    if (short) short.textContent = twitch ? tx.twitchShort : studioText[1];
+    light.title = twitch ? tx.twitchLabel : live ? tx.knockLive : tx.knockOff;
+    light.setAttribute('aria-label', twitch ? tx.twitchLabel : live ? tx.knockLiveLabel : tx.knockOffLabel);
   };
   const checkStudio = async () => {
     if (!light || document.hidden) return;
     try {
       const res = await fetch('/api/studio', { headers: { Accept: 'application/json' } });
-      if (res.ok) setLive(Boolean((await res.json()).live));
+      if (res.ok) {
+        const data = await res.json();
+        twitch = typeof data.twitch === 'string' && data.twitch.startsWith('https://www.twitch.tv/') ? data.twitch : null;
+        setLive(Boolean(data.live));
+      }
     } catch {
       /* offline: leave as is */
     }
   };
   light?.addEventListener('click', async () => {
+    if (twitch) return void window.open(twitch, '_blank', 'noopener');
     light.classList.remove('knocked');
     void light.offsetWidth; // restart the shake animation
     light.classList.add('knocked');
@@ -149,6 +162,7 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     animation: sign-on 0.9s steps(1, end) 1, sign-glow 3.2s ease-in-out 0.9s infinite;
   }
   .studio-sign:disabled { cursor: default; }
+  .studio-sign.is-twitch { background: #9146ff; border-color: #b48cff; color: #fff; text-shadow: none; box-shadow: 0 0 12px rgba(145, 70, 255, 0.6); animation: none; }
   .studio-sign.is-live { cursor: pointer; }
   .studio-sign.is-live:hover, .studio-sign.is-live:focus-visible { filter: brightness(1.12); }
   .studio-sign.knocked { animation: sign-knock 0.35s ease, sign-glow 3.2s ease-in-out 0.35s infinite; }

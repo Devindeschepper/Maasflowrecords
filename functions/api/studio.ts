@@ -5,6 +5,7 @@ import { followerSummary } from '../_lib/followers';
 import { visitorStats } from '../_lib/visitors';
 import { newsletterStats } from '../_lib/newsletter';
 import { spotifyStats } from '../_lib/spotify';
+import { twitchLive } from '../_lib/twitch';
 import { wrappedStats, wrappedYear, type Wrapped } from '../_lib/wrapped';
 import { db, openSession, sessionOff, sessionOn, summarize, weekStart, type Session } from '../_lib/studio';
 
@@ -26,9 +27,10 @@ import { db, openSession, sessionOff, sessionOn, summarize, weekStart, type Sess
 const LIVE_TTL = 15 * 60; // seconds without a heartbeat before the light switches off
 
 export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
-  if (!env.STUDIO) return jsonResponse(200, { live: false, last: null });
-  const [live, last] = await Promise.all([env.STUDIO.get('live'), env.STUDIO.get('last')]);
-  return new Response(JSON.stringify({ live: live !== null, last: live ?? last }), {
+  if (!env.STUDIO) return jsonResponse(200, { live: false, last: null, twitch: null });
+  // twitch: the stream link while VIN is live on Twitch (the header sign then says "Live on Twitch").
+  const [live, last, twitch] = await Promise.all([env.STUDIO.get('live'), env.STUDIO.get('last'), twitchLive(env)]);
+  return new Response(JSON.stringify({ live: live !== null, last: live ?? last, twitch }), {
     headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'public, max-age=30' },
   });
 };
