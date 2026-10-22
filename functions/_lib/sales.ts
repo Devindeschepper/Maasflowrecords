@@ -181,6 +181,27 @@ export async function salesSummary(env: Env): Promise<string> {
   ].join('\n');
 }
 
+/**
+ * The product sold most in the last 30 days, for the "Best seller" tag on the shop. Only when there are at
+ * least 2 products and it sold at least 3 times, so a single product or a quiet month shows no tag.
+ * Cached for 10 minutes (KV), since every shop visit asks.
+ */
+export async function bestSeller(env: Env, now = Date.now()): Promise<string | null> {
+  if (!shopOpen || products.length < 2) return null;
+  const cached = JSON.parse((await env.STUDIO?.get('bestseller')) ?? 'null') as { id: string | null; at: number } | null;
+  if (cached && now - cached.at < 600000) return cached.id;
+  const d = await db(env);
+  if (!d) return null;
+  await ensureSalesTable(d);
+  const { results } = await d.prepare('SELECT lines FROM sales WHERE test = ?1 AND at > ?2').bind(shopTestMode ? 1 : 0, now - 30 * 86400000).all<{ lines: string }>();
+  const qty = new Map<string, number>();
+  for (const r of results) for (const l of JSON.parse(r.lines || '[]') as Line[]) qty.set(l.id, (qty.get(l.id) ?? 0) + l.qty);
+  const [top] = [...qty].filter(([id]) => products.some((p) => p.id === id)).sort((a, b) => b[1] - a[1]);
+  const id = top && top[1] >= 3 ? top[0] : null;
+  await env.STUDIO?.put('bestseller', JSON.stringify({ id, at: now }));
+  return id;
+}
+
 export type StockLine = { stock: number; sold: number; left: number };
 export type ProductStock = StockLine & { sizes?: Record<string, StockLine> };
 

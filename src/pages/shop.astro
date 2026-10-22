@@ -171,6 +171,16 @@ const jsonLd = !shopOpen ? [] : products.map((p) => ({
     }),
   );
 
+  // "Best seller" tag on the product sold most in the last 30 days (worked out by the server).
+  fetch('/api/bestseller')
+    .then((r) => (r.ok ? r.json() : null))
+    .then((d: { id?: string | null } | null) => {
+      if (!d?.id) return;
+      const tag = [...document.querySelectorAll<HTMLElement>('[data-product-id]')].find((el) => el.dataset.productId === d.id)?.querySelector<HTMLElement>('[data-best]');
+      if (tag) tag.hidden = false;
+    })
+    .catch(() => {});
+
   const buttons = document.querySelectorAll<HTMLButtonElement>('.filter');
   const items = document.querySelectorAll<HTMLElement>('#product-grid > [data-cat]');
   buttons.forEach((b) =>
