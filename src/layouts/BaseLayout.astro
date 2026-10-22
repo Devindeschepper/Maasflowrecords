@@ -7,7 +7,8 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Newsletter from '../components/Newsletter.astro';
 import MaintenanceScreen from '../components/MaintenanceScreen.astro';
-import { site, labelSocials, turnstileSiteKey, maintenance } from '../data/site';
+import BackgroundFx from '../components/BackgroundFx.astro';
+import { site, labelSocials, turnstileSiteKey, maintenance, backgroundFx } from '../data/site';
 import { getLang, LANGS, stripLang, switchLang } from '../i18n';
 import { ui } from '../i18n/ui';
 
@@ -90,6 +91,7 @@ const orgLd = {
   </head>
   <body>
     <a class="skip-link" href="#main">{t.skip}</a>
+    {backgroundFx && !noindex && <BackgroundFx />}
     {!bare && <Header />}
     <main id="main">
       <slot />
