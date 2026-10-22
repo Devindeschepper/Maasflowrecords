@@ -49,6 +49,15 @@ import PageHero from '../components/PageHero.astro';
           <p class="f-note mono muted" data-follower-note></p>
         </section>
 
+        <section class="newsletter" id="spotify" data-spotify hidden>
+          <h2 class="h3 sec">Spotify</h2>
+          <div class="tiles">
+            <div class="tile"><span class="mono muted">Monthly listeners</span><strong data-sp="count"></strong><span>VIN</span></div>
+            <div class="tile"><span class="mono muted">Last 7 days</span><strong data-sp="week"></strong><span>change</span></div>
+          </div>
+          <p class="v-error mono" data-sp="error" hidden></p>
+        </section>
+
         <section class="newsletter" id="newsletter" data-newsletter hidden>
           <h2 class="h3 sec">Newsletter</h2>
           <div class="tiles">
@@ -81,6 +90,7 @@ import PageHero from '../components/PageHero.astro';
   type Stats = {
     ok: boolean; error?: string; live: boolean; week: Sum; month: Sum; all: Sum;
     visitors?: { visits: number; views: number; prevVisits: number; prevViews: number; days: { date: string; visits: number; views: number }[]; pages: { path: string; views: number }[]; error?: string } | null;
+    spotify?: { count: number | null; week: number | null; at: string | null; error?: string } | null;
     newsletter?: { total: number; month: number; week: number; error?: string } | null;
     wrapped?: {
       year: number; since: string | null;
@@ -190,6 +200,18 @@ import PageHero from '../components/PageHero.astro';
       })
       .join('');
     box.querySelectorAll<HTMLButtonElement>('[data-tiktok-connect]').forEach((b) => b.addEventListener('click', connectTikTok));
+    // Spotify monthly listeners (read from VIN's public Spotify page every 6 hours).
+    const sp = s.spotify;
+    const spBox = box.querySelector<HTMLElement>('[data-spotify]')!;
+    spBox.hidden = !sp;
+    if (sp) {
+      const n = (k: string) => spBox.querySelector<HTMLElement>(`[data-sp="${k}"]`)!;
+      n('count').textContent = sp.count === null ? '—' : sp.count.toLocaleString('en-US');
+      n('week').textContent = sp.week === null ? '—' : `${sp.week > 0 ? '+' : ''}${sp.week.toLocaleString('en-US')}`;
+      n('error').hidden = !sp.error || sp.count !== null;
+      n('error').textContent = "Couldn't read Spotify right now. It tries again by itself.";
+      n('error').title = sp.error ?? '';
+    }
     // Newsletter subscribers (Resend contact list).
     const nl = s.newsletter;
     const nBox = box.querySelector<HTMLElement>('[data-newsletter]')!;
