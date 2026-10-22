@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from '../components/PageHero.astro';
 import { artists } from '../data/artists';
+import { photoSrcset } from '../data/img';
 import { getLang, localize, pick } from '../i18n';
 
 const vin = artists[0];
@@ -87,7 +88,7 @@ const t = pick(lang, {
   <section class="section" id="vin">
     <div class="container bio">
       <div class="side">
-        <img src={bioPhoto.src} alt={bioPhoto.alt} width="480" height="600" loading="lazy" />
+        <img src={bioPhoto.src} srcset={photoSrcset(bioPhoto.src)} sizes="(max-width: 900px) 100vw, 480px" alt={bioPhoto.alt} width="480" height="600" loading="lazy" />
         <p class="mono muted">{t.side[0]}<br />{t.side[1]}<br />{t.side[2]}</p>
       </div>
       <article class="prose">

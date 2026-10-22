@@ -19,6 +19,16 @@ site_url: https://maasflowrecords.com
 media_folder: public/images/uploads
 public_folder: /images/uploads
 
+# Uploads: photos are made smaller before they are saved (max 2000 px, WebP), so a big phone photo can't slow
+# down the site. Anything still over 3 MB (or another huge file) is refused with a message.
+media_libraries:
+  default:
+    config:
+      max_file_size: 3145728
+      slugify_filename: true
+      transformations:
+        raster_image: { format: webp, quality: 82, width: 2000, height: 2000 }
+
 collections:
   # ---------------------------------------------------------------- RELEASES
   - name: releases
@@ -69,7 +79,7 @@ collections:
         widget: image
         media_folder: /public/images/releases
         public_folder: /images/releases
-        hint: Square image, at least 1000×1000 (.jpg).
+        hint: Square image, at least 1000×1000. Max 3 MB; it is made smaller automatically.
       - { name: description, label: Short description, widget: text, required: false }
       - name: tracks
         label: Tracklist
@@ -101,7 +111,8 @@ collections:
         accept: audio/mpeg
         media_folder: /public/audio
         public_folder: /audio
-        hint: A short clip (10–30 seconds, under 1 MB). A play button appears on the cover.
+        media_library: { config: { max_file_size: 2097152 } }
+        hint: A short clip (10–30 seconds, max 2 MB). A play button appears on the cover.
 
   # ------------------------------------------------------------------ EVENTS
   - name: events
@@ -148,7 +159,7 @@ collections:
         widget: image
         media_folder: /public/images/events
         public_folder: /images/events
-        hint: Landscape 16:9, e.g. 1600×900.
+        hint: Landscape 16:9, e.g. 1600×900. Max 3 MB.
       - { name: ticketUrl, label: Ticket / info link, widget: string, required: false, hint: "Full link (https://…) or a page on this site like /music/2real4u/" }
       - { name: ticketLabel, label: Button text, widget: string, required: false, hint: "e.g. Tickets, Watch live, More info" }
 
@@ -179,7 +190,7 @@ collections:
               - { name: origin, label: From, widget: string, required: false }
               - { name: tagline, label: Tagline, widget: string, required: false }
               - { name: description, label: Short bio, widget: text, required: false }
-              - { name: image, label: Main photo, widget: image, media_folder: /public/images/artists, public_folder: /images/artists, hint: "Portrait photo" }
+              - { name: image, label: Main photo, widget: image, media_folder: /public/images/artists, public_folder: /images/artists, hint: "Portrait photo. Max 3 MB." }
               - { name: imageAlt, label: Main photo description, widget: string, required: false, hint: "For blind visitors and Google, e.g. “VIN on a staircase”" }
               - { name: bioPhoto, label: Bio page photo, widget: image, required: false, media_folder: /public/images/artists, public_folder: /images/artists }
               - { name: bioPhotoAlt, label: Bio photo description, widget: string, required: false }
@@ -235,7 +246,7 @@ collections:
               - { name: category, label: Category, widget: select, default: CD, options: [CD, Vinyl, T-Shirt, Hoodie, Cap, Poster, Jewellery, Bundle, Other] }
               - { name: description, label: Description, widget: text, required: false }
               - { name: price, label: Price (€), widget: number, value_type: float, min: 0, step: 0.01 }
-              - { name: image, label: Photo, widget: image, media_folder: /public/images/shop, public_folder: /images/shop, hint: "Square, 1200×1200" }
+              - { name: image, label: Photo, widget: image, media_folder: /public/images/shop, public_folder: /images/shop, hint: "Square, 1200×1200. Max 3 MB." }
               - { name: stock, label: In stock, widget: number, value_type: int, min: 0, default: 0, hint: "0 = sold out" }
               - { name: preorder, label: Pre-order, widget: boolean, default: false }
               - name: bundle
