@@ -4,6 +4,7 @@ import { safeEqual } from '../_lib/sign';
 import { followerSummary } from '../_lib/followers';
 import { visitorStats } from '../_lib/visitors';
 import { newsletterStats } from '../_lib/newsletter';
+import { spotifyStats } from '../_lib/spotify';
 import { wrappedStats, wrappedYear, type Wrapped } from '../_lib/wrapped';
 import { db, openSession, sessionOff, sessionOn, summarize, weekStart, type Session } from '../_lib/studio';
 
@@ -159,6 +160,7 @@ export const onStats: PagesFunction<Env> = async ({ request, env }) => {
     }),
     visitors: await visitorStats(env, now).catch(() => null),
     newsletter: await newsletterStats(env, now, monthStart).catch(() => null),
+    spotify: await spotifyStats(env, now).catch(() => null),
     wrapped: await wrapped(env, now, new URL(request.url).searchParams.has('wrapped')),
   });
 };

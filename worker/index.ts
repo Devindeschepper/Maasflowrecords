@@ -15,6 +15,9 @@ import { onRequestPost as stripeWebhook } from '../functions/api/webhooks/stripe
 import { onRequestPost as cryptoWebhook } from '../functions/api/webhooks/crypto';
 import { onRequestGet as studioStatus, onRequestPost as studioSet, onKnock, onStats } from '../functions/api/studio';
 import { onRequestGet as bestseller } from '../functions/api/bestseller';
+import { onRequestGet as unsubscribePage, onRequestPost as unsubscribe } from '../functions/api/unsubscribe';
+import { releaseNewsletter } from '../functions/_lib/release-mail';
+import { snapshotSpotify } from '../functions/_lib/spotify';
 import { onConnect as tiktokConnect, onCallback as tiktokCallback } from '../functions/api/tiktok';
 import { onShop, onShipped, onExport as shopExport, onManage, onSettings as shopSettings, onProducts as shopProducts, onDiscounts as shopDiscounts } from '../functions/api/shop';
 import { studioNudge, weeklySummary } from '../functions/_lib/studio';
@@ -88,6 +91,12 @@ export default {
       if (request.method !== 'GET') return jsonResponse(405, { ok: false, error: 'Method not allowed.' });
       return (bestseller as unknown as Handler)({ request, env });
     }
+    // Unsubscribe link in the newsletter emails.
+    if (route === '/api/unsubscribe') {
+      if (request.method === 'GET') return (unsubscribePage as unknown as Handler)({ request, env });
+      if (request.method === 'POST') return (unsubscribe as unknown as Handler)({ request, env });
+      return jsonResponse(405, { ok: false, error: 'Method not allowed.' });
+    }
     // TikTok login for the follower count on /studio-stats/.
     if (route === '/api/tiktok/connect' || route === '/api/tiktok/callback') {
       if (request.method !== 'GET') return jsonResponse(405, { ok: false, error: 'Method not allowed.' });
@@ -106,7 +115,8 @@ export default {
   },
 
   // Crons (wrangler.toml [triggers]): hourly follower check (+ WhatsApp milestone/problem alerts, the
-  // 18:00 studio nudge, the 31 December Wrapped and 10:00 release anniversaries, dated reminders, the busy-hour sales summary, tidying up after a timed drop and back-in-stock emails); Sunday evening WhatsApp
+  // 18:00 studio nudge, the 31 December Wrapped and 10:00 release anniversaries, dated reminders, the busy-hour sales summary, tidying up after a timed drop, back-in-stock emails, the
+  // new-release newsletter and Spotify listeners); Sunday evening WhatsApp
   // summary and Instagram token renewal; monthly WhatsApp report, link check and backup email on the 1st.
   async scheduled(controller: ScheduledController, env: WorkerEnv, ctx: ExecutionContext): Promise<void> {
     if (controller.cron === WEEKLY_CRON) {
@@ -121,7 +131,7 @@ export default {
         if (text) await notifyWhatsApp(env, text);
       };
       const releases = async () => (await (await env.ASSETS.fetch('https://assets.local/release-dates.json')).json()) as ReleaseDate[];
-      ctx.waitUntil(Promise.all([hourlyFollowers(env, now), studioNudge(env, now), wrappedMessage(env, now), releaseAnniversaries(env, now, releases), dueReminders(env, now), busySales(), finishDrop(env, now), restockAlerts(env, now)]));
+      ctx.waitUntil(Promise.all([hourlyFollowers(env, now), studioNudge(env, now), wrappedMessage(env, now), releaseAnniversaries(env, now, releases), dueReminders(env, now), busySales(), finishDrop(env, now), restockAlerts(env, now), releaseNewsletter(env, now, releases), snapshotSpotify(env, now)]));
     }
   },
 } satisfies ExportedHandler<WorkerEnv>;
