@@ -3,6 +3,7 @@ import type { Order } from './payments/types';
 import { db } from './studio';
 import { countUse } from './discounts';
 import { sendMail } from './mail';
+import { notifyWhatsApp } from './whatsapp';
 import { customerTexts, itemsForCustomer } from './payments/customer-texts';
 import { bundleStock, products } from '../../src/data/products';
 import { dropAt, shopOpen, shopTestMode } from '../../src/data/site';
@@ -115,6 +116,7 @@ export async function recordSale(env: Env, sale: { orderId: string; totalCents: 
       .run();
     if (!inserted.meta.changes) return false; // a payment retry for a sale already counted
     if (saved.details?.discount?.code) await countUse(env, saved.details.discount.code);
+    await lowStockAlert(env, saved.lines ?? [], now);
     const recent = await d.prepare('SELECT COUNT(*) AS n FROM sales WHERE at > ?1').bind(now - 3600000).first<{ n: number }>();
     if ((recent?.n ?? 0) <= BUSY_PER_HOUR) return false;
     await d.prepare('UPDATE sales SET notified = 0 WHERE order_id = ?1').bind(sale.orderId).run();
@@ -122,6 +124,39 @@ export async function recordSale(env: Env, sale: { orderId: string; totalCents: 
   } catch (err) {
     console.error('Recording the sale failed', err);
     return false;
+  }
+}
+
+/** WhatsApp to VIN when something has only a few pieces left. */
+const ALERT_AT = 3;
+
+/**
+ * After a sale: one WhatsApp for each product (or size) that this sale took down to ALERT_AT or fewer, so VIN
+ * hears it once when it gets low and once when it's sold out, not on every sale. Never throws.
+ */
+async function lowStockAlert(env: Env, lines: Line[], now: number) {
+  try {
+    if (!lines.length) return;
+    const left = await stockLeft(env, now);
+    const alerts: string[] = [];
+    for (const p of products) {
+      if (p.bundle) continue; // a bundle runs out when a product inside runs out
+      const sold = (size?: string) =>
+        lines
+          .filter((l) => (l.id === p.id || products.find((b) => b.id === l.id)?.bundle?.includes(p.id)) && (size === undefined || l.size === size))
+          .reduce((n, l) => n + l.qty, 0);
+      const st = left.get(p.id);
+      const check = (label: string, after: number, qty: number) => {
+        if (!qty || (after > 0 && after + qty <= ALERT_AT)) return; // already low before this sale
+        if (after === 0) alerts.push(`❌ Sold out: ${label}`);
+        else if (after <= ALERT_AT) alerts.push(`⚠️ Only ${after} left: ${label}`);
+      };
+      if (st?.sizes) for (const [size, s] of Object.entries(st.sizes)) check(`${p.name} (${size})`, s.left, sold(size));
+      else if (st) check(p.name, st.left, sold());
+    }
+    if (alerts.length) await notifyWhatsApp(env, [`🔴 Maas Flow Records${shopTestMode ? ' [TEST]' : ''}`, ...alerts, 'Change the stock on /shop-admin/ when you get new pieces.'].join('\n'));
+  } catch (err) {
+    console.error('Low stock alert failed', err);
   }
 }
 
