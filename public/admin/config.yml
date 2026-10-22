@@ -348,6 +348,11 @@ collections:
             widget: boolean
             default: false
             hint: On = shooting stars and slow red light lines behind the website. Off = plain background.
+          - name: spaceBattle
+            label: Space battle
+            widget: boolean
+            default: false
+            hint: On = small spaceships fight far away in the background (lasers and explosions). Off = no ships.
           - name: maintenance
             label: Maintenance (website shows “Back soon”)
             widget: boolean

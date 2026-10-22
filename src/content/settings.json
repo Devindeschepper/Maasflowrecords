@@ -26,5 +26,6 @@
     "x": "",
     "twitch": ""
   },
-  "backgroundFx": true
+  "backgroundFx": true,
+  "spaceBattle": true
 }
