@@ -83,10 +83,4 @@ export const nav = [
  * Maintenance switch (/shop-admin/ or admin panel → Settings): every public page shows "Back soon".
  * VIN still sees the site on a phone where he is logged in to /shop-admin/ or /studio-stats/.
  */
-/** Background animations (admin panel → Settings): shooting stars and light lines behind the content. */
-export const backgroundFx: boolean = (settings as { backgroundFx?: unknown }).backgroundFx === true;
-
-/** Space battle far away in the background (admin panel → Settings). */
-export const spaceBattle: boolean = (settings as { spaceBattle?: unknown }).spaceBattle === true;
-
 export const maintenance: boolean = (settings as { maintenance?: unknown }).maintenance === true;
