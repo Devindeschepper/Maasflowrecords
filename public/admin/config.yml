@@ -343,6 +343,11 @@ collections:
             default: false
             hint: 'On = a "test shop" banner shows, Stripe only works with TEST keys (sk_test_…) and crypto uses the NOWPayments sandbox. Turn OFF (and use live keys) to sell for real.'
           - { name: twitchUsername, label: Twitch username, widget: string, required: false, hint: 'Your channel name (twitch.tv/NAME), for the follower count on /studio-stats/. Also needs the Cloudflare secrets TWITCH_CLIENT_ID and TWITCH_CLIENT_SECRET.' }
+          - name: backgroundFx
+            label: Background animations
+            widget: boolean
+            default: false
+            hint: On = shooting stars and slow red light lines behind the website. Off = plain background.
           - name: maintenance
             label: Maintenance (website shows “Back soon”)
             widget: boolean

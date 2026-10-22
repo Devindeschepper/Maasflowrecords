@@ -1,0 +1,65 @@
+---
+/**
+ * Background animations (admin panel → Settings → "Background animations"): a few twinkling stars, shooting
+ * stars now and then and slow light lines, behind the content. Only transform/opacity animations (cheap on
+ * phones), no clicks caught, and off for people who ask their device for less motion.
+ */
+// Fixed pseudo-random positions, so every build looks the same.
+let seed = 7;
+const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
+const stars = Array.from({ length: 36 }, () => ({ x: rnd() * 100, y: rnd() * 100, s: rnd() < 0.2 ? 2 : 1, d: (rnd() * 6).toFixed(1), t: (3 + rnd() * 4).toFixed(1) }));
+const shooting = Array.from({ length: 5 }, (_, i) => ({ x: 20 + rnd() * 80, y: rnd() * 45, d: (i * 4.5 + rnd() * 3).toFixed(1), t: (16 + rnd() * 8).toFixed(1) }));
+const lines = [
+  { y: 22, d: 0, t: 14 },
+  { y: 58, d: 5, t: 18 },
+  { y: 84, d: 10, t: 16 },
+];
+---
+
+<div class="fx" aria-hidden="true">
+  {stars.map((s) => <i class="star" style={`left:${s.x}%;top:${s.y}%;width:${s.s}px;height:${s.s}px;animation-delay:${s.d}s;animation-duration:${s.t}s`} />)}
+  {shooting.map((s) => <i class="shoot" style={`left:${s.x}%;top:${s.y}%;animation-delay:${s.d}s;animation-duration:${s.t}s`} />)}
+  {lines.map((l) => <i class="beam" style={`top:${l.y}%;animation-delay:${l.d}s;animation-duration:${l.t}s`} />)}
+</div>
+
+<style>
+  .fx { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+  .fx i { position: absolute; display: block; will-change: transform, opacity; }
+
+  .star { border-radius: 50%; background: #fff; opacity: 0.15; animation: twinkle ease-in-out infinite; }
+  @keyframes twinkle { 0%, 100% { opacity: 0.12; } 50% { opacity: 0.7; } }
+
+  /* Shooting star: a bright head with a fading tail, flying down-left, visible only a short part of its cycle. */
+  .shoot {
+    width: 140px; height: 1.5px; opacity: 0;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.95), rgba(255, 140, 120, 0.5) 30%, transparent);
+    border-radius: 2px; transform-origin: left center;
+    animation: shoot linear infinite;
+  }
+  .shoot::before {
+    content: ''; position: absolute; left: -2px; top: -1.5px; width: 4px; height: 4px; border-radius: 50%;
+    background: #fff; box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.7);
+  }
+  @keyframes shoot {
+    0% { opacity: 0; transform: rotate(-35deg) translateX(0); }
+    1% { opacity: 1; }
+    6% { opacity: 0; transform: rotate(-35deg) translateX(-420px); }
+    100% { opacity: 0; transform: rotate(-35deg) translateX(-420px); }
+  }
+
+  /* Light line: a thin red glow sliding slowly across the screen. */
+  .beam {
+    left: 0; width: 40vw; height: 1px; opacity: 0;
+    background: linear-gradient(90deg, transparent, rgba(228, 67, 45, 0.7), transparent);
+    box-shadow: 0 0 10px rgba(228, 67, 45, 0.5);
+    animation: beam ease-in-out infinite;
+  }
+  @keyframes beam {
+    0% { opacity: 0; transform: translateX(-45vw); }
+    15% { opacity: 0.55; }
+    50% { opacity: 0.55; }
+    65%, 100% { opacity: 0; transform: translateX(110vw); }
+  }
+
+  @media (prefers-reduced-motion: reduce) { .fx { display: none; } }
+</style>
